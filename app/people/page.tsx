@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { AddPersonButton, type Tag } from "./AddPersonButton";
 
 type PersonWithTags = {
@@ -44,6 +44,7 @@ export default async function PeoplePage({
   searchParams: Promise<{ tag?: string; q?: string }>;
 }) {
   const { tag: activeTag, q } = await searchParams;
+  const supabase = await createSupabaseServerClient();
 
   const [peopleResult, tagsResult] = await Promise.all([
     supabase

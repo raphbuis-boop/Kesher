@@ -1,6 +1,6 @@
 "use server";
 
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
 
 export type AddPersonState = {
@@ -24,6 +24,7 @@ export async function addPerson(
   _prevState: AddPersonState,
   formData: FormData
 ): Promise<AddPersonState> {
+  const supabase = await createSupabaseServerClient();
   const firstName = (formData.get("first_name") as string | null)?.trim() ?? "";
   const lastName = (formData.get("last_name") as string | null)?.trim() ?? "";
   const email = (formData.get("email") as string | null)?.trim() || null;

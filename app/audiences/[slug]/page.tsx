@@ -2,8 +2,10 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { AddPersonButton } from "@/app/people/AddPersonButton";
+import { AddContactsButton } from "./AddContactsButton";
+import { removeContactFromGroup } from "@/app/groups/actions";
 
 const SYSTEM_AUDIENCES = {
   parents: { label: "Parents", category: "parent" },
@@ -56,6 +58,8 @@ export default async function AudiencePage({
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ q?: string; tag?: string; grade?: string }>;
 }) {
+  const supabase = await createSupabaseServerClient();
+
   const { slug } = await params;
   const { q, tag: activeTag, grade: activeGrade } = await searchParams;
 
@@ -68,6 +72,7 @@ export default async function AudiencePage({
   let audienceDescription = "";
   let defaultCategory: string | null = null;
   let people: PersonRow[] = [];
+  let nonMembers: { id: string; first_name: string; last_name: string; email: string | null }[] = [];
 
   // Fetch tags for the AddPersonButton (always needed)
   const { data: allTagsData } = await supabase
@@ -106,21 +111,29 @@ export default async function AudiencePage({
 
     const tagIds = typedGroup.group_tags.map((gt) => gt.tag_id);
 
+    const { data, error } = await supabase
+      .from("people")
+      .select(
+        "id, first_name, last_name, email, phone, categories, grade, person_tags ( tag_id, tags ( id, name ) )"
+      )
+      .order("last_name");
+
+    if (error) throw new Error(error.message);
+
+    const allPeople = (data ?? []) as unknown as PersonRow[];
+
     if (tagIds.length > 0) {
-      const { data, error } = await supabase
-        .from("people")
-        .select(
-          "id, first_name, last_name, email, phone, categories, grade, person_tags ( tag_id, tags ( id, name ) )"
-        )
-        .order("last_name");
-
-      if (error) throw new Error(error.message);
-
       const tagIdSet = new Set(tagIds);
-      people = ((data ?? []) as unknown as PersonRow[]).filter((p) =>
+      people = allPeople.filter((p) =>
         p.person_tags.some((pt) => tagIdSet.has(pt.tag_id))
       );
     }
+
+    // Non-members available to add via the picker
+    const memberIds = new Set(people.map((p) => p.id));
+    nonMembers = allPeople
+      .filter((p) => !memberIds.has(p.id))
+      .map((p) => ({ id: p.id, first_name: p.first_name, last_name: p.last_name, email: p.email }));
   }
 
   // Apply search + filter in Node (all server-side, no client JS needed)
@@ -222,10 +235,26 @@ export default async function AudiencePage({
                 {people.length.toLocaleString()}
               </span>
             </div>
-            <AddPersonButton
-              tags={allTags}
-              defaultCategories={defaultCategory ? [defaultCategory] : []}
-            />
+            <div className="flex items-center gap-2">
+              {!isSystem && (
+                <AddContactsButton groupId={slug} nonMembers={nonMembers} />
+              )}
+              <Link
+                href={`/messages/new?audiences=${slug}`}
+                className="inline-flex items-center gap-2 rounded-md bg-zinc-900 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700"
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+                </svg>
+                Message Audience
+              </Link>
+              {isSystem && (
+                <AddPersonButton
+                  tags={allTags}
+                  defaultCategories={defaultCategory ? [defaultCategory] : []}
+                />
+              )}
+            </div>
           </div>
           {audienceDescription && (
             <p className="mt-1 text-sm text-zinc-500">{audienceDescription}</p>
@@ -353,14 +382,18 @@ export default async function AudiencePage({
                 ? "No contacts match your filters"
                 : `No contacts in ${audienceLabel} yet`}
             </p>
-            {hasActiveFilter && (
+            {hasActiveFilter ? (
               <Link
                 href={`/audiences/${slug}`}
                 className="mt-2 text-sm text-zinc-500 transition-colors hover:text-zinc-700"
               >
                 Clear filters
               </Link>
-            )}
+            ) : !isSystem && nonMembers.length > 0 ? (
+              <p className="mt-1.5 text-sm text-zinc-400">
+                Use &ldquo;Add Contacts&rdquo; above to add people to this audience.
+              </p>
+            ) : null}
           </div>
         ) : (
           <div className="overflow-hidden rounded-lg border border-zinc-200">
@@ -382,6 +415,9 @@ export default async function AudiencePage({
                   <th className="pl-3 pr-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-zinc-500">
                     Tags
                   </th>
+                  {!isSystem && (
+                    <th className="pl-3 pr-4 py-3" />
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100 bg-white">
@@ -450,6 +486,18 @@ export default async function AudiencePage({
                         <span className="text-zinc-300">—</span>
                       )}
                     </td>
+                    {!isSystem && (
+                      <td className="pl-3 pr-4 py-3.5 text-right">
+                        <form action={removeContactFromGroup.bind(null, slug, person.id)}>
+                          <button
+                            type="submit"
+                            className="rounded px-2 py-1 text-xs font-medium text-zinc-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                          >
+                            Remove
+                          </button>
+                        </form>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { ComposeFlow, type AudienceOption } from "./ComposeFlow";
 
 const SYSTEM_AUDIENCES: { slug: string; label: string; category: string }[] = [
@@ -15,8 +15,15 @@ const SYSTEM_AUDIENCES: { slug: string; label: string; category: string }[] = [
   { slug: "prospects", label: "Prospects", category: "prospect" },
 ];
 
-export default async function NewMessagePage() {
+export default async function NewMessagePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ audiences?: string }>;
+}) {
+  const { audiences: audiencesParam } = await searchParams;
+  const initialAudienceSlugs = audiencesParam ? audiencesParam.split(",") : undefined;
   const fromEmail = process.env.RESEND_FROM_EMAIL ?? "";
+  const supabase = await createSupabaseServerClient();
 
   // Fetch all people once — compute all counts in one pass
   const { data: allPeople } = await supabase
@@ -83,17 +90,23 @@ export default async function NewMessagePage() {
   });
 
   const audiences = [...systemAudiences, ...customAudiences];
+  const attachmentsEnabled = !!process.env.BLOB_READ_WRITE_TOKEN;
 
   return (
     <div className="min-h-screen bg-zinc-50">
       <div className="mx-auto max-w-2xl px-6 py-10">
-        <div className="mb-8">
-          <h1 className="text-xl font-semibold text-zinc-900">Compose Message</h1>
+        <div className="mb-6">
+          <h1 className="text-xl font-semibold text-zinc-900">New Message</h1>
           <p className="mt-1 text-sm text-zinc-500">
-            Send an email, SMS, or WhatsApp message to your school community.
+            Compose and send to your school community.
           </p>
         </div>
-        <ComposeFlow audiences={audiences} fromEmail={fromEmail} />
+        <ComposeFlow
+          audiences={audiences}
+          fromEmail={fromEmail}
+          initialAudienceSlugs={initialAudienceSlugs}
+          attachmentsEnabled={attachmentsEnabled}
+        />
       </div>
     </div>
   );

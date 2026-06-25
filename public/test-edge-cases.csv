@@ -1,0 +1,9 @@
+Salutation,First Name,Last Name,Email,Phone,Role,Grade,Graduating Year,Parent Of,Notes
+Dr.,Rachel,Friedman,rachel.friedman@email.com,555-0201,parent,,,,"Mother of Noa (Grade 6). PhD in biochemistry. Gender should NOT be assumed from Dr."
+Dr.,David,Klein,d.klein@kleins.net,555-0202,parent,,,,"Father of twins Yonatan and Shira (Grade 9). Proves Dr. cannot indicate male either."
+Rabbi,Shlomo,Berkowitz,rabbi.berkowitz@school.edu,555-0203,faculty,,,,"School chaplain and 10th grade Gemara teacher. Rabbi = unambiguously male."
+,,Rosenblum,info@rosenblum.com,555-0204,donor,,,,"Anonymous donor submitted form with only last name. No first name provided."
+Mr.,Moshe Yaakov,Goldstein,moshe@goldsteinfamily.com,555-0205,parent,,,,"Goes by Moshe. Full name is Moshe Yaakov. preferred_name should be set to Moshe."
+Mrs.,Miriam,Levy,miriam.levy@alumni.school.edu,,alumni,,2015,,"Graduated 2015. Now studying at Bar Ilan University. Should be Alumni Class of 2015."
+Mrs.,Tova,Sheinfeld,tova.sheinfeld@school.edu,555-0207,faculty,,,,4th grade teacher AND mother of two students currently enrolled (Grade 2 and Grade 8). Belongs to both faculty and parent audiences.
+Mr.,Aaron,Blum,aaron.blum@,555-0208,parent,,,,"Email appears truncated on intake form — missing domain. Should be flagged invalid_email."

@@ -1,6 +1,6 @@
 "use server";
 
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
 
 export type UpdatePersonState = {
@@ -24,6 +24,7 @@ export async function updatePerson(
   _prevState: UpdatePersonState,
   formData: FormData
 ): Promise<UpdatePersonState> {
+  const supabase = await createSupabaseServerClient();
   const id = (formData.get("person_id") as string | null)?.trim() ?? "";
   const firstName = (formData.get("first_name") as string | null)?.trim() ?? "";
   const lastName = (formData.get("last_name") as string | null)?.trim() ?? "";
@@ -124,6 +125,7 @@ export async function addRelationship(
   _prevState: AddRelationshipState,
   formData: FormData
 ): Promise<AddRelationshipState> {
+  const supabase = await createSupabaseServerClient();
   const personId = (formData.get("person_id") as string | null)?.trim() ?? "";
   const relatedPersonId =
     (formData.get("related_person_id") as string | null)?.trim() ?? "";

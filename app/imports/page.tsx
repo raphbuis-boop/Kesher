@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { ImportWidget } from "./ImportWidget";
 
 type ImportRecord = {
@@ -20,6 +20,7 @@ function formatDate(dateString: string): string {
 }
 
 export default async function ImportsPage() {
+  const supabase = await createSupabaseServerClient();
   const { data: imports } = await supabase
     .from("imports")
     .select("id, file_name, imported_count, failed_count, created_at")

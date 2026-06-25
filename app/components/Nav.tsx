@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "@/app/login/actions";
 
 export function Nav() {
   const pathname = usePathname();
@@ -59,7 +60,7 @@ export function Nav() {
                   : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900")
               }
             >
-              Groups
+              Custom Audiences
             </Link>
             <Link
               href="/imports"
@@ -72,7 +73,28 @@ export function Nav() {
             >
               Import
             </Link>
+            <Link
+              href="/settings"
+              className={
+                "rounded-md px-3 py-1.5 text-sm font-medium transition-colors " +
+                (pathname.startsWith("/settings")
+                  ? "bg-zinc-100 text-zinc-900"
+                  : "text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900")
+              }
+            >
+              Settings
+            </Link>
           </div>
+
+          {/* Sign out */}
+          <form action={signOut}>
+            <button
+              type="submit"
+              className="rounded-md px-3 py-1.5 text-sm font-medium text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-zinc-900"
+            >
+              Sign out
+            </button>
+          </form>
         </div>
       </div>
     </nav>

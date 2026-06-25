@@ -1,6 +1,6 @@
 "use server";
 
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
 
 export type ParsedRow = {
@@ -23,6 +23,7 @@ export async function importPeople(
   _prevState: ImportActionState,
   formData: FormData
 ): Promise<ImportActionState> {
+  const supabase = await createSupabaseServerClient();
   const fileName =
     (formData.get("file_name") as string | null)?.trim() || "import.csv";
   const rowsJson = formData.get("rows") as string | null;
