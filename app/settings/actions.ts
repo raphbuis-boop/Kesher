@@ -16,6 +16,7 @@ const FIELDS = [
   "footer_text",
   "reply_to_email",
   "sender_name",
+  "sender_email",
 ] as const;
 
 export async function saveSettings(
@@ -38,5 +39,7 @@ export async function saveSettings(
   }
 
   revalidatePath("/settings");
+  revalidatePath("/messages");
+  revalidatePath("/messages/new");
   return { success: true, error: null };
 }

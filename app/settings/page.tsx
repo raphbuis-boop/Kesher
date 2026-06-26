@@ -36,11 +36,12 @@ export default async function SettingsPage() {
 INSERT INTO settings (key, value) VALUES
   ('school_name',    ''),
   ('school_logo_url',''),
-  ('primary_color',  '#18181b'),
+  ('primary_color',  '#1e3a6e'),
   ('website_url',    ''),
   ('footer_text',    ''),
   ('reply_to_email', ''),
-  ('sender_name',    '')
+  ('sender_name',    ''),
+  ('sender_email',   '')
 ON CONFLICT (key) DO NOTHING;
 
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;

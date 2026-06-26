@@ -167,9 +167,8 @@ const HEADER_MAP: Record<string, keyof RawRow> = {
   "father last name": "last_name", "mother last name": "last_name",
   "guardian 1 last name": "last_name", "guardian last name": "last_name",
 
-  // Email — includes school-specific patterns like "Heichal E-mail"
+  // Email
   "email": "email", "email address": "email", "e-mail": "email",
-  "heichal e-mail": "email",
   "work email": "email", "school email": "email", "primary email": "email",
   "home email": "email", "parent email": "email",
   "parent 1 email": "email", "parent1 email": "email",
@@ -220,7 +219,7 @@ const PERSON_FIELDS = new Set<keyof RawRow>([
  * a block-opening header ("title", "salutation", or "first name" variants).
  * Returns Infinity if the CSV is single-contact-per-row.
  *
- * Example — Heichal staff CSV headers (lowercase):
+ * Example CSV headers (lowercase):
  *   [0] student name  [3] title  [4] first name  [9] title  [10] first name
  *   → second "title" is at index 9 → spouseBlockStart = 9
  */

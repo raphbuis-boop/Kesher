@@ -18,6 +18,7 @@ type Person = {
   salutation: string | null;
   email: string | null;
   phone: string | null;
+  graduation_year: number | null;
 };
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -42,6 +43,31 @@ const EMAIL_IMAGE_RE = /\.(jpg|jpeg|png|gif|webp)$/i;
 // Patterns that indicate the user already opened with a salutation
 const GREETING_START_RE = /^(hi|hello|dear|shalom|good\s+morning|good\s+afternoon|gut\s+shabbos|shana\s+tova|greetings|to\s+whom)/i;
 
+/**
+ * Build a plain-text fallback for multipart/alternative.
+ * Strips basic formatting cues and returns clean readable text.
+ */
+function buildEmailText(
+  body: string,
+  branding: BrandingSettings,
+  firstName: string | null
+): string {
+  const lines: string[] = [];
+
+  const bodyTrimmed = body.trim();
+  if (firstName && !GREETING_START_RE.test(bodyTrimmed)) {
+    lines.push(`Hi ${firstName},`, "");
+  }
+  lines.push(bodyTrimmed, "");
+
+  if (branding.footerText) lines.push("---", branding.footerText);
+  if (branding.websiteUrl) lines.push(branding.websiteUrl);
+  if (branding.replyToEmail) lines.push(branding.replyToEmail);
+  lines.push("", "Sent with Kesher");
+
+  return lines.join("\n");
+}
+
 function buildEmailHtml(
   body: string,
   branding: BrandingSettings,
@@ -49,13 +75,14 @@ function buildEmailHtml(
   attachmentUrls?: string[]
 ): string {
   const primaryColor = branding.primaryColor || "#1e3a6e";
-  const schoolName   = branding.schoolName   || "School Office";
+  const schoolName   = branding.schoolName   || "";
   const footerText   = branding.footerText   || "";
   const websiteUrl   = branding.websiteUrl   || "";
   const logoUrl      = branding.logoUrl      || "";
   const replyEmail   = branding.replyToEmail || "";
 
-  // ── Initials fallback when no logo ───────────────────────────────────────
+  // ── Header: logo > initials circle + name > color bar only ──────────────
+  // Initials are derived from the real school name only — never a placeholder.
   const initials = schoolName
     .split(/\s+/)
     .map((w) => w[0])
@@ -64,13 +91,22 @@ function buildEmailHtml(
     .join("")
     .toUpperCase();
 
-  const logoHtml = logoUrl
-    ? `<img src="${logoUrl}" alt="${schoolName}" style="display:block;margin:0 auto;max-height:96px;max-width:280px;height:auto;width:auto;border:0;">`
-    : `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
+  let headerContentHtml: string;
+  if (logoUrl) {
+    // Priority 1: school logo
+    headerContentHtml = `<img src="${logoUrl}" alt="${schoolName}" style="display:block;margin:0 auto;max-height:96px;max-width:280px;height:auto;width:auto;border:0;">`;
+  } else if (schoolName) {
+    // Priority 2: initials circle + school name (original design fallback)
+    headerContentHtml = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
         <tr><td style="width:68px;height:68px;background:rgba(255,255,255,0.18);border-radius:50%;text-align:center;vertical-align:middle;font-size:24px;font-weight:700;color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:-0.5px;">
           ${initials}
         </td></tr>
-      </table>`;
+      </table>
+      <h1 style="margin:18px 0 0;font-size:24px;font-weight:700;color:#ffffff;letter-spacing:-0.4px;line-height:1.25;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">${schoolName}</h1>`;
+  } else {
+    // Priority 3: nothing configured yet — slim color bar, no phantom text
+    headerContentHtml = "";
+  }
 
   // ── Greeting line (auto-injected if body doesn't already open with one) ──
   const bodyTrimmed = body.trim();
@@ -137,7 +173,9 @@ ${docs
   }
   const footerContentHtml = footerLines.length
     ? footerLines.join("\n")
-    : `<p style="margin:0;font-size:13px;color:#9ca3af;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">${schoolName}</p>`;
+    : schoolName
+    ? `<p style="margin:0;font-size:13px;color:#9ca3af;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">${schoolName}</p>`
+    : "";
 
   // ── Full template ─────────────────────────────────────────────────────────
   return `<!DOCTYPE html>
@@ -171,9 +209,8 @@ ${docs
 
       <!-- ━━ HEADER ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
       <tr>
-        <td class="em-header-td" style="background-color:${primaryColor};border-radius:14px 14px 0 0;padding:48px 56px 44px;text-align:center;">
-          ${logoHtml}
-          ${logoUrl ? "" : `<h1 style="margin:18px 0 0;font-size:24px;font-weight:700;color:#ffffff;letter-spacing:-0.4px;line-height:1.25;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">${schoolName}</h1>`}
+        <td class="em-header-td" style="background-color:${primaryColor};border-radius:14px 14px 0 0;padding:${headerContentHtml ? "48px 56px 44px" : "20px 56px"};text-align:center;">
+          ${headerContentHtml}
         </td>
       </tr>
 
@@ -221,7 +258,7 @@ async function getPeopleForAudience(audienceSlug: string): Promise<Person[]> {
     const category = SYSTEM_CATEGORY_MAP[audienceSlug];
     const { data } = await supabase
       .from("people")
-      .select("id, first_name, last_name, preferred_name, salutation, email, phone")
+      .select("id, first_name, last_name, preferred_name, salutation, email, phone, graduation_year")
       .contains("categories", [category]);
     return (data ?? []) as Person[];
   }
@@ -240,7 +277,7 @@ async function getPeopleForAudience(audienceSlug: string): Promise<Person[]> {
 
   const { data: allPeople } = await supabase
     .from("people")
-    .select("id, first_name, last_name, preferred_name, salutation, email, phone, person_tags ( tag_id )");
+    .select("id, first_name, last_name, preferred_name, salutation, email, phone, graduation_year, person_tags ( tag_id )");
 
   const tagIdSet = new Set<string>(tagIds);
   return ((allPeople ?? []) as any[])
@@ -253,6 +290,7 @@ async function getPeopleForAudience(audienceSlug: string): Promise<Person[]> {
       salutation: p.salutation as string | null,
       email: p.email as string | null,
       phone: p.phone as string | null,
+      graduation_year: (p.graduation_year as number | null) ?? null,
     }));
 }
 
@@ -276,9 +314,9 @@ async function sendEmailBatch(
   now: string,
   branding: BrandingSettings,
   attachmentUrls?: string[]
-): Promise<{ inserts: RecipientInsert[]; sentCount: number; failedCount: number }> {
+): Promise<{ inserts: RecipientInsert[]; sentCount: number; failedCount: number; batchError: string | null }> {
   const resend = new Resend(process.env.RESEND_API_KEY!);
-  const fromEmail = process.env.RESEND_FROM_EMAIL!;
+  const fromEmail = branding.senderEmail || process.env.RESEND_FROM_EMAIL!;
   const senderName = branding.senderName || branding.schoolName || "";
   const from = senderName ? `${senderName} <${fromEmail}>` : fromEmail;
   const replyTo = branding.replyToEmail || undefined;
@@ -287,26 +325,46 @@ async function sendEmailBatch(
 
   let sentCount = 0;
   let failedCount = 0;
+  let batchError: string | null = null;
   const inserts: RecipientInsert[] = [];
+
+  console.log(`[sendEmailBatch] from="${from}" replyTo="${replyTo ?? "none"}" recipients=${eligible.length}`);
 
   for (let i = 0; i < eligible.length; i += BATCH_SIZE) {
     const batch = eligible.slice(i, i + BATCH_SIZE);
     const emails = batch.map((r) => {
       const rendered = renderTemplate(bodyTemplate, r);
       const firstName = r.preferred_name?.trim() || r.first_name?.trim() || null;
-      const email: Record<string, unknown> = {
+      const payload: Record<string, unknown> = {
         from,
         to: r.email!,
         subject,
         html: buildEmailHtml(rendered, branding, firstName, attachmentUrls),
+        text: buildEmailText(rendered, branding, firstName),
+        headers: {
+          // Helps Gmail and Outlook route bulk mail correctly
+          "Precedence": "bulk",
+          // Unique per-recipient ID prevents duplicate-detection false positives
+          "X-Entity-Ref-ID": `${messageId}-${r.id}`,
+          // One-click unsubscribe — required by Gmail/Yahoo bulk sender guidelines (2024+)
+          "List-Unsubscribe": `<mailto:${replyTo || fromEmail}?subject=Unsubscribe>`,
+          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        },
       };
-      if (replyTo) email.reply_to = replyTo;
-      return email;
+      if (replyTo) payload.replyTo = replyTo;
+      return payload;
     });
 
-    const result = await resend.batch.send(emails);
+    console.log(`[sendEmailBatch] sending batch of ${batch.length} to: ${batch.map((r) => r.email).join(", ")}`);
+
+    const result = await resend.batch.send(emails as Parameters<typeof resend.batch.send>[0]);
 
     if (result.error || !result.data) {
+      const errMsg = result.error
+        ? `${result.error.name}: ${result.error.message}`
+        : "No data returned from Resend";
+      console.error(`[sendEmailBatch] Resend error:`, JSON.stringify(result.error, null, 2));
+      batchError = errMsg;
       for (const r of batch) {
         inserts.push({
           message_id: messageId,
@@ -321,9 +379,13 @@ async function sendEmailBatch(
       }
     } else {
       const ids = result.data.data;
+      console.log(`[sendEmailBatch] Resend accepted batch — ids:`, ids.map((d: { id: string }) => d.id));
       for (let j = 0; j < batch.length; j++) {
         const r = batch[j];
         const providerId = ids[j]?.id ?? null;
+        if (!providerId) {
+          console.error(`[sendEmailBatch] No provider_id for ${r.email} at index ${j}`);
+        }
         inserts.push({
           message_id: messageId,
           person_id: r.id,
@@ -338,7 +400,8 @@ async function sendEmailBatch(
     }
   }
 
-  return { inserts, sentCount, failedCount };
+  console.log(`[sendEmailBatch] done — sent=${sentCount} failed=${failedCount} error=${batchError ?? "none"}`);
+  return { inserts, sentCount, failedCount, batchError };
 }
 
 // ─── Twilio send (SMS + WhatsApp) ─────────────────────────────────────────────
@@ -528,11 +591,27 @@ export async function sendMessage(
   let failedCount = 0;
   let inserts: RecipientInsert[] = [];
 
+  let batchError: string | null = null;
+
+  // ── AUDIT LOG: log every recipient email before sending ──────────────────
+  if (channel === "email") {
+    console.log(`[sendMessage] RECIPIENT AUDIT — message ${messageId} — ${eligible.length} recipients:`);
+    for (const r of eligible) {
+      console.log(`  [sendMessage]   → ${r.email} (${r.first_name} ${r.last_name})`);
+    }
+  } else {
+    console.log(`[sendMessage] RECIPIENT AUDIT — message ${messageId} — ${eligible.length} recipients:`);
+    for (const r of eligible) {
+      console.log(`  [sendMessage]   → ${r.phone} (${r.first_name} ${r.last_name})`);
+    }
+  }
+
   if (channel === "email") {
     const result = await sendEmailBatch(eligible, trimmedSubject, trimmedBody, messageId, now, branding, attachmentUrls);
     sentCount = result.sentCount;
     failedCount = result.failedCount;
     inserts = result.inserts;
+    batchError = result.batchError;
   } else {
     // SMS or WhatsApp via Twilio (credentials validated above)
     const result = await sendViaTwilio(channel as "sms" | "whatsapp", eligible, trimmedBody, messageId, now, attachmentUrls);
@@ -541,16 +620,63 @@ export async function sendMessage(
     inserts = result.inserts;
   }
 
+  const finalStatus = sentCount === 0 ? "failed" : "sent";
+
   await Promise.all([
-    supabase.from("message_recipients").insert(inserts),
+    inserts.length > 0 ? supabase.from("message_recipients").insert(inserts) : Promise.resolve(),
     supabase
       .from("messages")
-      .update({ sent_count: sentCount, failed_count: failedCount, status: "sent", sent_at: now })
+      .update({ sent_count: sentCount, failed_count: failedCount, status: finalStatus, sent_at: now })
       .eq("id", messageId),
   ]);
 
   revalidatePath("/messages");
+
+  if (sentCount === 0 && batchError) {
+    return { success: false, error: batchError };
+  }
   return { success: true };
+}
+
+// ─── Full recipient resolution (pre-send audit) ───────────────────────────────
+
+export type ResolvedRecipient = {
+  name: string;
+  contactValue: string; // email or phone
+};
+
+/**
+ * Resolves the exact set of recipients that will receive a send.
+ * Called BEFORE sendMessage so the user can confirm who will receive the message.
+ * Also used server-side to audit the recipient list before calling Resend.
+ */
+export async function resolveAllRecipients(
+  audienceSlugs: string[],
+  channel: Channel
+): Promise<ResolvedRecipient[]> {
+  if (audienceSlugs.length === 0) return [];
+
+  const peopleArrays = await Promise.all(audienceSlugs.map(getPeopleForAudience));
+  const seenIds = new Set<string>();
+  const allPeople: Person[] = [];
+  for (const batch of peopleArrays) {
+    for (const p of batch) {
+      if (!seenIds.has(p.id)) {
+        seenIds.add(p.id);
+        allPeople.push(p);
+      }
+    }
+  }
+
+  const eligible =
+    channel === "email"
+      ? allPeople.filter((p) => p.email)
+      : allPeople.filter((p) => p.phone);
+
+  return eligible.map((r) => ({
+    name: [r.first_name, r.last_name].filter(Boolean).join(" ") || (channel === "email" ? r.email ?? "" : r.phone ?? ""),
+    contactValue: channel === "email" ? (r.email ?? "") : (r.phone ?? ""),
+  }));
 }
 
 // ─── Per-recipient preview ────────────────────────────────────────────────────

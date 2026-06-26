@@ -45,7 +45,7 @@ export function SettingsForm({ current }: { current: BrandingSettings }) {
               name="school_name"
               type="text"
               defaultValue={current.schoolName}
-              placeholder="Heichal HaTorah"
+              placeholder="Lincoln Academy"
               className={field}
               disabled={isPending}
             />
@@ -107,12 +107,29 @@ export function SettingsForm({ current }: { current: BrandingSettings }) {
               name="sender_name"
               type="text"
               defaultValue={current.senderName}
-              placeholder="Heichal HaTorah"
+              placeholder="Lincoln Academy"
               className={field}
               disabled={isPending}
             />
             <p className="mt-1 text-xs text-zinc-400">
               Shown as the "From" name in recipients' email clients. Falls back to School Name if blank.
+            </p>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-zinc-700">
+              Sender Email
+            </label>
+            <input
+              name="sender_email"
+              type="email"
+              defaultValue={current.senderEmail}
+              placeholder="hello@yourschool.org"
+              className={field}
+              disabled={isPending}
+            />
+            <p className="mt-1 text-xs text-zinc-400">
+              The email address emails are sent from. Must be on your verified sending domain.
             </p>
           </div>
 

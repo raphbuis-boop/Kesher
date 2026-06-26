@@ -14,9 +14,18 @@
 
 ### Apply the schema
 
-In your Supabase project, open the **SQL Editor** and run `scripts/migrate.sql` to create the `messages` and `message_recipients` tables.
+In your Supabase project, open the **SQL Editor** and run each migration in order. All scripts are safe to re-run (IF NOT EXISTS / ON CONFLICT DO NOTHING guards throughout).
 
-The following tables are assumed to already exist (created by the Supabase setup):
+**Run in this order:**
+
+| # | File | What it creates |
+|---|------|-----------------|
+| 1 | `scripts/migrate.sql` | `messages`, `message_recipients` tables + indexes |
+| 2 | `scripts/migrate_phase1_up.sql` | Extends `people` + `groups`; adds `import_jobs`, `message_threads`, `thread_messages`, `message_attachments` |
+| 3 | `scripts/migrate_settings.sql` | `settings` table + default rows + RLS |
+| 4 | `scripts/rls_policies.sql` | Row Level Security policies for all tables |
+
+The following tables are assumed to already exist (created during Supabase project setup):
 - `people`
 - `tags`
 - `person_tags`
@@ -151,15 +160,20 @@ npx vercel --prod
 |----------|----------|-------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | ✅ Yes | Your Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ Yes | Supabase anon/public key |
-| `RESEND_API_KEY` | For email | API key from resend.com |
-| `RESEND_FROM_EMAIL` | For email | Verified sender address (e.g. `noreply@yourdomain.com`) |
-
-**Without `RESEND_API_KEY`:** Email compose will show an error. SMS and WhatsApp work in demo/mock mode without any provider keys.
+| `RESEND_API_KEY` | ✅ For email | API key from resend.com |
+| `RESEND_FROM_EMAIL` | ✅ For email | Verified sender address (e.g. `hello@kesherhq.co`) |
+| `ANTHROPIC_API_KEY` | For AI compose | API key from console.anthropic.com |
+| `BLOB_READ_WRITE_TOKEN` | For attachments | From Vercel Dashboard → Storage → Blob store |
 
 **To get a Resend API key:**
 1. Sign up at [resend.com](https://resend.com)
-2. Go to **API Keys** → **Create API Key**
-3. Verify your domain, or use `onboarding@resend.dev` as the from address during testing
+2. Go to **Domains** → add `kesherhq.co` → verify SPF, DKIM, DMARC DNS records
+3. Go to **API Keys** → **Create API Key**
+
+**To get a Vercel Blob token:**
+1. In Vercel Dashboard → your project → **Storage** tab
+2. Create a new **Blob** store
+3. Copy the `BLOB_READ_WRITE_TOKEN` and add it as an environment variable
 
 ---
 

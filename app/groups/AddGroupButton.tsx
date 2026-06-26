@@ -160,7 +160,7 @@ function FilterBuilder({
                   updateConditions(
                     conditions.map((c) =>
                       c.id === cond.id ? { ...c, value: e.target.value } : c
-                    )
+                    ) as FilterCondition[]
                   )
                 }
               >
@@ -183,7 +183,7 @@ function FilterBuilder({
                       c.id === cond.id
                         ? { ...c, value: parseInt(e.target.value, 10) || CURRENT_YEAR }
                         : c
-                    )
+                    ) as FilterCondition[]
                   )
                 }
               />

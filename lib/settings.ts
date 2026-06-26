@@ -8,17 +8,19 @@ export type BrandingSettings = {
   footerText: string;
   replyToEmail: string;
   senderName: string;
+  senderEmail: string;
 };
 
 /** Env-var fallbacks used when the settings table has no value set. */
 const ENV_DEFAULTS: BrandingSettings = {
-  schoolName: process.env.SCHOOL_NAME ?? "",
-  logoUrl: process.env.SCHOOL_LOGO_URL ?? "",
-  primaryColor: process.env.PRIMARY_COLOR ?? "#1e3a6e",
-  websiteUrl: process.env.SCHOOL_WEBSITE ?? "",
-  footerText: process.env.FOOTER_TEXT ?? "",
-  replyToEmail: process.env.RESEND_REPLY_TO ?? "",
-  senderName: process.env.RESEND_FROM_NAME ?? "",
+  schoolName: "",
+  logoUrl: "",
+  primaryColor: "#1e3a6e",
+  websiteUrl: "",
+  footerText: "",
+  replyToEmail: "",
+  senderName: "",
+  senderEmail: process.env.RESEND_FROM_EMAIL ?? "",
 };
 
 const KEY_MAP: Record<string, keyof BrandingSettings> = {
@@ -29,6 +31,7 @@ const KEY_MAP: Record<string, keyof BrandingSettings> = {
   footer_text: "footerText",
   reply_to_email: "replyToEmail",
   sender_name: "senderName",
+  sender_email: "senderEmail",
 };
 
 /**

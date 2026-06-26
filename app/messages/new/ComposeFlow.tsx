@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { sendMessage, previewRecipients, type Channel, type RecipientPreview } from "../actions";
+import { sendMessage, previewRecipients, resolveAllRecipients, type Channel, type RecipientPreview, type ResolvedRecipient } from "../actions";
 import { TEMPLATE_TOKENS, renderTemplate } from "@/lib/template";
 
 export type AudienceOption = {
@@ -25,6 +25,8 @@ const PREVIEW_PERSON = {
   last_name: "Cohen",
   preferred_name: "Sarah",
   salutation: "Mrs.",
+  email: "sarah.cohen@example.com",
+  graduation_year: new Date().getFullYear() + 4, // ~Grade 8
 };
 
 function recipientCount(audiences: AudienceOption[], channel: Channel): number {
@@ -397,6 +399,10 @@ export function ComposeFlow({
   const [showRecipientPreviews, setShowRecipientPreviews] = useState(false);
   const [isLoadingPreviews, startPreviewTransition] = useTransition();
 
+  // Confirmation step — populated when user clicks "Send Email"
+  const [confirmRecipients, setConfirmRecipients] = useState<ResolvedRecipient[] | null>(null);
+  const [isResolvingRecipients, startResolveTransition] = useTransition();
+
   function toggleAudience(a: AudienceOption) {
     setRecipientPreviews(null);
     setSelectedAudiences((prev) =>
@@ -489,8 +495,23 @@ export function ComposeFlow({
     (channel !== "email" || subject.trim().length > 0) &&
     eligible > 0;
 
+  // Step 1: user clicks "Send Email" → resolve recipients → show confirmation
   function handleSend() {
     if (!canSend) return;
+    setSendError(null);
+    startResolveTransition(async () => {
+      const resolved = await resolveAllRecipients(
+        selectedAudiences.map((a) => a.slug),
+        channel
+      );
+      setConfirmRecipients(resolved);
+    });
+  }
+
+  // Step 2: user reviews recipient list and confirms → actually send
+  function handleConfirmedSend() {
+    if (!canSend || !confirmRecipients) return;
+    setConfirmRecipients(null);
     setSendError(null);
     startTransition(async () => {
       const label = audienceSummary(selectedAudiences);
@@ -520,6 +541,7 @@ export function ComposeFlow({
       : "image/jpeg,image/png,image/gif,image/webp,application/pdf,.docx,.xlsx";
 
   return (
+    <>
     <div className="rounded-xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
 
       {/* ── TO ────────────────────────────────────────────────────────────── */}
@@ -894,16 +916,16 @@ export function ComposeFlow({
           <button
             type="button"
             onClick={handleSend}
-            disabled={!canSend || isPending}
+            disabled={!canSend || isPending || isResolvingRecipients}
             className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {isPending ? (
+            {(isPending || isResolvingRecipients) ? (
               <>
                 <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                 </svg>
-                Sending…
+                {isPending ? "Sending…" : "Resolving…"}
               </>
             ) : (
               <>
@@ -917,5 +939,62 @@ export function ComposeFlow({
         </div>
       </div>
     </div>
+
+    {/* ── PRE-SEND CONFIRMATION MODAL ─────────────────────────────────────── */}
+    {confirmRecipients && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setConfirmRecipients(null)}>
+        <div
+          className="w-full max-w-md rounded-xl border border-zinc-200 bg-white shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="border-b border-zinc-100 px-5 py-4">
+            <h2 className="text-sm font-semibold text-zinc-900">
+              Confirm send to {confirmRecipients.length.toLocaleString()} {confirmRecipients.length === 1 ? "recipient" : "recipients"}
+            </h2>
+            <p className="mt-0.5 text-xs text-zinc-500">
+              Review the complete recipient list before sending. This cannot be undone.
+            </p>
+          </div>
+
+          {/* Recipient list — scrollable, shows every address */}
+          <div className="max-h-72 overflow-y-auto divide-y divide-zinc-50">
+            {confirmRecipients.length === 0 ? (
+              <p className="px-5 py-4 text-sm text-zinc-400">No eligible recipients found.</p>
+            ) : (
+              confirmRecipients.map((r, i) => (
+                <div key={i} className="flex items-center justify-between px-5 py-2.5 hover:bg-zinc-50">
+                  <span className="text-sm font-medium text-zinc-800 truncate mr-3">{r.name}</span>
+                  <span className="text-xs text-zinc-400 tabular-nums shrink-0">{r.contactValue}</span>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-end gap-3 border-t border-zinc-100 px-5 py-4">
+            <button
+              type="button"
+              onClick={() => setConfirmRecipients(null)}
+              className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmedSend}
+              disabled={confirmRecipients.length === 0}
+              className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Confirm &amp; Send {channelLabel(channel)}
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

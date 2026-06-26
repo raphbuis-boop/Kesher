@@ -109,6 +109,16 @@ CREATE POLICY "message_attachments: authenticated full access"
   USING (auth.role() = 'authenticated')
   WITH CHECK (auth.role() = 'authenticated');
 
+-- ─── settings ────────────────────────────────────────────────────────────
+
+ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "settings: authenticated full access" ON settings;
+CREATE POLICY "settings: authenticated full access"
+  ON settings FOR ALL
+  USING      (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
+
 -- ─── Done ────────────────────────────────────────────────────────────────
 -- Verify with:
 --   SELECT schemaname, tablename, rowsecurity

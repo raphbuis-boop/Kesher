@@ -147,7 +147,7 @@ export async function removeContactFromGroup(
   groupId: string,
   personId: string,
   _formData: FormData
-): Promise<{ success: boolean; error: string | null }> {
+): Promise<void> {
   const supabase = await createSupabaseServerClient();
 
   const { data: groupTagRows } = await supabase
@@ -167,5 +167,4 @@ export async function removeContactFromGroup(
   revalidatePath(`/audiences/${groupId}`);
   revalidatePath("/groups");
   revalidatePath("/");
-  return { success: true, error: null };
 }
