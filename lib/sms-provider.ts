@@ -14,7 +14,8 @@
  *   TELNYX_MESSAGING_PROFILE_ID     — messaging profile UUID (required by Telnyx)
  *
  * Required environment variables (webhook delivery receipts):
- *   TELNYX_WEBHOOK_SECRET           — used to verify inbound webhook signatures
+ *   TELNYX_PUBLIC_KEY               — Ed25519 public key from portal → API Keys
+ *                                     Used to verify telnyx-signature-ed25519 header
  */
 
 export type SmsChannel = "sms" | "whatsapp";
