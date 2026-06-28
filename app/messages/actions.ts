@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
 import { renderTemplate } from "@/lib/template";
 import { getBrandingSettings, type BrandingSettings } from "@/lib/settings";
+import { getSmsProvider, validateSmsEnv } from "@/lib/sms-provider";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -93,8 +94,10 @@ function buildEmailHtml(
 
   let headerContentHtml: string;
   if (logoUrl) {
-    // Priority 1: school logo
-    headerContentHtml = `<img src="${logoUrl}" alt="${schoolName}" style="display:block;margin:0 auto;max-height:96px;max-width:280px;height:auto;width:auto;border:0;">`;
+    // Priority 1: school logo — white pill so it reads on any header color
+    headerContentHtml = `<div style="display:inline-block;background:#ffffff;border-radius:12px;padding:14px 28px;">
+        <img src="${logoUrl}" alt="${schoolName}" style="display:block;margin:0 auto;max-height:120px;max-width:300px;height:auto;width:auto;border:0;">
+      </div>`;
   } else if (schoolName) {
     // Priority 2: initials circle + school name (original design fallback)
     headerContentHtml = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
@@ -209,7 +212,7 @@ ${docs
 
       <!-- ━━ HEADER ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
       <tr>
-        <td class="em-header-td" style="background-color:${primaryColor};border-radius:14px 14px 0 0;padding:${headerContentHtml ? "48px 56px 44px" : "20px 56px"};text-align:center;">
+        <td class="em-header-td" style="background-color:${primaryColor};border-radius:14px 14px 0 0;padding:${logoUrl ? "36px 56px 32px" : headerContentHtml ? "48px 56px 44px" : "20px 56px"};text-align:center;">
           ${headerContentHtml}
         </td>
       </tr>
@@ -404,9 +407,9 @@ async function sendEmailBatch(
   return { inserts, sentCount, failedCount, batchError };
 }
 
-// ─── Twilio send (SMS + WhatsApp) ─────────────────────────────────────────────
+// ─── SMS / WhatsApp send (Telnyx) ─────────────────────────────────────────────
 
-async function sendViaTwilio(
+async function sendViaSmsProvider(
   channel: "sms" | "whatsapp",
   recipients: Person[],
   bodyTemplate: string,
@@ -414,73 +417,12 @@ async function sendViaTwilio(
   now: string,
   attachmentUrls?: string[]
 ): Promise<{ inserts: RecipientInsert[]; sentCount: number; failedCount: number }> {
-  const accountSid = process.env.TWILIO_ACCOUNT_SID!;
-  const authToken = process.env.TWILIO_AUTH_TOKEN!;
-
-  // WhatsApp uses sandbox number; SMS uses TWILIO_SMS_FROM
-  const fromNumber =
-    channel === "whatsapp"
-      ? (process.env.TWILIO_WHATSAPP_FROM ?? "whatsapp:+14155238886")
-      : process.env.TWILIO_SMS_FROM!;
-
-  const eligible = recipients.filter((r) => r.phone);
-  const IMAGE_RE = /\.(jpg|jpeg|png|gif|webp)$/i;
-  const firstImageUrl = attachmentUrls?.find((u) => IMAGE_RE.test(u));
-
-  let sentCount = 0;
-  let failedCount = 0;
-  const inserts: RecipientInsert[] = [];
-
-  const credentials = Buffer.from(`${accountSid}:${authToken}`).toString("base64");
-
-  for (const r of eligible) {
-    const rendered = renderTemplate(bodyTemplate, r);
-
-    // WhatsApp requires "whatsapp:+1..." prefix; SMS uses bare E.164
-    const rawPhone = r.phone!;
-    const toNumber =
-      channel === "whatsapp"
-        ? (rawPhone.startsWith("whatsapp:") ? rawPhone : `whatsapp:${rawPhone}`)
-        : rawPhone;
-
-    const params = new URLSearchParams({
-      From: fromNumber,
-      To: toNumber,
-      Body: rendered,
-    });
-    if (channel === "whatsapp" && firstImageUrl) {
-      params.append("MediaUrl", firstImageUrl);
-    }
-
-    try {
-      const res = await fetch(
-        `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Basic ${credentials}`,
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: params.toString(),
-        }
-      );
-
-      const json = await res.json();
-      const sid: string | null = json.sid ?? null;
-
-      inserts.push({
-        message_id: messageId,
-        person_id: r.id,
-        contact_value: r.phone!,
-        name: `${r.first_name} ${r.last_name}`.trim(),
-        status: sid ? "sent" : "failed",
-        provider_id: sid,
-        sent_at: sid ? now : null,
-      });
-
-      if (sid) sentCount++; else failedCount++;
-    } catch {
-      inserts.push({
+  const provider = getSmsProvider();
+  if (!provider) {
+    // Provider not configured — fail all recipients gracefully
+    const inserts: RecipientInsert[] = recipients
+      .filter((r) => r.phone)
+      .map((r) => ({
         message_id: messageId,
         person_id: r.id,
         contact_value: r.phone!,
@@ -488,9 +430,43 @@ async function sendViaTwilio(
         status: "failed",
         provider_id: null,
         sent_at: null,
-      });
-      failedCount++;
-    }
+      }));
+    return { inserts, sentCount: 0, failedCount: inserts.length };
+  }
+
+  const fromNumber =
+    channel === "whatsapp"
+      ? (process.env.TELNYX_WHATSAPP_FROM ?? "")
+      : (process.env.TELNYX_SMS_FROM ?? "");
+
+  const IMAGE_RE = /\.(jpg|jpeg|png|gif|webp)$/i;
+  const firstImageUrl = attachmentUrls?.find((u) => IMAGE_RE.test(u));
+  const eligible = recipients.filter((r) => r.phone);
+
+  let sentCount = 0;
+  let failedCount = 0;
+  const inserts: RecipientInsert[] = [];
+
+  for (const r of eligible) {
+    const rendered = renderTemplate(bodyTemplate, r);
+    const result = await provider.send(channel, {
+      to: r.phone!,
+      from: fromNumber,
+      body: rendered,
+      mediaUrl: firstImageUrl,
+    });
+
+    inserts.push({
+      message_id: messageId,
+      person_id: r.id,
+      contact_value: r.phone!,
+      name: `${r.first_name} ${r.last_name}`.trim(),
+      status: result.success ? "sent" : "failed",
+      provider_id: result.providerId,
+      sent_at: result.success ? now : null,
+    });
+
+    if (result.success) sentCount++; else failedCount++;
   }
 
   return { inserts, sentCount, failedCount };
@@ -504,8 +480,7 @@ function validateEnv(channel: Channel): string | null {
       return "Email delivery is not configured for this account. Contact your administrator.";
   }
   if (channel === "sms" || channel === "whatsapp") {
-    if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN)
-      return `${channel === "sms" ? "SMS" : "WhatsApp"} delivery is not configured for this account. Contact your administrator.`;
+    return validateSmsEnv(channel);
   }
   return null;
 }
@@ -613,8 +588,8 @@ export async function sendMessage(
     inserts = result.inserts;
     batchError = result.batchError;
   } else {
-    // SMS or WhatsApp via Twilio (credentials validated above)
-    const result = await sendViaTwilio(channel as "sms" | "whatsapp", eligible, trimmedBody, messageId, now, attachmentUrls);
+    // SMS or WhatsApp via provider abstraction (currently Telnyx)
+    const result = await sendViaSmsProvider(channel as "sms" | "whatsapp", eligible, trimmedBody, messageId, now, attachmentUrls);
     sentCount = result.sentCount;
     failedCount = result.failedCount;
     inserts = result.inserts;
