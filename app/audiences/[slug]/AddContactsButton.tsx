@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Plus, Search, X, Loader2, Check } from "lucide-react";
 import { addContactsToGroup } from "@/app/groups/actions";
 
 type Person = {
@@ -10,6 +11,10 @@ type Person = {
   last_name: string;
   email: string | null;
 };
+
+function initials(p: Person) {
+  return (p.first_name[0] ?? "") + (p.last_name[0] ?? "");
+}
 
 export function AddContactsButton({
   groupId,
@@ -41,7 +46,6 @@ export function AddContactsButton({
     setSelected(new Set());
     setError(null);
     setOpen(true);
-    // focus search after paint
     requestAnimationFrame(() => searchRef.current?.focus());
   }
 
@@ -64,6 +68,31 @@ export function AddContactsButton({
     });
   }
 
+  // Select All selects only the currently filtered results
+  const allFilteredSelected =
+    filtered.length > 0 && filtered.every((p) => selected.has(p.id));
+
+  function handleSelectAll() {
+    if (allFilteredSelected) {
+      // Deselect all filtered
+      setSelected((prev) => {
+        const next = new Set(prev);
+        filtered.forEach((p) => next.delete(p.id));
+        return next;
+      });
+    } else {
+      setSelected((prev) => {
+        const next = new Set(prev);
+        filtered.forEach((p) => next.add(p.id));
+        return next;
+      });
+    }
+  }
+
+  function handleClearSelection() {
+    setSelected(new Set());
+  }
+
   function handleAdd() {
     if (selected.size === 0) return;
     setError(null);
@@ -82,12 +111,10 @@ export function AddContactsButton({
     return (
       <button
         disabled
-        className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3.5 py-2 text-sm font-medium text-zinc-400 cursor-not-allowed"
+        className="inline-flex items-center gap-1.5 rounded-md border border-[#e7e7e7] bg-white px-3 py-1.5 text-[12px] font-medium text-[#a1a1aa] cursor-not-allowed"
         title="All contacts are already in this audience"
       >
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-        </svg>
+        <Plus size={13} strokeWidth={2} />
         Add Contacts
       </button>
     );
@@ -97,11 +124,9 @@ export function AddContactsButton({
     <>
       <button
         onClick={openModal}
-        className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3.5 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 hover:border-zinc-300"
+        className="inline-flex items-center gap-1.5 rounded-md border border-[#e7e7e7] bg-white px-3 py-1.5 text-[12px] font-medium text-[#0f0f0f] hover:bg-[#fafafa] hover:border-[#d4d4d8]"
       >
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-        </svg>
+        <Plus size={13} strokeWidth={2} />
         Add Contacts
       </button>
 
@@ -111,55 +136,100 @@ export function AddContactsButton({
           onClick={(e) => {
             if (e.target === overlayRef.current) setOpen(false);
           }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4"
+          className="animate-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/25 px-4"
         >
-          <div className="flex w-full max-w-md flex-col rounded-xl border border-zinc-200 bg-white shadow-xl max-h-[80vh]">
-            {/* Header */}
-            <div className="flex shrink-0 items-center justify-between border-b border-zinc-100 px-5 py-4">
-              <h2 className="text-sm font-semibold text-zinc-900">Add Contacts</h2>
+          <div className="animate-fade-up flex w-full max-w-[740px] flex-col rounded-xl border border-[#e7e7e7] bg-white shadow-2xl shadow-black/10"
+            style={{ maxHeight: "80vh" }}
+          >
+            {/* ── Fixed header ── */}
+            <div className="shrink-0 flex items-center justify-between border-b border-[#f0f0f0] px-6 py-4">
+              <div>
+                <h2 className="text-[13px] font-semibold text-[#0f0f0f]">
+                  Add Contacts
+                  {selected.size > 0 && (
+                    <span className="ml-2 rounded-full bg-[#eff6ff] px-2 py-0.5 text-[11px] font-medium text-[#2563eb]">
+                      {selected.size} selected
+                    </span>
+                  )}
+                </h2>
+                <p className="mt-px text-[11px] text-[#a1a1aa]">
+                  {nonMembers.length.toLocaleString()} contacts available to add
+                </p>
+              </div>
               <button
                 onClick={() => setOpen(false)}
-                className="rounded-md p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
+                className="rounded-md p-1.5 text-[#a1a1aa] hover:bg-[#f5f5f5] hover:text-[#71717a]"
               >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                </svg>
+                <X size={15} strokeWidth={1.75} />
               </button>
             </div>
 
-            {/* Search */}
-            <div className="shrink-0 border-b border-zinc-100 px-5 py-3">
+            {/* ── Sticky search + bulk actions ── */}
+            <div className="shrink-0 border-b border-[#f0f0f0] px-6 py-3 space-y-2.5">
               <div className="relative">
-                <svg
-                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-                </svg>
+                <Search
+                  size={13}
+                  strokeWidth={1.75}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#a1a1aa]"
+                />
                 <input
                   ref={searchRef}
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search by name or email…"
-                  className="w-full rounded-md border border-zinc-200 bg-white py-2 pl-9 pr-3 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-zinc-400"
+                  className="w-full rounded-lg border border-[#e7e7e7] bg-[#fafafa] py-2 pl-8 pr-3 text-[13px] text-[#0f0f0f] placeholder-[#a1a1aa] outline-none focus:border-[#a1a1aa] focus:bg-white"
                 />
+                {query && (
+                  <button
+                    onClick={() => setQuery("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-[#a1a1aa] hover:text-[#71717a]"
+                  >
+                    <X size={12} />
+                  </button>
+                )}
               </div>
+              {filtered.length > 0 && (
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleSelectAll}
+                    className="text-[11px] font-medium text-[#2563eb] hover:text-[#1d4ed8]"
+                  >
+                    {allFilteredSelected ? "Deselect All" : "Select All"}
+                    {!allFilteredSelected && filtered.length < nonMembers.length && ` (${filtered.length})`}
+                  </button>
+                  {selected.size > 0 && (
+                    <>
+                      <span className="text-[#e7e7e7]">·</span>
+                      <button
+                        type="button"
+                        onClick={handleClearSelection}
+                        className="text-[11px] font-medium text-[#71717a] hover:text-[#0f0f0f]"
+                      >
+                        Clear Selection
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* List */}
+            {/* ── Scrollable list ── */}
             <div className="min-h-0 flex-1 overflow-y-auto">
               {filtered.length === 0 ? (
-                <p className="px-5 py-8 text-center text-sm text-zinc-400">
-                  {query.trim()
-                    ? "No contacts match your search."
-                    : "All contacts are already in this audience."}
-                </p>
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <p className="text-[13px] font-medium text-[#0f0f0f]">
+                    {query.trim() ? "No matches found" : "No contacts available"}
+                  </p>
+                  <p className="mt-1 text-[12px] text-[#a1a1aa]">
+                    {query.trim()
+                      ? "Try a different name or email"
+                      : "All contacts are already in this audience"}
+                  </p>
+                </div>
               ) : (
-                <ul className="divide-y divide-zinc-50">
+                <ul>
                   {filtered.map((person) => {
                     const isSelected = selected.has(person.id);
                     return (
@@ -167,37 +237,53 @@ export function AddContactsButton({
                         <button
                           type="button"
                           onClick={() => toggle(person.id)}
-                          className={
-                            "flex w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-zinc-50 " +
-                            (isSelected ? "bg-zinc-50" : "")
-                          }
+                          className={[
+                            "flex w-full items-center gap-3 px-6 text-left transition-colors",
+                            "border-b border-[#f0f0f0] last:border-b-0",
+                            isSelected
+                              ? "bg-[#eff6ff] hover:bg-[#e8f0fe]"
+                              : "hover:bg-[#fafafa]",
+                          ].join(" ")}
+                          style={{ height: 54 }}
                         >
+                          {/* Avatar */}
                           <div
-                            className={
-                              "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors " +
-                              (isSelected
-                                ? "border-zinc-900 bg-zinc-900"
-                                : "border-zinc-300 bg-white")
-                            }
+                            className={[
+                              "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold uppercase",
+                              isSelected
+                                ? "bg-[#dbeafe] text-[#1d4ed8]"
+                                : "bg-[#f0f0f0] text-[#71717a]",
+                            ].join(" ")}
                           >
-                            {isSelected && (
-                              <svg
-                                className="h-2.5 w-2.5 text-white"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                strokeWidth={3}
-                              >
-                                <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                              </svg>
-                            )}
+                            {initials(person)}
                           </div>
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-medium text-zinc-900">
+
+                          {/* Name + email */}
+                          <div className="min-w-0 flex-1">
+                            <p className={[
+                              "truncate text-[13px] font-medium",
+                              isSelected ? "text-[#1d4ed8]" : "text-[#0f0f0f]",
+                            ].join(" ")}>
                               {person.first_name} {person.last_name}
                             </p>
                             {person.email && (
-                              <p className="truncate text-xs text-zinc-400">{person.email}</p>
+                              <p className="truncate text-[11px] text-[#a1a1aa]">
+                                {person.email}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Check indicator */}
+                          <div
+                            className={[
+                              "flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-all",
+                              isSelected
+                                ? "bg-[#2563eb]"
+                                : "border border-[#d4d4d8]",
+                            ].join(" ")}
+                          >
+                            {isSelected && (
+                              <Check size={11} strokeWidth={2.5} className="text-white" />
                             )}
                           </div>
                         </button>
@@ -208,20 +294,30 @@ export function AddContactsButton({
               )}
             </div>
 
-            {/* Footer */}
-            <div className="shrink-0 border-t border-zinc-100 px-5 py-4">
-              {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-sm text-zinc-400">
+            {/* ── Fixed footer ── */}
+            <div className="shrink-0 border-t border-[#e7e7e7] px-6 py-4">
+              {error && (
+                <p className="mb-3 text-[12px] text-red-600">{error}</p>
+              )}
+              <div className="flex items-center justify-between gap-4">
+                {/* Left zone: availability */}
+                <p className="text-[12px] text-[#a1a1aa]">
+                  {nonMembers.length.toLocaleString()} available
+                </p>
+
+                {/* Center zone: selection count */}
+                <p className="text-[12px] font-medium text-[#0f0f0f]">
                   {selected.size > 0
-                    ? `${selected.size} selected`
-                    : `${nonMembers.length.toLocaleString()} available`}
-                </span>
+                    ? `${selected.size} contact${selected.size !== 1 ? "s" : ""} selected`
+                    : <span className="text-[#a1a1aa]">None selected</span>}
+                </p>
+
+                {/* Right zone: actions */}
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setOpen(false)}
-                    className="rounded-md px-3 py-2 text-sm text-zinc-500 transition-colors hover:text-zinc-700"
+                    className="rounded-md px-3 py-1.5 text-[12px] font-medium text-[#71717a] hover:text-[#0f0f0f] hover:bg-[#f5f5f5]"
                   >
                     Cancel
                   </button>
@@ -229,14 +325,11 @@ export function AddContactsButton({
                     type="button"
                     onClick={handleAdd}
                     disabled={selected.size === 0 || isPending}
-                    className="inline-flex items-center gap-2 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 rounded-md bg-[#0f0f0f] px-4 py-1.5 text-[12px] font-medium text-white hover:bg-[#1a1a1a] disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {isPending ? (
                       <>
-                        <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                        </svg>
+                        <Loader2 size={12} className="animate-spin" />
                         Adding…
                       </>
                     ) : selected.size > 0 ? (
