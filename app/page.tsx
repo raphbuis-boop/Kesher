@@ -3,245 +3,226 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
-type PersonRow = {
-  id: string;
-  categories: string[] | null;
-};
+function formatDate(d: string) {
+  return new Date(d).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
 
-type PersonForGroup = {
-  id: string;
-  person_tags: Array<{ tag_id: string }>;
-};
+function formatRelative(d: string) {
+  const diff = Date.now() - new Date(d).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return formatDate(d);
+}
 
-type Group = {
-  id: string;
-  name: string;
-  description: string | null;
-  group_tags: Array<{ tag_id: string }>;
-};
-
-const SYSTEM_AUDIENCES = [
-  { slug: "parents", label: "Parents", category: "parent" },
-  { slug: "students", label: "Students", category: "student" },
-  { slug: "grandparents", label: "Grandparents", category: "grandparent" },
-  { slug: "alumni", label: "Alumni", category: "alumni" },
-  { slug: "faculty", label: "Faculty", category: "faculty" },
-  { slug: "staff", label: "Staff", category: "staff" },
-  { slug: "board", label: "Board", category: "board" },
-  { slug: "donors", label: "Donors", category: "donor" },
-  { slug: "prospects", label: "Prospects", category: "prospect" },
-] as const;
-
-function AudienceCard({
-  slug,
-  label,
-  count,
-  type,
-  description,
-}: {
-  slug: string;
-  label: string;
-  count: number;
-  type: "system" | "custom";
-  description?: string | null;
-}) {
-  const href = `/audiences/${slug}`;
-  const messageHref = `/messages/new?audiences=${slug}`;
-
+function ChannelBadge({ channel }: { channel: string }) {
+  const map: Record<string, string> = {
+    email: "bg-zinc-100 text-zinc-600",
+    sms: "bg-blue-50 text-blue-700",
+    whatsapp: "bg-emerald-50 text-emerald-700",
+  };
   return (
-    <div className="group relative flex flex-col rounded-xl border border-zinc-200 bg-white p-5 transition-all hover:border-zinc-300 hover:shadow-sm">
-      {/* Type badge */}
-      <div className="mb-3 flex items-center justify-between">
-        <span
-          className={
-            "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider " +
-            (type === "system"
-              ? "bg-zinc-100 text-zinc-500"
-              : "bg-indigo-50 text-indigo-600")
-          }
-        >
-          {type === "system" ? "System" : "Custom"}
-        </span>
-      </div>
-
-      {/* Audience name + count */}
-      <Link href={href} className="flex-1">
-        <h3 className="text-sm font-semibold text-zinc-900 group-hover:text-zinc-700 transition-colors">
-          {label}
-        </h3>
-        <div
-          className={
-            "mt-2 text-3xl font-bold tabular-nums " +
-            (count === 0 ? "text-zinc-200" : "text-zinc-900")
-          }
-        >
-          {count.toLocaleString()}
-        </div>
-        <div className="mt-0.5 text-xs text-zinc-400">
-          {count === 1 ? "contact" : "contacts"}
-        </div>
-        {description && (
-          <p className="mt-2 text-xs text-zinc-400 line-clamp-1">{description}</p>
-        )}
-      </Link>
-
-      {/* Action row */}
-      <div className="mt-4 flex items-center gap-2 border-t border-zinc-100 pt-4">
-        <Link
-          href={messageHref}
-          className="inline-flex items-center gap-1.5 rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-zinc-700"
-        >
-          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
-          </svg>
-          Message
-        </Link>
-        <Link
-          href={href}
-          className="inline-flex items-center gap-1 text-xs font-medium text-zinc-400 transition-colors hover:text-zinc-700"
-        >
-          View
-          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-          </svg>
-        </Link>
-      </div>
-    </div>
+    <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-wide ${map[channel] ?? "bg-zinc-100 text-zinc-600"}`}>
+      {channel}
+    </span>
   );
 }
 
-export default async function HomePage() {
+function StatusDot({ status }: { status: string }) {
+  if (status === "sent") return <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />;
+  if (status === "failed") return <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-400" />;
+  return <span className="inline-block h-1.5 w-1.5 rounded-full bg-zinc-300" />;
+}
+
+export default async function OverviewPage() {
   const supabase = await createSupabaseServerClient();
-  const [peopleResult, groupPeopleResult, groupsResult] = await Promise.all([
-    supabase.from("people").select("id, categories"),
-    supabase.from("people").select("id, person_tags ( tag_id )"),
+
+  const [
+    { count: totalContacts },
+    { data: messageRows },
+    { data: recentMessages },
+    { data: recentImports },
+  ] = await Promise.all([
+    supabase.from("people").select("*", { count: "exact", head: true }),
+    supabase.from("messages").select("sent_count, recipient_count"),
     supabase
-      .from("groups")
-      .select("id, name, description, group_tags ( tag_id )")
-      .order("name"),
+      .from("messages")
+      .select("id, subject, body, channel, audience_label, sent_count, status, sent_at, created_at")
+      .order("created_at", { ascending: false })
+      .limit(6),
+    supabase
+      .from("imports")
+      .select("id, file_name, imported_count, created_at")
+      .order("created_at", { ascending: false })
+      .limit(4),
   ]);
 
-  const people = (peopleResult.data ?? []) as unknown as PersonRow[];
-  const groupPeople = (groupPeopleResult.data ?? []) as unknown as PersonForGroup[];
-  const groups = (groupsResult.data ?? []) as unknown as Group[];
-
-  const systemAudiences = SYSTEM_AUDIENCES.map((audience) => ({
-    ...audience,
-    count: people.filter(
-      (p) => Array.isArray(p.categories) && p.categories.includes(audience.category)
-    ).length,
-  }));
-
-  const totalContacts = people.length;
-
-  const customAudiences = groups.map((group) => {
-    const groupTagIds = new Set(group.group_tags.map((gt) => gt.tag_id));
-    const count =
-      groupTagIds.size === 0
-        ? 0
-        : groupPeople.filter((p) =>
-            p.person_tags.some((pt) => groupTagIds.has(pt.tag_id))
-          ).length;
-    return { ...group, count };
-  });
+  const contacts = totalContacts ?? 0;
+  const totalSent = (messageRows ?? []).reduce((s, m) => s + (m.sent_count ?? 0), 0);
+  const totalMessages = (messageRows ?? []).length;
+  const messages = recentMessages ?? [];
+  const imports = recentImports ?? [];
 
   return (
-    <div className="min-h-screen bg-zinc-50">
-      {/* Header */}
-      <div className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto max-w-6xl px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-semibold text-zinc-900 tracking-tight">
-                Audiences
-              </h1>
-              <p className="mt-0.5 text-sm text-zinc-500">
-                {totalContacts.toLocaleString()}{" "}
-                {totalContacts === 1 ? "contact" : "contacts"} in your directory
-              </p>
+    <div className="min-h-screen">
+      {/* Page header */}
+      <header className="border-b border-zinc-100 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-sm font-semibold text-zinc-900">Overview</h1>
+            <p className="mt-0.5 text-xs text-zinc-400">Heichal HaTorah</p>
+          </div>
+          <Link
+            href="/messages/new"
+            className="inline-flex items-center gap-1.5 rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-zinc-700"
+          >
+            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Compose
+          </Link>
+        </div>
+      </header>
+
+      {/* Stats */}
+      <div className="grid grid-cols-3 divide-x divide-zinc-100 border-b border-zinc-100">
+        <div className="px-6 py-5">
+          <div className="text-xs font-medium text-zinc-400">Total contacts</div>
+          <div className="mt-1.5 text-2xl font-semibold tabular-nums text-zinc-900">
+            {contacts.toLocaleString()}
+          </div>
+          <Link href="/people" className="mt-1 text-xs text-zinc-400 hover:text-zinc-700 transition-colors">
+            View all →
+          </Link>
+        </div>
+        <div className="px-6 py-5">
+          <div className="text-xs font-medium text-zinc-400">Messages sent</div>
+          <div className="mt-1.5 text-2xl font-semibold tabular-nums text-zinc-900">
+            {totalMessages.toLocaleString()}
+          </div>
+          <Link href="/messages" className="mt-1 text-xs text-zinc-400 hover:text-zinc-700 transition-colors">
+            View history →
+          </Link>
+        </div>
+        <div className="px-6 py-5">
+          <div className="text-xs font-medium text-zinc-400">Recipients reached</div>
+          <div className="mt-1.5 text-2xl font-semibold tabular-nums text-zinc-900">
+            {totalSent.toLocaleString()}
+          </div>
+          <Link href="/activity" className="mt-1 text-xs text-zinc-400 hover:text-zinc-700 transition-colors">
+            View activity →
+          </Link>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-0 divide-x divide-zinc-100 px-0">
+        {/* Recent messages — 2/3 width */}
+        <div className="col-span-2 px-6 py-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xs font-semibold text-zinc-900">Recent messages</h2>
+            <Link href="/messages" className="text-xs text-zinc-400 hover:text-zinc-700 transition-colors">
+              View all
+            </Link>
+          </div>
+
+          {messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-zinc-200 py-12 text-center">
+              <p className="text-xs font-medium text-zinc-500">No messages yet</p>
+              <Link href="/messages/new" className="mt-3 text-xs text-zinc-400 hover:text-zinc-700 transition-colors">
+                Send your first message →
+              </Link>
             </div>
-            <div className="flex items-center gap-2">
+          ) : (
+            <div className="rounded-lg border border-zinc-100 overflow-hidden">
+              <table className="w-full">
+                <tbody className="divide-y divide-zinc-50">
+                  {messages.map((msg) => (
+                    <tr key={msg.id} className="hover:bg-zinc-50 transition-colors">
+                      <td className="py-3 pl-4 pr-3">
+                        <div className="flex items-center gap-2">
+                          <StatusDot status={msg.status} />
+                          <span className="text-xs font-medium text-zinc-900 truncate max-w-[280px]">
+                            {msg.subject ?? msg.body.slice(0, 50) + (msg.body.length > 50 ? "…" : "")}
+                          </span>
+                        </div>
+                        <div className="mt-0.5 pl-4 text-[11px] text-zinc-400">{msg.audience_label}</div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <ChannelBadge channel={msg.channel} />
+                      </td>
+                      <td className="px-3 py-3 text-right">
+                        <span className="text-xs tabular-nums text-zinc-500">
+                          {(msg.sent_count ?? 0).toLocaleString()} sent
+                        </span>
+                      </td>
+                      <td className="pl-3 pr-4 py-3 text-right">
+                        <span className="text-[11px] tabular-nums text-zinc-400">
+                          {formatRelative(msg.sent_at ?? msg.created_at)}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Recent imports — 1/3 width */}
+        <div className="px-6 py-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xs font-semibold text-zinc-900">Recent imports</h2>
+            <Link href="/imports" className="text-xs text-zinc-400 hover:text-zinc-700 transition-colors">
+              View all
+            </Link>
+          </div>
+
+          {imports.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-zinc-200 py-10 text-center">
+              <p className="text-xs text-zinc-400">No imports yet</p>
+              <Link href="/imports" className="mt-2 text-xs text-zinc-400 hover:text-zinc-700 transition-colors">
+                Import contacts →
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {imports.map((imp) => (
+                <div
+                  key={imp.id}
+                  className="rounded-lg border border-zinc-100 px-3.5 py-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <svg className="h-3.5 w-3.5 shrink-0 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                    </svg>
+                    <span className="text-xs font-medium text-zinc-900 truncate">{imp.file_name}</span>
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-between">
+                    <span className="text-[11px] text-zinc-400">
+                      {imp.imported_count.toLocaleString()} contacts
+                    </span>
+                    <span className="text-[11px] tabular-nums text-zinc-400">
+                      {formatDate(imp.created_at)}
+                    </span>
+                  </div>
+                </div>
+              ))}
               <Link
-                href="/messages/new"
-                className="inline-flex items-center gap-2 rounded-md bg-zinc-900 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700"
+                href="/imports"
+                className="flex items-center gap-1.5 rounded-lg border border-dashed border-zinc-200 px-3.5 py-3 text-xs text-zinc-400 transition-colors hover:border-zinc-300 hover:text-zinc-600"
               >
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
-                Compose
+                Import contacts
               </Link>
-              <Link
-                href="/people"
-                className="rounded-md border border-zinc-200 bg-white px-3.5 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
-              >
-                All Contacts
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="mx-auto max-w-6xl px-6 py-8">
-        {/* System Audiences */}
-        <div className="mb-2 flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-            System Audiences
-          </p>
-          <p className="text-xs text-zinc-400">
-            Built-in groups based on contact role
-          </p>
-        </div>
-        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {systemAudiences.map((audience) => (
-            <AudienceCard
-              key={audience.slug}
-              slug={audience.slug}
-              label={audience.label}
-              count={audience.count}
-              type="system"
-            />
-          ))}
-        </div>
-
-        {/* Custom Audiences */}
-        <div className="mt-10">
-          <div className="mb-2 flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
-              Custom Audiences
-            </p>
-            <Link
-              href="/groups"
-              className="text-xs text-zinc-400 transition-colors hover:text-zinc-700"
-            >
-              Manage →
-            </Link>
-          </div>
-
-          {customAudiences.length === 0 ? (
-            <div className="mt-3 flex flex-col items-center justify-center rounded-xl border border-dashed border-zinc-200 py-12 text-center">
-              <p className="text-sm font-medium text-zinc-500">No custom audiences yet</p>
-              <p className="mt-1 text-xs text-zinc-400">
-                Create tag-based groups for committees, classes, or any custom segment.
-              </p>
-              <Link
-                href="/groups"
-                className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-zinc-900 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700"
-              >
-                Create Custom Audience
-              </Link>
-            </div>
-          ) : (
-            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {customAudiences.map((audience) => (
-                <AudienceCard
-                  key={audience.id}
-                  slug={audience.id}
-                  label={audience.name}
-                  count={audience.count}
-                  type="custom"
-                  description={audience.description}
-                />
-              ))}
             </div>
           )}
         </div>

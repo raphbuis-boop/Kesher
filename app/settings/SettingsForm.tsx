@@ -16,7 +16,7 @@ export function SettingsForm({ current }: { current: BrandingSettings }) {
   }, [state.success]);
 
   const field =
-    "w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-zinc-400 transition-colors disabled:opacity-50";
+    "w-full rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-zinc-400 transition-colors disabled:opacity-50";
 
   return (
     <form action={formAction} noValidate>
@@ -33,10 +33,10 @@ export function SettingsForm({ current }: { current: BrandingSettings }) {
 
       {/* ── Identity ─────────────────────────────────────────────────── */}
       <section className="mb-8">
-        <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
           School Identity
         </h2>
-        <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-6">
+        <div className="space-y-4 rounded-lg border border-zinc-200 bg-white p-5">
           <div>
             <label className="mb-1 block text-sm font-medium text-zinc-700">
               School Name
@@ -95,10 +95,10 @@ export function SettingsForm({ current }: { current: BrandingSettings }) {
 
       {/* ── Sender ───────────────────────────────────────────────────── */}
       <section className="mb-8">
-        <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
           Sender & Reply
         </h2>
-        <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-6">
+        <div className="space-y-4 rounded-lg border border-zinc-200 bg-white p-5">
           <div>
             <label className="mb-1 block text-sm font-medium text-zinc-700">
               Sender Name
@@ -154,10 +154,10 @@ export function SettingsForm({ current }: { current: BrandingSettings }) {
 
       {/* ── Footer ───────────────────────────────────────────────────── */}
       <section className="mb-8">
-        <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-zinc-400">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">
           Email Footer
         </h2>
-        <div className="space-y-4 rounded-xl border border-zinc-200 bg-white p-6">
+        <div className="space-y-4 rounded-lg border border-zinc-200 bg-white p-5">
           <div>
             <label className="mb-1 block text-sm font-medium text-zinc-700">
               Footer Text
