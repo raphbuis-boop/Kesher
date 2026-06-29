@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { EditPersonButton, type Tag } from "./EditPersonButton";
 import { AddRelationshipButton, type PersonOption } from "./AddRelationshipButton";
 import { gradYearLabel } from "@/lib/gradYear";
+import { Mail, Smartphone, MessageSquare, ArrowLeft, Hash } from "lucide-react";
 
 const CATEGORY_LABELS: Record<string, string> = {
   parent: "Parents",
@@ -29,6 +30,24 @@ const CATEGORY_SLUGS: Record<string, string> = {
   board: "board",
   donor: "donors",
   prospect: "prospects",
+};
+
+const CATEGORY_COLORS: Record<string, string> = {
+  parent: "bg-violet-50 text-violet-700",
+  student: "bg-blue-50 text-blue-700",
+  grandparent: "bg-purple-50 text-purple-700",
+  alumni: "bg-indigo-50 text-indigo-700",
+  faculty: "bg-amber-50 text-amber-700",
+  staff: "bg-orange-50 text-orange-700",
+  board: "bg-rose-50 text-rose-700",
+  donor: "bg-emerald-50 text-emerald-700",
+  prospect: "bg-teal-50 text-teal-700",
+};
+
+const CHANNEL_META: Record<string, { label: string; color: string; icon: React.FC<{ size?: number; strokeWidth?: number; className?: string }> }> = {
+  email: { label: "Email", color: "text-zinc-500", icon: Mail },
+  sms: { label: "SMS", color: "text-blue-500", icon: Smartphone },
+  whatsapp: { label: "WhatsApp", color: "text-emerald-500", icon: MessageSquare },
 };
 
 type Person = {
@@ -57,19 +76,6 @@ type Relationship = {
   related_person_id: string;
 };
 
-type MessageHistoryItem = {
-  id: string;
-  subject: string;
-  audience_label: string;
-  status: string;
-  sent_at: string | null;
-  message: {
-    subject: string;
-    audience_label: string;
-    sent_at: string | null;
-  };
-};
-
 function formatDate(dateString: string): string {
   return new Date(dateString).toLocaleDateString("en-US", {
     month: "long",
@@ -78,23 +84,39 @@ function formatDate(dateString: string): string {
   });
 }
 
-function Field({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | number | null;
+function SectionCard({ title, count, children, action }: {
+  title: string;
+  count?: number;
+  children: React.ReactNode;
+  action?: React.ReactNode;
 }) {
   return (
+    <div className="rounded-xl border border-[#e7e7e7] bg-white">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-[#f0f0f0]">
+        <div className="flex items-center gap-2">
+          <h2 className="text-[13px] font-semibold text-[#0f0f0f]">{title}</h2>
+          {count != null && count > 0 && (
+            <span className="rounded-full bg-[#f5f5f5] px-2 py-0.5 text-[10px] font-medium tabular-nums text-[#71717a]">
+              {count}
+            </span>
+          )}
+        </div>
+        {action}
+      </div>
+      <div className="px-5 py-4">{children}</div>
+    </div>
+  );
+}
+
+function Field({ label, value, mono }: { label: string; value: string | number | null; mono?: boolean }) {
+  return (
     <div>
-      <dt className="text-xs font-medium uppercase tracking-wide text-zinc-400">
-        {label}
-      </dt>
-      <dd className="mt-1 text-sm text-zinc-900">
+      <dt className="text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">{label}</dt>
+      <dd className={`mt-1 text-[13px] ${mono ? "font-mono" : ""} text-[#0f0f0f]`}>
         {value !== null && value !== "" ? (
           String(value)
         ) : (
-          <span className="text-zinc-300">—</span>
+          <span className="text-[#d4d4d8]">—</span>
         )}
       </dd>
     </div>
@@ -150,35 +172,20 @@ export default async function PersonPage({
 
   const peopleById = new Map(allPeople.map((p) => [p.id, p]));
   const currentTagIds = person.person_tags.map((pt) => pt.tag_id);
-  const currentCategories = Array.isArray(person.categories)
-    ? person.categories
-    : [];
-  const initials =
-    `${person.first_name[0] ?? ""}${person.last_name[0] ?? ""}`.toUpperCase();
+  const currentCategories = Array.isArray(person.categories) ? person.categories : [];
+  const initials = `${person.first_name[0] ?? ""}${person.last_name[0] ?? ""}`.toUpperCase();
 
   return (
-    <div className="min-h-screen bg-zinc-50">
-      <div className="mx-auto max-w-4xl px-6 py-8">
-        {/* Back + actions bar */}
-        <div className="mb-8 flex items-center justify-between">
+    <div className="min-h-screen bg-[#fafafa]">
+      {/* Sticky header */}
+      <header className="sticky top-0 z-10 border-b border-[#e7e7e7] bg-white/95 backdrop-blur-sm px-6 py-3.5">
+        <div className="flex items-center justify-between max-w-3xl mx-auto">
           <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-sm text-zinc-500 transition-colors hover:text-zinc-900"
+            href="/people"
+            className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#a1a1aa] hover:text-[#71717a] transition-colors"
           >
-            <svg
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
-              />
-            </svg>
-            Audiences
+            <ArrowLeft size={13} strokeWidth={2} />
+            People
           </Link>
           <EditPersonButton
             person={{
@@ -199,18 +206,20 @@ export default async function PersonPage({
             tags={allTags}
           />
         </div>
+      </header>
 
-        {/* Profile header card */}
-        <div className="mb-6 rounded-xl border border-zinc-200 bg-white px-6 py-6">
+      <div className="mx-auto max-w-3xl px-6 py-6 space-y-4">
+        {/* Profile header */}
+        <div className="rounded-xl border border-[#e7e7e7] bg-white px-5 py-5">
           <div className="flex items-start gap-4">
-            <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-zinc-900 text-lg font-semibold text-white">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#f0f0f0] text-[13px] font-semibold text-[#71717a]">
               {initials}
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-xl font-semibold text-zinc-900 tracking-tight">
+              <h1 className="text-[18px] font-semibold text-[#0f0f0f] tracking-tight leading-tight">
                 {person.first_name} {person.last_name}
               </h1>
-              <p className="mt-0.5 text-sm text-zinc-400">
+              <p className="mt-0.5 text-[11px] text-[#a1a1aa]">
                 Added {formatDate(person.created_at)}
               </p>
               {currentCategories.length > 0 && (
@@ -219,7 +228,7 @@ export default async function PersonPage({
                     <Link
                       key={cat}
                       href={`/audiences/${CATEGORY_SLUGS[cat] ?? cat}`}
-                      className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700 transition-colors hover:bg-indigo-100"
+                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-colors ${CATEGORY_COLORS[cat] ?? "bg-[#f5f5f5] text-[#71717a]"}`}
                     >
                       {CATEGORY_LABELS[cat] ?? cat}
                     </Link>
@@ -230,15 +239,12 @@ export default async function PersonPage({
           </div>
         </div>
 
-        {/* Basic Information */}
-        <div className="mb-6 rounded-xl border border-zinc-200 bg-white px-6 py-6">
-          <h2 className="mb-5 text-sm font-semibold text-zinc-900">
-            Contact Information
-          </h2>
+        {/* Contact Information */}
+        <SectionCard title="Contact Information">
           <dl className="grid grid-cols-2 gap-x-8 gap-y-5">
             <Field label="Email" value={person.email} />
-            <Field label="Phone" value={person.phone} />
-            <Field label="WhatsApp" value={person.whatsapp} />
+            <Field label="Phone" value={person.phone} mono />
+            <Field label="WhatsApp" value={person.whatsapp} mono />
             <Field label="Address" value={person.address} />
             {person.graduation_year && (
               <Field label="Class" value={gradYearLabel(person.graduation_year)} />
@@ -247,60 +253,43 @@ export default async function PersonPage({
               <Field label="Organization" value={person.organization} />
             )}
           </dl>
-        </div>
+        </SectionCard>
 
-        {/* Communication History — shown prominently before other metadata */}
-        <div className="mb-6 rounded-xl border border-zinc-200 bg-white px-6 py-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-zinc-900">Communication History</h2>
-            {messageHistory.length > 0 && (
-              <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium tabular-nums text-zinc-500">
-                {messageHistory.length}
-              </span>
-            )}
-          </div>
+        {/* Communication History */}
+        <SectionCard title="Communication History" count={messageHistory.length}>
           {messageHistory.length > 0 ? (
-            <div className="divide-y divide-zinc-100">
+            <div className="divide-y divide-[#f5f5f5]">
               {messageHistory.map((item: any) => {
                 const msg = item.messages;
                 const date = item.sent_at ?? msg?.sent_at;
                 const ch = msg?.channel ?? "email";
-                const channelColors: Record<string, string> = {
-                  email: "bg-zinc-100 text-zinc-600",
-                  sms: "bg-blue-50 text-blue-700",
-                  whatsapp: "bg-green-50 text-green-700",
-                };
-                const channelNames: Record<string, string> = {
-                  email: "Email",
-                  sms: "SMS",
-                  whatsapp: "WhatsApp",
-                };
+                const meta = CHANNEL_META[ch] ?? CHANNEL_META.email;
+                const ChannelIcon = meta.icon;
                 const title = msg?.subject ?? (msg?.body ? msg.body.slice(0, 60) + (msg.body.length > 60 ? "…" : "") : "—");
                 return (
                   <div key={item.id} className="flex items-start gap-3 py-3.5 first:pt-0 last:pb-0">
-                    {/* Channel dot */}
-                    <div className={"mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold " + (channelColors[ch] ?? channelColors.email)}>
-                      {ch === "email" ? "✉" : ch === "sms" ? "✆" : "W"}
+                    <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#fafafa] border border-[#f0f0f0]">
+                      <ChannelIcon size={12} className={meta.color} strokeWidth={1.75} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-zinc-900 truncate">{title}</p>
-                      <p className="mt-0.5 text-xs text-zinc-400">
-                        {channelNames[ch] ?? ch}
+                      <p className="text-[13px] font-medium text-[#0f0f0f] truncate">{title}</p>
+                      <p className="mt-0.5 text-[11px] text-[#a1a1aa]">
+                        {meta.label}
                         {msg?.audience_label ? ` · ${msg.audience_label}` : ""}
                         {date ? ` · ${formatDate(date)}` : ""}
                       </p>
                     </div>
-                    <div className="flex-shrink-0">
-                      {item.status === "sent" ? (
-                        <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
-                          Delivered
+                    <div className="shrink-0">
+                      {item.status === "sent" || item.status === "delivered" ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
+                          <span className="h-1 w-1 rounded-full bg-emerald-500" />Delivered
                         </span>
                       ) : item.status === "failed" ? (
-                        <span className="inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
-                          Failed
+                        <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-600">
+                          <span className="h-1 w-1 rounded-full bg-red-500" />Failed
                         </span>
                       ) : (
-                        <span className="inline-flex items-center rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-500">
+                        <span className="inline-flex items-center rounded-full bg-[#f5f5f5] px-1.5 py-0.5 text-[10px] font-medium text-[#71717a]">
                           {item.status}
                         </span>
                       )}
@@ -310,55 +299,53 @@ export default async function PersonPage({
               })}
             </div>
           ) : (
-            <div className="flex flex-col items-center py-6 text-center">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100">
-                <svg className="h-5 w-5 text-zinc-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
-                </svg>
+            <div className="flex flex-col items-center py-8 text-center">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#fafafa] border border-[#e7e7e7] mb-3">
+                <Mail size={16} className="text-[#d4d4d8]" strokeWidth={1.5} />
               </div>
-              <p className="mt-2 text-sm text-zinc-400">No messages sent to this person yet.</p>
+              <p className="text-[12px] text-[#a1a1aa]">No messages sent to this person yet.</p>
             </div>
           )}
-        </div>
+        </SectionCard>
 
         {/* Tags */}
-        <div className="mb-6 rounded-xl border border-zinc-200 bg-white px-6 py-6">
-          <h2 className="mb-4 text-sm font-semibold text-zinc-900">Tags</h2>
+        <SectionCard title="Tags" count={person.person_tags.length}>
           {person.person_tags.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {person.person_tags.map((pt) => (
                 <span
                   key={pt.tag_id}
-                  className="inline-flex items-center rounded-full bg-zinc-100 px-3 py-1 text-sm font-medium text-zinc-700"
+                  className="inline-flex items-center gap-1 rounded-full bg-[#f5f5f5] px-2.5 py-1 text-[12px] font-medium text-[#71717a]"
                 >
+                  <Hash size={10} className="text-[#a1a1aa]" strokeWidth={2} />
                   {pt.tags.name}
                 </span>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-zinc-400">No tags assigned.</p>
+            <p className="text-[12px] text-[#a1a1aa]">No tags assigned.</p>
           )}
-        </div>
+        </SectionCard>
 
         {/* Relationships */}
-        <div className="mb-6 rounded-xl border border-zinc-200 bg-white px-6 py-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-zinc-900">Relationships</h2>
-            <AddRelationshipButton personId={person.id} allPeople={allPeople} />
-          </div>
+        <SectionCard
+          title="Relationships"
+          count={relationships.length}
+          action={<AddRelationshipButton personId={person.id} allPeople={allPeople} />}
+        >
           {relationships.length > 0 ? (
-            <div className="divide-y divide-zinc-100">
+            <div className="divide-y divide-[#f5f5f5]">
               {relationships.map((rel) => {
                 const related = peopleById.get(rel.related_person_id);
                 if (!related) return null;
                 return (
                   <div key={rel.id} className="flex items-center gap-4 py-3 first:pt-0 last:pb-0">
-                    <span className="w-28 flex-shrink-0 text-xs font-medium uppercase tracking-wide text-zinc-400">
+                    <span className="w-28 flex-shrink-0 text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">
                       {rel.relationship_type}
                     </span>
                     <Link
                       href={`/people/${related.id}`}
-                      className="text-sm font-medium text-zinc-900 transition-colors hover:text-zinc-500"
+                      className="text-[13px] font-medium text-[#0f0f0f] hover:text-[#71717a] transition-colors"
                     >
                       {related.first_name} {related.last_name}
                     </Link>
@@ -367,21 +354,20 @@ export default async function PersonPage({
               })}
             </div>
           ) : (
-            <p className="text-sm text-zinc-400">No relationships added yet.</p>
+            <p className="text-[12px] text-[#a1a1aa]">No relationships added yet.</p>
           )}
-        </div>
+        </SectionCard>
 
         {/* Notes */}
-        <div className="rounded-xl border border-zinc-200 bg-white px-6 py-6">
-          <h2 className="mb-4 text-sm font-semibold text-zinc-900">Notes</h2>
+        <SectionCard title="Notes">
           {person.notes ? (
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-zinc-700">
+            <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-[#71717a]">
               {person.notes}
             </p>
           ) : (
-            <p className="text-sm text-zinc-400">No notes yet.</p>
+            <p className="text-[12px] text-[#a1a1aa]">No notes yet.</p>
           )}
-        </div>
+        </SectionCard>
       </div>
     </div>
   );

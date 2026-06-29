@@ -2,6 +2,17 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import {
+  Users,
+  Send,
+  Inbox,
+  Plus,
+  FileText,
+  Mail,
+  MessageSquare,
+  Smartphone,
+  ArrowRight,
+} from "lucide-react";
 
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString("en-US", {
@@ -11,34 +22,51 @@ function formatDate(d: string) {
   });
 }
 
-function formatRelative(d: string) {
+function timeAgo(d: string) {
   const diff = Date.now() - new Date(d).getTime();
   const mins = Math.floor(diff / 60000);
+  if (mins < 2) return "just now";
   if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h ago`;
   const days = Math.floor(hrs / 24);
+  if (days === 1) return "yesterday";
   if (days < 7) return `${days}d ago`;
   return formatDate(d);
 }
 
-function ChannelBadge({ channel }: { channel: string }) {
-  const map: Record<string, string> = {
-    email: "bg-zinc-100 text-zinc-600",
-    sms: "bg-blue-50 text-blue-700",
-    whatsapp: "bg-emerald-50 text-emerald-700",
-  };
+const CHANNEL_ICON: Record<string, React.FC<{ size?: number; className?: string; strokeWidth?: number }>> = {
+  email: Mail,
+  sms: Smartphone,
+  whatsapp: MessageSquare,
+};
+
+const CHANNEL_COLOR: Record<string, string> = {
+  email: "text-zinc-500",
+  sms: "text-blue-500",
+  whatsapp: "text-emerald-500",
+};
+
+function StatusPill({ status }: { status: string }) {
+  if (status === "sent")
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+        <span className="h-1 w-1 rounded-full bg-emerald-500" />
+        Sent
+      </span>
+    );
+  if (status === "failed")
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-600">
+        <span className="h-1 w-1 rounded-full bg-red-500" />
+        Failed
+      </span>
+    );
   return (
-    <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-wide ${map[channel] ?? "bg-zinc-100 text-zinc-600"}`}>
-      {channel}
+    <span className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-500">
+      {status}
     </span>
   );
-}
-
-function StatusDot({ status }: { status: string }) {
-  if (status === "sent") return <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />;
-  if (status === "failed") return <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-400" />;
-  return <span className="inline-block h-1.5 w-1.5 rounded-full bg-zinc-300" />;
 }
 
 export default async function OverviewPage() {
@@ -56,7 +84,7 @@ export default async function OverviewPage() {
       .from("messages")
       .select("id, subject, body, channel, audience_label, sent_count, status, sent_at, created_at")
       .order("created_at", { ascending: false })
-      .limit(6),
+      .limit(8),
     supabase
       .from("imports")
       .select("id, file_name, imported_count, created_at")
@@ -70,161 +98,176 @@ export default async function OverviewPage() {
   const messages = recentMessages ?? [];
   const imports = recentImports ?? [];
 
+  const stats = [
+    { label: "Total contacts", value: contacts.toLocaleString(), icon: Users, href: "/people", sublabel: "in directory" },
+    { label: "Messages sent", value: totalMessages.toLocaleString(), icon: Send, href: "/messages", sublabel: "all time" },
+    { label: "Recipients reached", value: totalSent.toLocaleString(), icon: Inbox, href: "/activity", sublabel: "all time" },
+  ];
+
   return (
-    <div className="min-h-screen">
-      {/* Page header */}
-      <header className="border-b border-zinc-100 px-6 py-4">
+    <div className="min-h-screen bg-[#fafafa]">
+      {/* Sticky header */}
+      <header className="sticky top-0 z-10 border-b border-[#e7e7e7] bg-white/95 backdrop-blur-sm px-6 py-3.5">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-sm font-semibold text-zinc-900">Overview</h1>
-            <p className="mt-0.5 text-xs text-zinc-400">Heichal HaTorah</p>
+            <h1 className="text-[13px] font-semibold text-[#0f0f0f]">Overview</h1>
+            <p className="text-[11px] text-[#a1a1aa] mt-px">Heichal HaTorah</p>
           </div>
           <Link
             href="/messages/new"
-            className="inline-flex items-center gap-1.5 rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-zinc-700"
+            className="inline-flex items-center gap-1.5 rounded-md bg-[#0f0f0f] px-3 py-1.5 text-[12px] font-medium text-white transition-colors duration-150 hover:bg-[#27272a] active:bg-black"
           >
-            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
+            <Plus size={12} strokeWidth={2.5} />
             Compose
           </Link>
         </div>
       </header>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 divide-x divide-zinc-100 border-b border-zinc-100">
-        <div className="px-6 py-5">
-          <div className="text-xs font-medium text-zinc-400">Total contacts</div>
-          <div className="mt-1.5 text-2xl font-semibold tabular-nums text-zinc-900">
-            {contacts.toLocaleString()}
-          </div>
-          <Link href="/people" className="mt-1 text-xs text-zinc-400 hover:text-zinc-700 transition-colors">
-            View all →
-          </Link>
-        </div>
-        <div className="px-6 py-5">
-          <div className="text-xs font-medium text-zinc-400">Messages sent</div>
-          <div className="mt-1.5 text-2xl font-semibold tabular-nums text-zinc-900">
-            {totalMessages.toLocaleString()}
-          </div>
-          <Link href="/messages" className="mt-1 text-xs text-zinc-400 hover:text-zinc-700 transition-colors">
-            View history →
-          </Link>
-        </div>
-        <div className="px-6 py-5">
-          <div className="text-xs font-medium text-zinc-400">Recipients reached</div>
-          <div className="mt-1.5 text-2xl font-semibold tabular-nums text-zinc-900">
-            {totalSent.toLocaleString()}
-          </div>
-          <Link href="/activity" className="mt-1 text-xs text-zinc-400 hover:text-zinc-700 transition-colors">
-            View activity →
-          </Link>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-0 divide-x divide-zinc-100 px-0">
-        {/* Recent messages — 2/3 width */}
-        <div className="col-span-2 px-6 py-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xs font-semibold text-zinc-900">Recent messages</h2>
-            <Link href="/messages" className="text-xs text-zinc-400 hover:text-zinc-700 transition-colors">
-              View all
-            </Link>
-          </div>
-
-          {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-zinc-200 py-12 text-center">
-              <p className="text-xs font-medium text-zinc-500">No messages yet</p>
-              <Link href="/messages/new" className="mt-3 text-xs text-zinc-400 hover:text-zinc-700 transition-colors">
-                Send your first message →
-              </Link>
-            </div>
-          ) : (
-            <div className="rounded-lg border border-zinc-100 overflow-hidden">
-              <table className="w-full">
-                <tbody className="divide-y divide-zinc-50">
-                  {messages.map((msg) => (
-                    <tr key={msg.id} className="hover:bg-zinc-50 transition-colors">
-                      <td className="py-3 pl-4 pr-3">
-                        <div className="flex items-center gap-2">
-                          <StatusDot status={msg.status} />
-                          <span className="text-xs font-medium text-zinc-900 truncate max-w-[280px]">
-                            {msg.subject ?? msg.body.slice(0, 50) + (msg.body.length > 50 ? "…" : "")}
-                          </span>
-                        </div>
-                        <div className="mt-0.5 pl-4 text-[11px] text-zinc-400">{msg.audience_label}</div>
-                      </td>
-                      <td className="px-3 py-3">
-                        <ChannelBadge channel={msg.channel} />
-                      </td>
-                      <td className="px-3 py-3 text-right">
-                        <span className="text-xs tabular-nums text-zinc-500">
-                          {(msg.sent_count ?? 0).toLocaleString()} sent
-                        </span>
-                      </td>
-                      <td className="pl-3 pr-4 py-3 text-right">
-                        <span className="text-[11px] tabular-nums text-zinc-400">
-                          {formatRelative(msg.sent_at ?? msg.created_at)}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* Recent imports — 1/3 width */}
-        <div className="px-6 py-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xs font-semibold text-zinc-900">Recent imports</h2>
-            <Link href="/imports" className="text-xs text-zinc-400 hover:text-zinc-700 transition-colors">
-              View all
-            </Link>
-          </div>
-
-          {imports.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-zinc-200 py-10 text-center">
-              <p className="text-xs text-zinc-400">No imports yet</p>
-              <Link href="/imports" className="mt-2 text-xs text-zinc-400 hover:text-zinc-700 transition-colors">
-                Import contacts →
-              </Link>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {imports.map((imp) => (
-                <div
-                  key={imp.id}
-                  className="rounded-lg border border-zinc-100 px-3.5 py-3"
-                >
-                  <div className="flex items-center gap-2">
-                    <svg className="h-3.5 w-3.5 shrink-0 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                    </svg>
-                    <span className="text-xs font-medium text-zinc-900 truncate">{imp.file_name}</span>
-                  </div>
-                  <div className="mt-1.5 flex items-center justify-between">
-                    <span className="text-[11px] text-zinc-400">
-                      {imp.imported_count.toLocaleString()} contacts
-                    </span>
-                    <span className="text-[11px] tabular-nums text-zinc-400">
-                      {formatDate(imp.created_at)}
-                    </span>
-                  </div>
+      <div className="px-6 py-6 space-y-6">
+        {/* KPI row */}
+        <div className="grid grid-cols-3 gap-4">
+          {stats.map((s) => {
+            const Icon = s.icon;
+            return (
+              <Link
+                key={s.label}
+                href={s.href}
+                className="group flex flex-col rounded-xl border border-[#e7e7e7] bg-white p-5 transition-all duration-150 hover:border-[#d4d4d8] hover:shadow-sm"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[11px] font-medium text-[#a1a1aa] uppercase tracking-wide">{s.label}</span>
+                  <Icon size={13} className="text-[#d4d4d8] group-hover:text-[#a1a1aa] transition-colors" strokeWidth={1.75} />
                 </div>
-              ))}
+                <div className="text-[32px] font-semibold tracking-tight text-[#0f0f0f] tabular-nums leading-none">
+                  {s.value}
+                </div>
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-[11px] text-[#a1a1aa]">{s.sublabel}</span>
+                  <ArrowRight size={11} className="text-[#d4d4d8] group-hover:text-[#a1a1aa] transition-colors" />
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
+          {/* Recent Messages — 2/3 */}
+          <div className="col-span-2 rounded-xl border border-[#e7e7e7] bg-white overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#f0f0f0]">
+              <h2 className="text-[12px] font-semibold text-[#0f0f0f]">Recent messages</h2>
+              <Link
+                href="/messages"
+                className="text-[11px] font-medium text-[#a1a1aa] hover:text-[#71717a] transition-colors flex items-center gap-1"
+              >
+                View all <ArrowRight size={10} />
+              </Link>
+            </div>
+
+            {messages.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center px-6">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#fafafa] border border-[#e7e7e7] mb-3">
+                  <Send size={15} className="text-[#d4d4d8]" strokeWidth={1.5} />
+                </div>
+                <p className="text-[13px] font-medium text-[#71717a]">No messages yet</p>
+                <p className="text-[11px] text-[#a1a1aa] mt-1">Send your first message to get started.</p>
+                <Link
+                  href="/messages/new"
+                  className="mt-4 inline-flex items-center gap-1.5 rounded-md border border-[#e7e7e7] px-3 py-1.5 text-[12px] font-medium text-[#0f0f0f] hover:bg-[#fafafa] transition-colors"
+                >
+                  <Plus size={11} strokeWidth={2.5} /> Compose
+                </Link>
+              </div>
+            ) : (
+              <div>
+                {messages.map((msg, i) => {
+                  const ChannelIcon = CHANNEL_ICON[msg.channel] ?? Mail;
+                  const isLast = i === messages.length - 1;
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`flex items-center gap-3 px-5 py-3 hover:bg-[#fafafa] transition-colors group cursor-default ${!isLast ? "border-b border-[#f5f5f5]" : ""}`}
+                    >
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#fafafa] border border-[#f0f0f0]">
+                        <ChannelIcon size={12} className={CHANNEL_COLOR[msg.channel] ?? "text-zinc-400"} strokeWidth={1.75} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-medium text-[#0f0f0f] truncate">
+                          {msg.subject ?? msg.body.slice(0, 55) + (msg.body.length > 55 ? "…" : "")}
+                        </p>
+                        <p className="text-[11px] text-[#a1a1aa] mt-px">{msg.audience_label}</p>
+                      </div>
+                      <div className="shrink-0 flex items-center gap-3">
+                        <StatusPill status={msg.status} />
+                        <span className="text-[11px] tabular-nums text-[#a1a1aa]">
+                          {timeAgo(msg.sent_at ?? msg.created_at)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Recent Imports — 1/3 */}
+          <div className="rounded-xl border border-[#e7e7e7] bg-white overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#f0f0f0]">
+              <h2 className="text-[12px] font-semibold text-[#0f0f0f]">Recent imports</h2>
               <Link
                 href="/imports"
-                className="flex items-center gap-1.5 rounded-lg border border-dashed border-zinc-200 px-3.5 py-3 text-xs text-zinc-400 transition-colors hover:border-zinc-300 hover:text-zinc-600"
+                className="text-[11px] font-medium text-[#a1a1aa] hover:text-[#71717a] transition-colors flex items-center gap-1"
               >
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-                Import contacts
+                View all <ArrowRight size={10} />
               </Link>
             </div>
-          )}
+
+            {imports.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-14 text-center px-5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#fafafa] border border-[#e7e7e7] mb-3">
+                  <FileText size={15} className="text-[#d4d4d8]" strokeWidth={1.5} />
+                </div>
+                <p className="text-[13px] font-medium text-[#71717a]">No imports yet</p>
+                <Link
+                  href="/imports"
+                  className="mt-3 text-[11px] text-[#a1a1aa] hover:text-[#71717a] transition-colors"
+                >
+                  Import contacts →
+                </Link>
+              </div>
+            ) : (
+              <div>
+                {imports.map((imp, i) => {
+                  const isLast = i === imports.length - 1;
+                  return (
+                    <div
+                      key={imp.id}
+                      className={`px-5 py-3.5 hover:bg-[#fafafa] transition-colors ${!isLast ? "border-b border-[#f5f5f5]" : ""}`}
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <FileText size={13} className="text-[#d4d4d8] mt-0.5 shrink-0" strokeWidth={1.5} />
+                        <div className="min-w-0">
+                          <p className="text-[12px] font-medium text-[#0f0f0f] truncate">{imp.file_name}</p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[11px] text-[#a1a1aa]">
+                              {imp.imported_count.toLocaleString()} contacts
+                            </span>
+                            <span className="text-[#d4d4d8] text-[10px]">·</span>
+                            <span className="text-[11px] text-[#a1a1aa]">{timeAgo(imp.created_at)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                <Link
+                  href="/imports"
+                  className="flex items-center justify-center gap-1.5 px-5 py-3 border-t border-[#f5f5f5] text-[11px] font-medium text-[#a1a1aa] hover:text-[#71717a] hover:bg-[#fafafa] transition-colors"
+                >
+                  <Plus size={11} strokeWidth={2.5} /> Import contacts
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

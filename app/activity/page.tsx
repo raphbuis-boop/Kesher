@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { Mail, Smartphone, MessageSquare, FileText, Plus } from "lucide-react";
 
 type MessageEvent = {
   kind: "message";
@@ -27,105 +28,39 @@ type ImportEvent = {
 
 type ActivityEvent = MessageEvent | ImportEvent;
 
-function formatDate(d: string) {
-  return new Date(d).toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
+function formatDayLabel(d: string) {
+  const date = new Date(d);
+  const now = new Date();
+  const isToday =
+    date.getDate() === now.getDate() &&
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear();
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const isYesterday =
+    date.getDate() === yesterday.getDate() &&
+    date.getMonth() === yesterday.getMonth() &&
+    date.getFullYear() === yesterday.getFullYear();
+
+  if (isToday) return "Today";
+  if (isYesterday) return "Yesterday";
+  return date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 }
 
 function formatTime(d: string) {
-  return new Date(d).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  return new Date(d).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 }
 
 function isSameDay(a: string, b: string) {
-  const da = new Date(a);
-  const db = new Date(b);
-  return (
-    da.getFullYear() === db.getFullYear() &&
-    da.getMonth() === db.getMonth() &&
-    da.getDate() === db.getDate()
-  );
+  const da = new Date(a), db = new Date(b);
+  return da.getFullYear() === db.getFullYear() && da.getMonth() === db.getMonth() && da.getDate() === db.getDate();
 }
 
-function ChannelBadge({ channel }: { channel: string }) {
-  const map: Record<string, string> = {
-    email: "bg-zinc-100 text-zinc-600",
-    sms: "bg-blue-50 text-blue-700",
-    whatsapp: "bg-emerald-50 text-emerald-700",
-  };
-  return (
-    <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-wide ${map[channel] ?? "bg-zinc-100 text-zinc-600"}`}>
-      {channel}
-    </span>
-  );
-}
-
-function MessageEventRow({ event }: { event: MessageEvent }) {
-  return (
-    <div className="flex gap-4 py-3.5">
-      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-zinc-200 bg-white">
-        <svg className="h-3 w-3 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
-        </svg>
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium text-zinc-900 truncate">
-            {event.subject ?? event.body.slice(0, 60) + (event.body.length > 60 ? "…" : "")}
-          </span>
-          <ChannelBadge channel={event.channel} />
-          {event.status === "failed" && (
-            <span className="text-[11px] font-medium text-red-500">Failed</span>
-          )}
-        </div>
-        <div className="mt-0.5 flex items-center gap-3 text-[11px] text-zinc-400">
-          <span>To {event.audience_label}</span>
-          {event.sent_count != null && (
-            <span>{event.sent_count.toLocaleString()} delivered</span>
-          )}
-          {event.failed_count != null && event.failed_count > 0 && (
-            <span className="text-red-400">{event.failed_count} failed</span>
-          )}
-        </div>
-      </div>
-      <div className="shrink-0 text-[11px] tabular-nums text-zinc-400">
-        {formatTime(event.created_at)}
-      </div>
-    </div>
-  );
-}
-
-function ImportEventRow({ event }: { event: ImportEvent }) {
-  return (
-    <div className="flex gap-4 py-3.5">
-      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-zinc-200 bg-white">
-        <svg className="h-3 w-3 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-        </svg>
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium text-zinc-900 truncate">
-          {event.file_name}
-        </div>
-        <div className="mt-0.5 flex items-center gap-3 text-[11px] text-zinc-400">
-          <span>Imported {event.imported_count.toLocaleString()} contacts</span>
-          {event.failed_count != null && event.failed_count > 0 && (
-            <span className="text-amber-500">{event.failed_count} skipped</span>
-          )}
-        </div>
-      </div>
-      <div className="shrink-0 text-[11px] tabular-nums text-zinc-400">
-        {formatTime(event.created_at)}
-      </div>
-    </div>
-  );
-}
+const CHANNEL_META: Record<string, { icon: React.FC<{ size?: number; strokeWidth?: number; className?: string }>; color: string; label: string }> = {
+  email: { icon: Mail, color: "text-zinc-500", label: "Email" },
+  sms: { icon: Smartphone, color: "text-blue-500", label: "SMS" },
+  whatsapp: { icon: MessageSquare, color: "text-emerald-500", label: "WhatsApp" },
+};
 
 export default async function ActivityPage() {
   const supabase = await createSupabaseServerClient();
@@ -144,7 +79,7 @@ export default async function ActivityPage() {
   ]);
 
   const messageEvents: MessageEvent[] = (messagesResult.data ?? []).map((m) => ({
-    kind: "message" as const,
+    kind: "message",
     id: m.id,
     subject: m.subject,
     body: m.body,
@@ -157,7 +92,7 @@ export default async function ActivityPage() {
   }));
 
   const importEvents: ImportEvent[] = (importsResult.data ?? []).map((i) => ({
-    kind: "import" as const,
+    kind: "import",
     id: i.id,
     file_name: i.file_name,
     imported_count: i.imported_count,
@@ -170,14 +105,14 @@ export default async function ActivityPage() {
   );
 
   return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <header className="border-b border-zinc-100 px-6 py-4">
+    <div className="min-h-screen bg-[#fafafa]">
+      {/* Sticky header */}
+      <header className="sticky top-0 z-10 border-b border-[#e7e7e7] bg-white/95 backdrop-blur-sm px-6 py-3.5">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-sm font-semibold text-zinc-900">Activity</h1>
-            <p className="mt-0.5 text-xs text-zinc-400">
-              {allEvents.length} events
+            <h1 className="text-[13px] font-semibold text-[#0f0f0f]">Activity</h1>
+            <p className="text-[11px] text-[#a1a1aa] mt-px">
+              {allEvents.length} event{allEvents.length !== 1 ? "s" : ""}
             </p>
           </div>
         </div>
@@ -185,50 +120,135 @@ export default async function ActivityPage() {
 
       <div className="px-6 py-6">
         {allEvents.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-zinc-200 py-20 text-center">
-            <p className="text-sm font-medium text-zinc-500">No activity yet</p>
-            <p className="mt-1 text-xs text-zinc-400">
-              Messages sent and imports will appear here.
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#e7e7e7] py-24 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white border border-[#e7e7e7] mb-4">
+              <Mail size={18} className="text-[#d4d4d8]" strokeWidth={1.5} />
+            </div>
+            <p className="text-[13px] font-semibold text-[#0f0f0f]">No activity yet</p>
+            <p className="text-[12px] text-[#a1a1aa] mt-1 max-w-xs">
+              Messages and imports will appear here as they happen.
             </p>
-            <div className="mt-4 flex gap-3">
+            <div className="mt-5 flex items-center gap-3">
               <Link
                 href="/messages/new"
-                className="text-xs font-medium text-zinc-900 hover:text-zinc-600 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-md bg-[#0f0f0f] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#27272a] transition-colors"
               >
-                Send a message →
+                <Plus size={11} strokeWidth={2.5} /> Send a message
               </Link>
               <Link
                 href="/imports"
-                className="text-xs font-medium text-zinc-400 hover:text-zinc-700 transition-colors"
+                className="text-[12px] font-medium text-[#a1a1aa] hover:text-[#71717a] transition-colors"
               >
-                Import contacts →
+                Import contacts
               </Link>
             </div>
           </div>
         ) : (
-          <div className="max-w-2xl">
-            {allEvents.map((event, i) => {
-              const prev = allEvents[i - 1];
-              const showDateHeader = !prev || !isSameDay(event.created_at, prev.created_at);
-              return (
-                <div key={event.id}>
-                  {showDateHeader && (
-                    <div className={`${i > 0 ? "mt-6" : ""} mb-1 pb-1.5 border-b border-zinc-100`}>
-                      <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
-                        {formatDate(event.created_at)}
-                      </span>
-                    </div>
-                  )}
-                  <div className="border-b border-zinc-50 last:border-0">
-                    {event.kind === "message" ? (
-                      <MessageEventRow event={event} />
-                    ) : (
-                      <ImportEventRow event={event} />
-                    )}
+          <div className="max-w-2xl space-y-6">
+            {(() => {
+              const groups: { label: string; events: ActivityEvent[] }[] = [];
+              for (const event of allEvents) {
+                const last = groups[groups.length - 1];
+                if (!last || !isSameDay(event.created_at, last.events[0].created_at)) {
+                  groups.push({ label: formatDayLabel(event.created_at), events: [event] });
+                } else {
+                  last.events.push(event);
+                }
+              }
+              return groups.map((group) => (
+                <div key={group.label}>
+                  <div className="mb-2 flex items-center gap-3">
+                    <span className="text-[11px] font-semibold text-[#a1a1aa] uppercase tracking-wider">
+                      {group.label}
+                    </span>
+                    <div className="flex-1 h-px bg-[#f0f0f0]" />
+                  </div>
+                  <div className="rounded-xl border border-[#e7e7e7] bg-white overflow-hidden">
+                    {group.events.map((event, i) => {
+                      const isLast = i === group.events.length - 1;
+                      if (event.kind === "message") {
+                        const meta = CHANNEL_META[event.channel] ?? CHANNEL_META.email;
+                        const ChannelIcon = meta.icon;
+                        return (
+                          <div
+                            key={event.id}
+                            className={`flex items-start gap-3 px-4 py-3.5 hover:bg-[#fafafa] transition-colors duration-100 ${!isLast ? "border-b border-[#f5f5f5]" : ""}`}
+                          >
+                            <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#fafafa] border border-[#f0f0f0]">
+                              <ChannelIcon size={12} className={meta.color} strokeWidth={1.75} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[13px] font-medium text-[#0f0f0f] truncate">
+                                {event.subject ?? event.body.slice(0, 60) + (event.body.length > 60 ? "…" : "")}
+                              </p>
+                              <div className="mt-0.5 flex items-center gap-2 text-[11px] text-[#a1a1aa]">
+                                <span>{meta.label}</span>
+                                <span className="text-[#d4d4d8]">·</span>
+                                <span>{event.audience_label}</span>
+                                {event.sent_count != null && (
+                                  <>
+                                    <span className="text-[#d4d4d8]">·</span>
+                                    <span>{event.sent_count.toLocaleString()} delivered</span>
+                                  </>
+                                )}
+                                {event.failed_count != null && event.failed_count > 0 && (
+                                  <>
+                                    <span className="text-[#d4d4d8]">·</span>
+                                    <span className="text-red-400">{event.failed_count} failed</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                            <div className="shrink-0 flex items-center gap-2">
+                              {event.status === "sent" ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
+                                  <span className="h-1 w-1 rounded-full bg-emerald-500" />Sent
+                                </span>
+                              ) : event.status === "failed" ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-600">
+                                  <span className="h-1 w-1 rounded-full bg-red-500" />Failed
+                                </span>
+                              ) : null}
+                              <span className="text-[11px] tabular-nums text-[#a1a1aa]">
+                                {formatTime(event.created_at)}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      } else {
+                        return (
+                          <div
+                            key={event.id}
+                            className={`flex items-start gap-3 px-4 py-3.5 hover:bg-[#fafafa] transition-colors duration-100 ${!isLast ? "border-b border-[#f5f5f5]" : ""}`}
+                          >
+                            <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#fafafa] border border-[#f0f0f0]">
+                              <FileText size={12} className="text-[#a1a1aa]" strokeWidth={1.75} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[13px] font-medium text-[#0f0f0f] truncate">{event.file_name}</p>
+                              <div className="mt-0.5 flex items-center gap-2 text-[11px] text-[#a1a1aa]">
+                                <span>Import</span>
+                                <span className="text-[#d4d4d8]">·</span>
+                                <span>{event.imported_count.toLocaleString()} contacts added</span>
+                                {event.failed_count != null && event.failed_count > 0 && (
+                                  <>
+                                    <span className="text-[#d4d4d8]">·</span>
+                                    <span className="text-amber-500">{event.failed_count} skipped</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                            <span className="shrink-0 text-[11px] tabular-nums text-[#a1a1aa]">
+                              {formatTime(event.created_at)}
+                            </span>
+                          </div>
+                        );
+                      }
+                    })}
                   </div>
                 </div>
-              );
-            })}
+              ));
+            })()}
           </div>
         )}
       </div>
