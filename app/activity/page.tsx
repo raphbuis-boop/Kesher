@@ -170,8 +170,9 @@ export default async function ActivityPage() {
                         const meta = CHANNEL_META[event.channel] ?? CHANNEL_META.email;
                         const ChannelIcon = meta.icon;
                         return (
-                          <div
+                          <Link
                             key={event.id}
+                            href={`/messages/${event.id}`}
                             className={`flex items-start gap-3 px-4 py-3.5 hover:bg-[#fafafa] transition-colors duration-100 ${!isLast ? "border-b border-[#f5f5f5]" : ""}`}
                           >
                             <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#fafafa] border border-[#f0f0f0]">
@@ -213,7 +214,7 @@ export default async function ActivityPage() {
                                 {formatTime(event.created_at)}
                               </span>
                             </div>
-                          </div>
+                          </Link>
                         );
                       } else {
                         return (

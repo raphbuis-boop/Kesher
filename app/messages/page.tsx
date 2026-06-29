@@ -164,7 +164,8 @@ export default async function MessagesPage({
                   <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-[#a1a1aa] uppercase tracking-wide">Audience</th>
                   <th className="px-3 py-2.5 text-right text-[11px] font-semibold text-[#a1a1aa] uppercase tracking-wide">Delivered</th>
                   <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-[#a1a1aa] uppercase tracking-wide">Status</th>
-                  <th className="pl-3 pr-4 py-2.5 text-right text-[11px] font-semibold text-[#a1a1aa] uppercase tracking-wide">Sent</th>
+                  <th className="px-3 py-2.5 text-right text-[11px] font-semibold text-[#a1a1aa] uppercase tracking-wide">Sent</th>
+                  <th className="pl-3 pr-4 py-2.5" />
                 </tr>
               </thead>
               <tbody>
@@ -178,9 +179,12 @@ export default async function MessagesPage({
                       className={`group hover:bg-[#fafafa] transition-colors duration-100 ${!isLast ? "border-b border-[#f5f5f5]" : ""}`}
                     >
                       <td className="py-3 pl-4 pr-3">
-                        <span className="text-[13px] font-medium text-[#0f0f0f]">
+                        <Link
+                          href={`/messages/${msg.id}`}
+                          className="text-[13px] font-medium text-[#0f0f0f] hover:text-[#27272a]"
+                        >
                           {msg.subject ?? msg.body.slice(0, 55) + (msg.body.length > 55 ? "…" : "")}
-                        </span>
+                        </Link>
                       </td>
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-1.5">
@@ -204,10 +208,18 @@ export default async function MessagesPage({
                       <td className="px-3 py-3">
                         <StatusBadge status={msg.status} />
                       </td>
-                      <td className="pl-3 pr-4 py-3 text-right">
+                      <td className="px-3 py-3 text-right">
                         <span className="text-[11px] tabular-nums text-[#a1a1aa]">
                           {timeAgo(msg.sent_at ?? msg.created_at)}
                         </span>
+                      </td>
+                      <td className="pl-3 pr-4 py-3 text-right">
+                        <Link
+                          href={`/messages/${msg.id}`}
+                          className="text-[11px] font-medium text-[#a1a1aa] opacity-0 group-hover:opacity-100 transition-opacity hover:text-[#0f0f0f]"
+                        >
+                          View →
+                        </Link>
                       </td>
                     </tr>
                   );
