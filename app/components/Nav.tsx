@@ -44,16 +44,16 @@ function NavItem({ href, label, icon: Icon, exact = false, extra = [] }: NavItem
     <Link
       href={href}
       className={[
-        "group flex items-center gap-2.5 rounded-md px-2.5 py-[7px] text-[13px] font-medium transition-all duration-100",
+        "group flex items-center gap-2.5 rounded-lg px-3 py-[7px] text-[13px] font-medium",
         isActive
-          ? "bg-[#f0f0f0] text-[#0f0f0f]"
-          : "text-[#71717a] hover:bg-[#f5f5f5] hover:text-[#0f0f0f]",
+          ? "bg-[#eff6ff] text-[#2563eb]"
+          : "text-[#71717a] hover:bg-white hover:text-[#0f0f0f] hover:shadow-[0_1px_3px_rgba(0,0,0,0.06)]",
       ].join(" ")}
     >
       <Icon
         size={14}
         strokeWidth={isActive ? 2 : 1.75}
-        className={isActive ? "text-[#0f0f0f]" : "text-[#a1a1aa] group-hover:text-[#71717a] transition-colors"}
+        className={isActive ? "text-[#2563eb]" : "text-[#a1a1aa] group-hover:text-[#71717a]"}
       />
       {label}
     </Link>
@@ -65,33 +65,47 @@ export function Nav() {
   if (pathname === "/login") return null;
 
   return (
-    <nav className="sticky top-0 h-screen w-[216px] shrink-0 flex flex-col border-r border-[#e7e7e7] bg-white overflow-y-auto">
+    <nav
+      className="sticky top-0 h-screen w-[220px] shrink-0 flex flex-col border-r border-[#e7e7e7] overflow-y-auto"
+      style={{ background: "var(--sidebar-bg)" }}
+    >
       {/* Wordmark */}
-      <div className="px-4 pt-[18px] pb-4 border-b border-[#f0f0f0]">
-        <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-[5px] bg-[#0f0f0f]">
-            <span className="text-[10px] font-bold text-white tracking-tight">K</span>
+      <div className="px-4 pt-5 pb-4">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-7 w-7 items-center justify-center rounded-[7px] bg-[#0f0f0f] shadow-sm">
+            <span className="text-[11px] font-bold text-white tracking-tight">K</span>
           </div>
-          <span className="text-[13px] font-semibold text-[#0f0f0f] tracking-tight">Kesher</span>
+          <div>
+            <span className="text-[13px] font-semibold text-[#0f0f0f] tracking-tight leading-none">Kesher</span>
+            <p className="text-[10px] text-[#a1a1aa] leading-none mt-0.5">School Comms</p>
+          </div>
         </div>
       </div>
 
+      {/* Section label */}
+      <div className="px-4 pb-1.5">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-[#c4c4c8]">Navigation</p>
+      </div>
+
       {/* Primary nav */}
-      <div className="flex-1 px-2.5 pt-3 pb-2 space-y-0.5">
+      <div className="flex-1 px-2.5 pb-2 space-y-0.5">
         {PRIMARY_NAV.map((item) => (
           <NavItem key={item.href} {...item} />
         ))}
       </div>
 
+      {/* Divider */}
+      <div className="mx-3 h-px bg-[#ebebeb]" />
+
       {/* Bottom nav */}
-      <div className="border-t border-[#f0f0f0] px-2.5 py-3 space-y-0.5">
+      <div className="px-2.5 py-3 space-y-0.5">
         <NavItem href="/settings" label="Settings" icon={Settings} />
         <form action={signOut} className="w-full">
           <button
             type="submit"
-            className="group flex w-full items-center gap-2.5 rounded-md px-2.5 py-[7px] text-[13px] font-medium text-[#a1a1aa] transition-all duration-100 hover:bg-[#f5f5f5] hover:text-[#71717a]"
+            className="group flex w-full items-center gap-2.5 rounded-lg px-3 py-[7px] text-[13px] font-medium text-[#a1a1aa] hover:bg-white hover:text-[#71717a] hover:shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
           >
-            <LogOut size={14} strokeWidth={1.75} className="transition-colors" />
+            <LogOut size={14} strokeWidth={1.75} className="text-[#c4c4c8] group-hover:text-[#a1a1aa]" />
             Sign out
           </button>
         </form>
