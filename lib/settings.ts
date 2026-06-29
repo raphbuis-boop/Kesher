@@ -42,7 +42,14 @@ export async function getBrandingSettings(): Promise<BrandingSettings> {
   try {
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase.from("settings").select("key, value");
-    if (error || !data) return ENV_DEFAULTS;
+    if (error) {
+      console.error("[getBrandingSettings] Supabase query error:", error.message, error.code);
+      return ENV_DEFAULTS;
+    }
+    if (!data || data.length === 0) {
+      console.warn("[getBrandingSettings] Settings table returned no rows — all branding will use defaults");
+      return ENV_DEFAULTS;
+    }
 
     const result = { ...ENV_DEFAULTS };
     for (const row of data as { key: string; value: string }[]) {
@@ -51,8 +58,15 @@ export async function getBrandingSettings(): Promise<BrandingSettings> {
         (result as Record<string, string>)[field] = row.value.trim();
       }
     }
+    console.log("[getBrandingSettings] loaded:", {
+      schoolName: result.schoolName || "(empty)",
+      senderEmail: result.senderEmail || "(empty)",
+      senderName: result.senderName || "(empty)",
+      primaryColor: result.primaryColor,
+    });
     return result;
-  } catch {
+  } catch (err) {
+    console.error("[getBrandingSettings] Unexpected error:", err);
     return ENV_DEFAULTS;
   }
 }
