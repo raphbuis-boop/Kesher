@@ -1,5 +1,5 @@
 /**
- * Telnyx webhook handler — delivery receipts and inbound SMS/WhatsApp.
+ * Telnyx webhook handler — delivery receipts, read receipts, and inbound replies.
  *
  * Signature verification:
  *   Algorithm : Ed25519 (NOT HMAC-SHA256)
@@ -8,18 +8,21 @@
  *   Public key: TELNYX_PUBLIC_KEY env var (portal → API Keys → Ed25519 Public Key)
  *
  * Event types handled:
- *   message.delivered  — update recipient status + delivered_at
- *   message.failed     — update recipient status to failed + error code
- *   message.received   — inbound message (logged; Inbox is Phase 2)
- *   message.sent       — acknowledged, no DB update
- *   message.finalized  — acknowledged, no DB update
+ *   message.sent          — acknowledged, no DB update
+ *   message.delivered     — outbound delivery confirmed → delivered_at
+ *   message.finalized     — final status with substatus (delivered / delivery_failed)
+ *   message.failed        — outbound delivery failed → status=failed
+ *   message.read          — WhatsApp read receipt → read_at
+ *   message.received      — inbound reply (SMS or WhatsApp)
+ *                           → saves to inbound_messages table
+ *                           → sets replied_at on the matching outbound recipient
  *
  * Required env vars:
  *   TELNYX_PUBLIC_KEY  — Ed25519 public key from Telnyx portal → API Keys
  *
  * Configure in Telnyx portal:
  *   Messaging → Messaging Profiles → your profile → Webhooks
- *   URL: https://kesherhq.co/api/webhooks/telnyx
+ *   URL: https://www.kesherhq.co/api/webhooks/telnyx
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -31,15 +34,16 @@ type TelnyxEventType =
   | "message.received"
   | "message.sent"
   | "message.delivered"
-  | "message.failed"
-  | "message.finalized";
+  | "message.finalized"
+  | "message.read"
+  | "message.failed";
 
 type TelnyxWebhookPayload = {
   data: {
     event_type: TelnyxEventType;
     occurred_at: string;
     payload: {
-      id: string; // Telnyx message UUID — matches provider_id in message_recipients
+      id: string; // Telnyx message UUID
       direction: "outbound" | "inbound";
       type: "SMS" | "MMS" | "WhatsApp";
       from: { phone_number: string };
@@ -58,8 +62,6 @@ async function verifySignature(
 ): Promise<boolean> {
   const publicKeyB64 = process.env.TELNYX_PUBLIC_KEY;
   if (!publicKeyB64) {
-    // No key configured — skip verification in development but log warning.
-    // In production you must set TELNYX_PUBLIC_KEY.
     console.warn(
       "[telnyx-webhook] TELNYX_PUBLIC_KEY not set — skipping signature verification"
     );
@@ -122,35 +124,86 @@ export async function POST(req: NextRequest) {
   }
 
   const { event_type, occurred_at, payload: msg } = payload.data;
-  const telnyxId = msg.id;
+  const telnyxId   = msg.id;
+  const channel    = msg.type === "WhatsApp" ? "whatsapp" : "sms";
+  const fromNumber = msg.from.phone_number;
+  const toNumber   = msg.to?.[0]?.phone_number ?? "";
 
   console.log(
-    `[telnyx-webhook] ${event_type} — id=${telnyxId} direction=${msg.direction} type=${msg.type}`
+    `[telnyx-webhook] ${event_type} — id=${telnyxId} dir=${msg.direction} type=${msg.type}`
   );
-
-  // ── Inbound messages ──────────────────────────────────────────────────────
-  // Logged for now; Inbox feature (Phase 2) will persist these.
-  if (event_type === "message.received" || msg.direction === "inbound") {
-    console.log(
-      `[telnyx-webhook] Inbound ${msg.type} from ${msg.from.phone_number}: "${msg.text ?? ""}"`
-    );
-    return NextResponse.json({ ok: true });
-  }
-
-  // ── Outbound delivery receipts ────────────────────────────────────────────
-  if (!telnyxId) {
-    return NextResponse.json({ ok: true });
-  }
 
   // Webhooks arrive with no user session — use service-role client to bypass RLS
   const supabase = createSupabaseAdminClient();
 
+  // ── Inbound message (reply) ────────────────────────────────────────────────
+  // Fires when someone texts or WhatsApps our number.
+  // 1. Find the most recent outbound message_recipient with this phone number.
+  // 2. Set replied_at on that recipient (first reply wins — idempotent after that).
+  // 3. Always persist the raw message in inbound_messages for the future inbox.
+  if (event_type === "message.received" || msg.direction === "inbound") {
+    const { data: matchedRecipients } = await supabase
+      .from("message_recipients")
+      .select("id")
+      .eq("contact_value", fromNumber)
+      .is("replied_at", null)
+      .order("sent_at", { ascending: false })
+      .limit(1);
+
+    const matchedRecipientId = matchedRecipients?.[0]?.id ?? null;
+
+    if (matchedRecipientId) {
+      const { error: replyError } = await supabase
+        .from("message_recipients")
+        .update({ replied_at: occurred_at })
+        .eq("id", matchedRecipientId);
+
+      if (replyError) {
+        console.error(
+          `[telnyx-webhook] Failed to set replied_at for recipient ${matchedRecipientId}:`,
+          replyError.message
+        );
+      }
+    }
+
+    const { error: insertError } = await supabase
+      .from("inbound_messages")
+      .insert({
+        channel,
+        from_number:          fromNumber,
+        to_number:            toNumber,
+        body:                 msg.text ?? null,
+        received_at:          occurred_at,
+        message_recipient_id: matchedRecipientId,
+        telnyx_id:            telnyxId,
+        raw_payload:          msg,
+      })
+      .select()
+      .single();
+
+    if (insertError && insertError.code !== "23505") {
+      // 23505 = unique_violation (duplicate telnyx_id) — safe to ignore
+      console.error(
+        `[telnyx-webhook] Failed to insert inbound_message id=${telnyxId}:`,
+        insertError.message
+      );
+    }
+
+    return NextResponse.json({ ok: true });
+  }
+
+  // ── Outbound delivery events ───────────────────────────────────────────────
+  if (!telnyxId) {
+    return NextResponse.json({ ok: true });
+  }
+
+  // message.delivered — carrier confirmed delivery to the handset
   if (event_type === "message.delivered") {
     const { error } = await supabase
       .from("message_recipients")
       .update({ status: "delivered", delivered_at: occurred_at })
       .eq("provider_id", telnyxId)
-      .neq("status", "delivered"); // idempotent — don't re-write if already delivered
+      .is("delivered_at", null); // idempotent
 
     if (error) {
       console.error(
@@ -158,10 +211,71 @@ export async function POST(req: NextRequest) {
         error.message
       );
     }
-  } else if (event_type === "message.failed") {
+    return NextResponse.json({ ok: true });
+  }
+
+  // message.finalized — final status with substatus
+  // Substatus values: "delivered" | "delivery_failed" | "delivery_unconfirmed"
+  if (event_type === "message.finalized") {
+    const substatus = msg.to?.[0]?.status;
+
+    if (substatus === "delivered") {
+      const { error } = await supabase
+        .from("message_recipients")
+        .update({ status: "delivered", delivered_at: occurred_at })
+        .eq("provider_id", telnyxId)
+        .is("delivered_at", null);
+
+      if (error) {
+        console.error(
+          `[telnyx-webhook] DB update failed (finalized/delivered) id=${telnyxId}:`,
+          error.message
+        );
+      }
+    } else if (substatus === "delivery_failed") {
+      const errorCode = msg.errors?.[0]?.code ?? null;
+      const update: Record<string, string | null> = { status: "failed" };
+      if (errorCode) update.bounce_type = errorCode;
+
+      const { error } = await supabase
+        .from("message_recipients")
+        .update(update)
+        .eq("provider_id", telnyxId);
+
+      if (error) {
+        console.error(
+          `[telnyx-webhook] DB update failed (finalized/delivery_failed) id=${telnyxId}:`,
+          error.message
+        );
+      }
+    }
+    // delivery_unconfirmed — no action, not a definitive state
+
+    return NextResponse.json({ ok: true });
+  }
+
+  // message.read — WhatsApp read receipt (recipient opened the message)
+  if (event_type === "message.read") {
+    const { error } = await supabase
+      .from("message_recipients")
+      .update({ read_at: occurred_at })
+      .eq("provider_id", telnyxId)
+      .is("read_at", null); // first read only
+
+    if (error) {
+      console.error(
+        `[telnyx-webhook] DB update failed (read) id=${telnyxId}:`,
+        error.message
+      );
+    }
+    return NextResponse.json({ ok: true });
+  }
+
+  // message.failed — outbound message failed before leaving Telnyx
+  if (event_type === "message.failed") {
     const errorCode = msg.errors?.[0]?.code ?? null;
     const update: Record<string, string | null> = { status: "failed" };
-    if (errorCode) update.bounce_type = errorCode; // reuse email bounce_type column for SMS error code
+    if (errorCode) update.bounce_type = errorCode;
 
     const { error } = await supabase
       .from("message_recipients")
@@ -174,9 +288,9 @@ export async function POST(req: NextRequest) {
         error.message
       );
     }
+    return NextResponse.json({ ok: true });
   }
-  // message.sent, message.finalized — no DB action needed
 
-  // Always return 200 — prevents Telnyx from retrying on DB errors
+  // message.sent — acknowledged, nothing to update
   return NextResponse.json({ ok: true });
 }

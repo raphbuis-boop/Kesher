@@ -15,18 +15,20 @@ import {
   CheckCircle2,
   XCircle,
   AlertCircle,
-  MousePointer,
   Eye,
   Send,
   Clock,
   Users,
+  Reply,
+  BookOpen,
 } from "lucide-react";
 import type { CampaignMessage, CampaignRecipient, ChartBucket } from "./page";
 
 // ─── types ──────────────────────────────────────────────────────────────────
 
 type RecipientStatus =
-  | "clicked"
+  | "replied"
+  | "read"
   | "opened"
   | "delivered"
   | "bounced"
@@ -34,7 +36,8 @@ type RecipientStatus =
   | "failed"
   | "sent";
 
-type FilterKey = "all" | "delivered" | "opened" | "not_opened" | "failed" | "bounced";
+// Filter keys vary by channel — we compute them dynamically
+type FilterKey = "all" | "delivered" | "opened" | "not_opened" | "read" | "replied" | "failed";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -53,19 +56,22 @@ const CATEGORY_LABELS: Record<string, string> = {
   board: "Board", donor: "Donor", prospect: "Prospect",
 };
 
+// Priority: replied > complained > bounced > failed > read (WA) > opened (email) > delivered > sent
 function recipientStatus(r: CampaignRecipient): RecipientStatus {
-  if (r.complained_at) return "complained";
-  if (r.bounced_at)    return "bounced";
+  if (r.replied_at)        return "replied";
+  if (r.complained_at)     return "complained";
+  if (r.bounced_at)        return "bounced";
   if (r.status === "failed") return "failed";
-  if (r.clicked_at)   return "clicked";
-  if (r.opened_at)    return "opened";
-  if (r.delivered_at) return "delivered";
+  if (r.read_at)           return "read";
+  if (r.opened_at)         return "opened";
+  if (r.delivered_at)      return "delivered";
   return "sent";
 }
 
 const STATUS_META: Record<RecipientStatus, { label: string; textColor: string; bg: string; dot: string }> = {
-  clicked:   { label: "Clicked",   textColor: "text-violet-700",  bg: "bg-violet-50",  dot: "bg-violet-500"  },
-  opened:    { label: "Opened",    textColor: "text-blue-700",    bg: "bg-blue-50",    dot: "bg-blue-500"    },
+  replied:   { label: "Replied",   textColor: "text-violet-700",  bg: "bg-violet-50",  dot: "bg-violet-500"  },
+  read:      { label: "Read",      textColor: "text-blue-700",    bg: "bg-blue-50",    dot: "bg-blue-500"    },
+  opened:    { label: "Opened",    textColor: "text-sky-700",     bg: "bg-sky-50",     dot: "bg-sky-500"     },
   delivered: { label: "Delivered", textColor: "text-emerald-700", bg: "bg-emerald-50", dot: "bg-emerald-500" },
   bounced:   { label: "Bounced",   textColor: "text-amber-700",   bg: "bg-amber-50",   dot: "bg-amber-500"   },
   complained:{ label: "Spam",      textColor: "text-orange-700",  bg: "bg-orange-50",  dot: "bg-orange-500"  },
@@ -73,10 +79,11 @@ const STATUS_META: Record<RecipientStatus, { label: string; textColor: string; b
   sent:      { label: "Sent",      textColor: "text-[#71717a]",   bg: "bg-[#f5f5f5]", dot: "bg-[#a1a1aa]"  },
 };
 
-// Accent top-border classes (must be full literals for Tailwind scanning)
+// Accent top-border classes (full literals for Tailwind scanning)
 const ACCENT: Record<string, string> = {
   emerald: "border-t-2 border-t-emerald-500",
   blue:    "border-t-2 border-t-blue-500",
+  sky:     "border-t-2 border-t-sky-500",
   violet:  "border-t-2 border-t-violet-500",
   red:     "border-t-2 border-t-red-500",
   amber:   "border-t-2 border-t-amber-500",
@@ -84,18 +91,18 @@ const ACCENT: Record<string, string> = {
 
 function fmt(ts: string | null, opts?: Intl.DateTimeFormatOptions) {
   if (!ts) return null;
-  return new Date(ts).toLocaleString("en-US", {
+  return new Date(ts).toLocaleString(undefined, {
     month: "short", day: "numeric", hour: "numeric", minute: "2-digit", ...opts,
   });
 }
 
 function fmtDate(ts: string) {
-  return new Date(ts).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  return new Date(ts).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
 }
 
 function lastActivity(r: CampaignRecipient): string | null {
   return (
-    [r.complained_at, r.clicked_at, r.opened_at, r.bounced_at, r.delivered_at, r.sent_at]
+    [r.replied_at, r.complained_at, r.opened_at, r.read_at, r.bounced_at, r.delivered_at, r.sent_at]
       .filter(Boolean)
       .sort((a, b) => new Date(b!).getTime() - new Date(a!).getTime())[0] ?? null
   );
@@ -106,21 +113,42 @@ function pct(num: number, den: number): string {
   return `${((num / den) * 100).toFixed(1)}%`;
 }
 
-function exportCSV(recipients: CampaignRecipient[], subject: string | null) {
-  const header = "Name,Contact,Status,Delivered At,Opened At,Clicked At,Bounced At,Bounce Type";
+function exportCSV(recipients: CampaignRecipient[], subject: string | null, channel: string) {
+  const isEmail = channel === "email";
+  const isWhatsApp = channel === "whatsapp";
+
+  const header = isEmail
+    ? "Name,Email,Status,Delivered At,Opened At,Replied At,Bounced At,Bounce Type"
+    : isWhatsApp
+    ? "Name,Phone,Status,Delivered At,Read At,Replied At"
+    : "Name,Phone,Status,Delivered At,Replied At";
+
   const rows = recipients
-    .map((r) =>
-      [
+    .map((r) => {
+      const base = [
         `"${r.name.replace(/"/g, '""')}"`,
         `"${r.contact_value}"`,
         recipientStatus(r),
         r.delivered_at ? new Date(r.delivered_at).toISOString() : "",
-        r.opened_at    ? new Date(r.opened_at).toISOString()    : "",
-        r.clicked_at   ? new Date(r.clicked_at).toISOString()   : "",
-        r.bounced_at   ? new Date(r.bounced_at).toISOString()   : "",
-        r.bounce_type ?? "",
-      ].join(",")
-    )
+      ];
+      if (isEmail) {
+        return [...base,
+          r.opened_at   ? new Date(r.opened_at).toISOString()   : "",
+          r.replied_at  ? new Date(r.replied_at).toISOString()  : "",
+          r.bounced_at  ? new Date(r.bounced_at).toISOString()  : "",
+          r.bounce_type ?? "",
+        ].join(",");
+      }
+      if (isWhatsApp) {
+        return [...base,
+          r.read_at    ? new Date(r.read_at).toISOString()    : "",
+          r.replied_at ? new Date(r.replied_at).toISOString() : "",
+        ].join(",");
+      }
+      return [...base,
+        r.replied_at ? new Date(r.replied_at).toISOString() : "",
+      ].join(",");
+    })
     .join("\n");
 
   const blob = new Blob([`${header}\n${rows}`], { type: "text/csv" });
@@ -146,7 +174,7 @@ function useCountUp(target: number, duration = 700) {
     function step(ts: number) {
       if (startTime === null) startTime = ts;
       const t = Math.min((ts - startTime) / duration, 1);
-      const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
+      const eased = 1 - Math.pow(1 - t, 3);
       setVal(Math.round(target * eased));
       if (t < 1) rafRef.current = requestAnimationFrame(step);
     }
@@ -168,13 +196,12 @@ function KPICard({
   index = 0,
 }: {
   label: string;
-  value: number | string;
+  value: number;
   sub?: string;
   accent?: string;
   index?: number;
 }) {
-  const count = useCountUp(typeof value === "number" ? value : 0, 650);
-  const display = typeof value === "string" ? value : count.toLocaleString();
+  const count = useCountUp(value, 650);
 
   return (
     <div
@@ -188,11 +215,120 @@ function KPICard({
         {label}
       </p>
       <p className="mt-2.5 text-[30px] font-semibold tracking-tight tabular-nums leading-none text-[#0f0f0f]">
-        {display}
+        {count.toLocaleString()}
       </p>
       {sub && (
-        <p className="mt-2 text-[11px] tabular-nums text-[#a1a1aa] leading-tight">{sub}</p>
+        <p className="mt-2 text-[11px] text-[#a1a1aa] leading-tight">{sub}</p>
       )}
+    </div>
+  );
+}
+
+// ─── KPI grid per channel ─────────────────────────────────────────────────────
+
+type KPIStats = {
+  total: number;
+  delivered: number;
+  opened: number;
+  read: number;
+  replied: number;
+  failed: number;
+};
+
+function KPIGrid({ stats, channel }: { stats: KPIStats; channel: string }) {
+  // Email: Recipients | Delivered | Opened | Failed
+  // Note: Replied is not tracked for email (Resend has no inbound reply webhook)
+  if (channel === "email") {
+    return (
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <KPICard label="Recipients" value={stats.total} index={0} />
+        <KPICard
+          label="Delivered"
+          value={stats.delivered}
+          sub={pct(stats.delivered, stats.total) + " delivery rate"}
+          accent={ACCENT.emerald}
+          index={1}
+        />
+        <KPICard
+          label="Opened"
+          value={stats.opened}
+          sub={pct(stats.opened, stats.delivered) + " open rate"}
+          accent={stats.opened > 0 ? ACCENT.sky : undefined}
+          index={2}
+        />
+        <KPICard
+          label="Failed"
+          value={stats.failed}
+          sub={pct(stats.failed, stats.total) + " failure rate"}
+          accent={stats.failed > 0 ? ACCENT.red : undefined}
+          index={3}
+        />
+      </div>
+    );
+  }
+
+  // WhatsApp: Recipients | Delivered | Read | Replied | Failed
+  if (channel === "whatsapp") {
+    return (
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <KPICard label="Recipients" value={stats.total} index={0} />
+        <KPICard
+          label="Delivered"
+          value={stats.delivered}
+          sub={pct(stats.delivered, stats.total) + " delivery rate"}
+          accent={ACCENT.emerald}
+          index={1}
+        />
+        <KPICard
+          label="Read"
+          value={stats.read}
+          sub={pct(stats.read, stats.delivered) + " read rate"}
+          accent={stats.read > 0 ? ACCENT.blue : undefined}
+          index={2}
+        />
+        <KPICard
+          label="Replied"
+          value={stats.replied}
+          sub={pct(stats.replied, stats.delivered) + " reply rate"}
+          accent={stats.replied > 0 ? ACCENT.violet : undefined}
+          index={3}
+        />
+        <KPICard
+          label="Failed"
+          value={stats.failed}
+          sub={pct(stats.failed, stats.total) + " failure rate"}
+          accent={stats.failed > 0 ? ACCENT.red : undefined}
+          index={4}
+        />
+      </div>
+    );
+  }
+
+  // SMS: Recipients | Delivered | Replied | Failed
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <KPICard label="Recipients" value={stats.total} index={0} />
+      <KPICard
+        label="Delivered"
+        value={stats.delivered}
+        sub={pct(stats.delivered, stats.total) + " delivery rate"}
+        accent={ACCENT.emerald}
+        index={1}
+      />
+      <KPICard
+        label="Replied"
+        value={stats.replied}
+        sub={pct(stats.replied, stats.delivered) + " reply rate"}
+        accent={stats.replied > 0 ? ACCENT.violet : undefined}
+        index={2}
+      />
+      <KPICard
+        label="Failed"
+        value={stats.failed}
+        sub={pct(stats.failed, stats.total) + " failure rate"}
+        accent={stats.failed > 0 ? ACCENT.red : undefined}
+        index={3}
+      />
     </div>
   );
 }
@@ -203,9 +339,13 @@ function TimelineChart({ data, channel }: { data: ChartBucket[]; channel: string
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
+  const isEmail    = channel === "email";
+  const isWhatsApp = channel === "whatsapp";
+
   const hasDelivered = data.some((b) => b.delivered > 0);
-  const hasOpened    = channel === "email" && data.some((b) => b.opened > 0);
-  const hasClicked   = channel === "email" && data.some((b) => b.clicked > 0);
+  const hasOpened    = isEmail && data.some((b) => b.opened > 0);
+  const hasRead      = isWhatsApp && data.some((b) => b.read > 0);
+  const hasReplied   = !isEmail && data.some((b) => b.replied > 0);
 
   if (!hasDelivered) {
     return (
@@ -256,8 +396,9 @@ function TimelineChart({ data, channel }: { data: ChartBucket[]; channel: string
 
   const hBucket = hoverIdx !== null ? data[hoverIdx] : null;
 
-  // tooltip position
-  const ttW = 108, ttH = 18 + (hasOpened ? 14 : 0) + (hasClicked ? 14 : 0) + 16;
+  const extraLines = [hasOpened, hasRead, hasReplied].filter(Boolean).length;
+  const ttH = 18 + 14 + (extraLines * 14) + 4;
+  const ttW = 120;
   const ttX = hoverIdx !== null
     ? (xS(hoverIdx) > W / 2 ? xS(hoverIdx) - ttW - 10 : xS(hoverIdx) + 10)
     : 0;
@@ -282,46 +423,40 @@ function TimelineChart({ data, channel }: { data: ChartBucket[]; channel: string
           </filter>
         </defs>
 
-        {/* Grid lines */}
         {yTicks.map((v) => (
           <line key={v} x1={PAD.left} x2={W - PAD.right} y1={yS(v)} y2={yS(v)}
             stroke="#f0f0f0" strokeWidth="1" />
         ))}
 
-        {/* Area fill under delivered */}
         <path d={areaPath("delivered")} fill="url(#grad-del)" />
-
-        {/* Delivered line */}
         <path d={linePath("delivered")} fill="none"
           stroke="#10b981" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
 
-        {/* Opened line */}
         {hasOpened && (
           <path d={linePath("opened")} fill="none"
+            stroke="#0ea5e9" strokeWidth="1.75" strokeLinejoin="round" strokeLinecap="round" />
+        )}
+        {hasRead && (
+          <path d={linePath("read")} fill="none"
             stroke="#3b82f6" strokeWidth="1.75" strokeLinejoin="round" strokeLinecap="round" />
         )}
-
-        {/* Clicked line */}
-        {hasClicked && (
-          <path d={linePath("clicked")} fill="none"
+        {hasReplied && (
+          <path d={linePath("replied")} fill="none"
             stroke="#8b5cf6" strokeWidth="1.75" strokeLinejoin="round" strokeLinecap="round" />
         )}
 
-        {/* X-axis labels */}
         {xTicks.map((i) => (
           <text key={i} x={xS(i)} y={H - 8} textAnchor="middle" fontSize="9" fill="#a1a1aa">
             {i === 0 ? "0h" : i === 23 ? "24h" : `${i}h`}
           </text>
         ))}
 
-        {/* Y-axis labels */}
         {yTicks.filter((v) => v > 0).map((v) => (
           <text key={v} x={PAD.left - 7} y={yS(v) + 3} textAnchor="end" fontSize="9" fill="#a1a1aa">
             {v}
           </text>
         ))}
 
-        {/* Hover interaction rect (transparent, on top) */}
         <rect
           x={PAD.left} y={PAD.top} width={iW} height={iH}
           fill="transparent"
@@ -330,68 +465,78 @@ function TimelineChart({ data, channel }: { data: ChartBucket[]; channel: string
           style={{ cursor: "crosshair" }}
         />
 
-        {/* Hover elements */}
         {hoverIdx !== null && hBucket && (() => {
           const cx = xS(hoverIdx);
+          let ttLine = 27;
           return (
             <g>
-              {/* Vertical rule */}
               <line x1={cx} y1={PAD.top} x2={cx} y2={PAD.top + iH}
                 stroke="#d4d4d8" strokeWidth="1" strokeDasharray="3,2" />
-
-              {/* Dots on each series */}
               <circle cx={cx} cy={yS(hBucket.delivered)} r="4"
                 fill="white" stroke="#10b981" strokeWidth="2" />
               {hasOpened && hBucket.opened > 0 && (
                 <circle cx={cx} cy={yS(hBucket.opened)} r="4"
+                  fill="white" stroke="#0ea5e9" strokeWidth="2" />
+              )}
+              {hasRead && hBucket.read > 0 && (
+                <circle cx={cx} cy={yS(hBucket.read)} r="4"
                   fill="white" stroke="#3b82f6" strokeWidth="2" />
               )}
-              {hasClicked && hBucket.clicked > 0 && (
-                <circle cx={cx} cy={yS(hBucket.clicked)} r="4"
+              {hasReplied && hBucket.replied > 0 && (
+                <circle cx={cx} cy={yS(hBucket.replied)} r="4"
                   fill="white" stroke="#8b5cf6" strokeWidth="2" />
               )}
 
-              {/* Tooltip box */}
               <rect x={ttX} y={ttY} width={ttW} height={ttH}
                 rx="6" fill="white" stroke="#e7e7e7" strokeWidth="1"
                 filter="url(#tt-shadow)" />
               <text x={ttX + 10} y={ttY + 13} fontSize="9" fontWeight="600" fill="#a1a1aa">
                 {hoverIdx === 0 ? "At send" : `${hoverIdx}h after send`}
               </text>
-              <text x={ttX + 10} y={ttY + 27} fontSize="9.5" fill="#10b981" fontWeight="500">
+              <text x={ttX + 10} y={ttY + ttLine} fontSize="9.5" fill="#10b981" fontWeight="500">
                 {hBucket.delivered.toLocaleString()} delivered
               </text>
-              {hasOpened && (
-                <text x={ttX + 10} y={ttY + 27 + 14} fontSize="9.5" fill="#3b82f6" fontWeight="500">
+              {hasOpened && (() => { ttLine += 14; return (
+                <text x={ttX + 10} y={ttY + ttLine} fontSize="9.5" fill="#0ea5e9" fontWeight="500">
                   {hBucket.opened.toLocaleString()} opened
                 </text>
-              )}
-              {hasClicked && (
-                <text x={ttX + 10} y={ttY + 27 + (hasOpened ? 28 : 14)} fontSize="9.5" fill="#8b5cf6" fontWeight="500">
-                  {hBucket.clicked.toLocaleString()} clicked
+              ); })()}
+              {hasRead && (() => { ttLine += 14; return (
+                <text x={ttX + 10} y={ttY + ttLine} fontSize="9.5" fill="#3b82f6" fontWeight="500">
+                  {hBucket.read.toLocaleString()} read
                 </text>
-              )}
+              ); })()}
+              {hasReplied && (() => { ttLine += 14; return (
+                <text x={ttX + 10} y={ttY + ttLine} fontSize="9.5" fill="#8b5cf6" fontWeight="500">
+                  {hBucket.replied.toLocaleString()} replied
+                </text>
+              ); })()}
             </g>
           );
         })()}
       </svg>
 
-      {/* Legend */}
-      <div className="mt-3 flex items-center gap-5">
+      <div className="mt-3 flex items-center gap-5 flex-wrap">
         <div className="flex items-center gap-1.5">
           <span className="h-[2px] w-5 rounded-full bg-emerald-500" />
           <span className="text-[11px] text-[#71717a]">Delivered</span>
         </div>
         {hasOpened && (
           <div className="flex items-center gap-1.5">
-            <span className="h-[2px] w-5 rounded-full bg-blue-500" />
+            <span className="h-[2px] w-5 rounded-full bg-sky-500" />
             <span className="text-[11px] text-[#71717a]">Opened</span>
           </div>
         )}
-        {hasClicked && (
+        {hasRead && (
+          <div className="flex items-center gap-1.5">
+            <span className="h-[2px] w-5 rounded-full bg-blue-500" />
+            <span className="text-[11px] text-[#71717a]">Read</span>
+          </div>
+        )}
+        {hasReplied && (
           <div className="flex items-center gap-1.5">
             <span className="h-[2px] w-5 rounded-full bg-violet-500" />
-            <span className="text-[11px] text-[#71717a]">Clicked</span>
+            <span className="text-[11px] text-[#71717a]">Replied</span>
           </div>
         )}
       </div>
@@ -424,8 +569,9 @@ function RecipientDrawer({
 }) {
   const status = recipientStatus(recipient);
   const person = recipient.people;
+  const isEmail = message.channel === "email";
+  const isWhatsApp = message.channel === "whatsapp";
 
-  // Keyboard close
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
@@ -440,16 +586,22 @@ function RecipientDrawer({
     bg: string;
   }> = [
     message.sent_at
-      ? { label: "Sent",              time: message.sent_at,         icon: Send,         color: "text-[#71717a]",   bg: "bg-[#f5f5f5]"   }
+      ? { label: "Sent",           time: message.sent_at,         icon: Send,         color: "text-[#71717a]",   bg: "bg-[#f5f5f5]"   }
       : null,
     recipient.delivered_at
-      ? { label: "Delivered",         time: recipient.delivered_at,  icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50"  }
+      ? { label: "Delivered",      time: recipient.delivered_at,  icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50"  }
       : null,
-    recipient.opened_at
-      ? { label: "Opened",            time: recipient.opened_at,     icon: Eye,          color: "text-blue-600",    bg: "bg-blue-50"     }
+    // Email only
+    isEmail && recipient.opened_at
+      ? { label: "Opened",         time: recipient.opened_at,     icon: Eye,          color: "text-sky-600",     bg: "bg-sky-50"      }
       : null,
-    recipient.clicked_at
-      ? { label: "Clicked a link",    time: recipient.clicked_at,    icon: MousePointer, color: "text-violet-600",  bg: "bg-violet-50"   }
+    // WhatsApp only
+    isWhatsApp && recipient.read_at
+      ? { label: "Read",           time: recipient.read_at,       icon: BookOpen,     color: "text-blue-600",    bg: "bg-blue-50"     }
+      : null,
+    // SMS + WhatsApp
+    !isEmail && recipient.replied_at
+      ? { label: "Replied",        time: recipient.replied_at,    icon: Reply,        color: "text-violet-600",  bg: "bg-violet-50"   }
       : null,
     recipient.bounced_at
       ? {
@@ -459,7 +611,7 @@ function RecipientDrawer({
         }
       : null,
     recipient.complained_at
-      ? { label: "Marked as spam",    time: recipient.complained_at, icon: XCircle,      color: "text-orange-600",  bg: "bg-orange-50"   }
+      ? { label: "Marked as spam", time: recipient.complained_at, icon: XCircle,      color: "text-orange-600",  bg: "bg-orange-50"   }
       : null,
   ]
     .filter((e): e is NonNullable<typeof e> => e !== null)
@@ -474,15 +626,11 @@ function RecipientDrawer({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/[0.08] backdrop-blur-[2px] animate-backdrop"
         onClick={onClose}
       />
-
-      {/* Drawer panel */}
       <div className="animate-slide-right relative flex w-full max-w-[360px] flex-col bg-white border-l border-[#e7e7e7] shadow-2xl shadow-black/10 overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-[#f0f0f0] px-5 py-4 flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#f0f0f0] text-[12px] font-semibold text-[#71717a]">
@@ -501,9 +649,7 @@ function RecipientDrawer({
           </button>
         </div>
 
-        {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
-          {/* Status */}
           <div>
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">
               Delivery Status
@@ -511,7 +657,6 @@ function RecipientDrawer({
             <StatusBadge status={status} />
           </div>
 
-          {/* Contact info */}
           <div>
             <p className="mb-2.5 text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">
               Contact
@@ -523,7 +668,7 @@ function RecipientDrawer({
               </div>
               <div className="px-4 py-3">
                 <p className="text-[10px] text-[#a1a1aa]">
-                  {message.channel === "email" ? "Email" : "Phone"}
+                  {isEmail ? "Email" : "Phone"}
                 </p>
                 <p className="mt-0.5 font-mono text-[12px] text-[#0f0f0f]">{recipient.contact_value}</p>
               </div>
@@ -542,7 +687,6 @@ function RecipientDrawer({
             </div>
           </div>
 
-          {/* Event timeline */}
           <div>
             <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">
               Activity Timeline
@@ -576,7 +720,6 @@ function RecipientDrawer({
             )}
           </div>
 
-          {/* Failure / bounce callouts */}
           {status === "bounced" && (
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5">
               <p className="text-[11px] font-semibold text-amber-700">Bounce Type</p>
@@ -594,13 +737,14 @@ function RecipientDrawer({
             <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3.5">
               <p className="text-[11px] font-semibold text-red-600">Delivery Failed</p>
               <p className="mt-0.5 text-[12px] text-red-500">
-                The message could not be delivered to this address.
+                {recipient.bounce_type
+                  ? `Error code: ${recipient.bounce_type}`
+                  : "The message could not be delivered to this recipient."}
               </p>
             </div>
           )}
         </div>
 
-        {/* Footer */}
         {person && (
           <div className="border-t border-[#f0f0f0] px-5 py-4 flex-shrink-0">
             <Link
@@ -626,15 +770,16 @@ function EmptyState({ filter, search, channel, onClear }: {
   onClear: () => void;
 }) {
   const CONFIGS: Record<FilterKey, { title: string; body: string }> = {
-    all:       { title: "No recipients", body: "Recipients will appear here once the campaign is sent." },
-    delivered: { title: "No delivered recipients", body: "Delivery events will populate as the message reaches inboxes." },
-    opened:    { title: "No opens yet", body: channel === "email" ? "Opens will appear once recipients view the email." : "Opens are not tracked for this channel." },
-    not_opened:{ title: "Everyone has opened", body: "All delivered recipients have opened the message." },
-    failed:    { title: "No failures", body: "All messages were accepted for delivery." },
-    bounced:   { title: "No bounces", body: "No emails have bounced for this campaign." },
+    all:        { title: "No recipients",        body: "Recipients will appear here once the campaign is sent." },
+    delivered:  { title: "No deliveries yet",    body: "Delivery events will populate as the message reaches recipients." },
+    opened:     { title: "No opens yet",         body: channel === "email" ? "Opens will appear once recipients view the email." : "Opens are not tracked for this channel." },
+    not_opened: { title: "Everyone has opened",  body: "All delivered recipients have opened the message." },
+    read:       { title: "No read receipts yet", body: "WhatsApp read receipts will appear here when recipients open the message." },
+    replied:    { title: "No replies yet",       body: "Replies will appear here as recipients respond." },
+    failed:     { title: "No failures",          body: "All messages were accepted for delivery." },
   };
 
-  const cfg = search ? { title: "No recipients match", body: "Try a different name or email address." } : CONFIGS[filter];
+  const cfg = search ? { title: "No recipients match", body: "Try a different name or contact." } : CONFIGS[filter];
 
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -673,26 +818,51 @@ export function CampaignClient({
   const channelMeta = CHANNEL_META[message.channel] ?? CHANNEL_META.email;
   const ChannelIcon = channelMeta.icon;
   const sentAt = message.sent_at ?? message.created_at;
-  const isEmail = message.channel === "email";
+  const isEmail    = message.channel === "email";
+  const isWhatsApp = message.channel === "whatsapp";
 
-  const kpis = useMemo(() => {
-    const total     = recipients.length;
-    const delivered = recipients.filter((r) => r.delivered_at).length;
-    const opened    = recipients.filter((r) => r.opened_at).length;
-    const clicked   = recipients.filter((r) => r.clicked_at).length;
-    const failed    = recipients.filter((r) => r.status === "failed").length;
-    const bounced   = recipients.filter((r) => r.bounced_at).length;
-    const complained= recipients.filter((r) => r.complained_at).length;
-    return { total, delivered, opened, clicked, failed, bounced, complained };
-  }, [recipients]);
-
-  const filterCounts = useMemo(() => ({
-    all:       recipients.length,
+  const stats = useMemo<KPIStats>(() => ({
+    total:     recipients.length,
     delivered: recipients.filter((r) => r.delivered_at).length,
     opened:    recipients.filter((r) => r.opened_at).length,
-    not_opened:recipients.filter((r) => r.delivered_at && !r.opened_at).length,
+    read:      recipients.filter((r) => r.read_at).length,
+    replied:   recipients.filter((r) => r.replied_at).length,
     failed:    recipients.filter((r) => r.status === "failed").length,
-    bounced:   recipients.filter((r) => r.bounced_at).length,
+  }), [recipients]);
+
+  // Filter tabs per channel
+  const FILTERS: { key: FilterKey; label: string }[] = useMemo(() => {
+    if (isEmail) return [
+      { key: "all",        label: "All"        },
+      { key: "delivered",  label: "Delivered"  },
+      { key: "opened",     label: "Opened"     },
+      { key: "not_opened", label: "Not Opened" },
+      { key: "failed",     label: "Failed"     },
+    ];
+    if (isWhatsApp) return [
+      { key: "all",       label: "All"       },
+      { key: "delivered", label: "Delivered" },
+      { key: "read",      label: "Read"      },
+      { key: "replied",   label: "Replied"   },
+      { key: "failed",    label: "Failed"    },
+    ];
+    // SMS
+    return [
+      { key: "all",       label: "All"       },
+      { key: "delivered", label: "Delivered" },
+      { key: "replied",   label: "Replied"   },
+      { key: "failed",    label: "Failed"    },
+    ];
+  }, [isEmail, isWhatsApp]);
+
+  const filterCounts = useMemo(() => ({
+    all:        recipients.length,
+    delivered:  recipients.filter((r) => r.delivered_at).length,
+    opened:     recipients.filter((r) => r.opened_at).length,
+    not_opened: recipients.filter((r) => r.delivered_at && !r.opened_at).length,
+    read:       recipients.filter((r) => r.read_at).length,
+    replied:    recipients.filter((r) => r.replied_at).length,
+    failed:     recipients.filter((r) => r.status === "failed").length,
   }), [recipients]);
 
   const filtered = useMemo(() => {
@@ -701,8 +871,9 @@ export function CampaignClient({
       case "delivered":  list = list.filter((r) => r.delivered_at); break;
       case "opened":     list = list.filter((r) => r.opened_at); break;
       case "not_opened": list = list.filter((r) => r.delivered_at && !r.opened_at); break;
+      case "read":       list = list.filter((r) => r.read_at); break;
+      case "replied":    list = list.filter((r) => r.replied_at); break;
       case "failed":     list = list.filter((r) => r.status === "failed"); break;
-      case "bounced":    list = list.filter((r) => r.bounced_at); break;
     }
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -713,18 +884,15 @@ export function CampaignClient({
     return list;
   }, [recipients, filter, search]);
 
-  const FILTERS: { key: FilterKey; label: string }[] = [
-    { key: "all",       label: "All" },
-    { key: "delivered", label: "Delivered" },
-    { key: "opened",    label: "Opened" },
-    { key: "not_opened",label: "Not Opened" },
-    { key: "failed",    label: "Failed" },
-    { key: "bounced",   label: "Bounced" },
-  ];
+  // Reset filter if current tab doesn't exist for this channel
+  useEffect(() => {
+    const validKeys = FILTERS.map((f) => f.key);
+    if (!validKeys.includes(filter)) setFilter("all");
+  }, [FILTERS, filter]);
 
   return (
     <div className="min-h-screen bg-[#fafafa]">
-      {/* ── Sticky header ───────────────────────────────────────────────── */}
+      {/* ── Sticky header ─────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-10 border-b border-[#e7e7e7] bg-white/95 backdrop-blur-sm">
         <div className="flex items-center justify-between gap-4 px-6 py-3.5">
           <div className="flex items-center gap-3 min-w-0">
@@ -747,7 +915,7 @@ export function CampaignClient({
 
           <div className="flex items-center gap-2 shrink-0">
             <button
-              onClick={() => exportCSV(recipients, message.subject)}
+              onClick={() => exportCSV(recipients, message.subject, message.channel)}
               className="inline-flex items-center gap-1.5 rounded-lg border border-[#e7e7e7] bg-white px-3 py-1.5 text-[12px] font-medium text-[#71717a] hover:bg-[#fafafa] hover:text-[#0f0f0f] hover:border-[#d4d4d8]"
             >
               <Download size={11} strokeWidth={2} />
@@ -770,7 +938,6 @@ export function CampaignClient({
           </div>
         </div>
 
-        {/* Meta row */}
         <div className="flex items-center gap-3 px-6 pb-3 text-[11px] text-[#a1a1aa]">
           <span>{message.audience_label}</span>
           <span className="text-[#e7e7e7]">·</span>
@@ -788,52 +955,10 @@ export function CampaignClient({
       </header>
 
       <div className="px-6 py-6 space-y-5 max-w-7xl">
-        {/* ── KPI grid ──────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          <KPICard
-            label="Recipients"
-            value={kpis.total}
-            sub={`${message.recipient_count.toLocaleString()} targeted`}
-            index={0}
-          />
-          <KPICard
-            label="Delivered"
-            value={kpis.delivered}
-            sub={pct(kpis.delivered, kpis.total) + " delivery rate"}
-            accent={ACCENT.emerald}
-            index={1}
-          />
-          <KPICard
-            label="Opened"
-            value={isEmail ? kpis.opened : "—"}
-            sub={isEmail ? pct(kpis.opened, kpis.delivered) + " open rate" : "Not tracked for SMS"}
-            accent={isEmail ? ACCENT.blue : undefined}
-            index={2}
-          />
-          <KPICard
-            label="Clicked"
-            value={isEmail ? kpis.clicked : "—"}
-            sub={isEmail ? pct(kpis.clicked, kpis.opened) + " click rate" : "Not tracked for SMS"}
-            accent={isEmail ? ACCENT.violet : undefined}
-            index={3}
-          />
-          <KPICard
-            label="Failed"
-            value={kpis.failed}
-            sub={pct(kpis.failed, kpis.total) + " failure rate"}
-            accent={kpis.failed > 0 ? ACCENT.red : undefined}
-            index={4}
-          />
-          <KPICard
-            label="Bounced"
-            value={kpis.bounced}
-            sub={kpis.bounced > 0 ? `${kpis.complained > 0 ? `+${kpis.complained} spam` : "No spam reports"}` : "No bounces"}
-            accent={kpis.bounced > 0 ? ACCENT.amber : undefined}
-            index={5}
-          />
-        </div>
+        {/* ── KPI grid ────────────────────────────────────────────────────── */}
+        <KPIGrid stats={stats} channel={message.channel} />
 
-        {/* ── Timeline chart ─────────────────────────────────────────────── */}
+        {/* ── Timeline chart ──────────────────────────────────────────────── */}
         <div className="rounded-xl border border-[#e7e7e7] bg-white px-5 py-5 animate-fade-up" style={{ animationDelay: "260ms" }}>
           <div className="mb-5 flex items-start justify-between">
             <div>
@@ -846,9 +971,8 @@ export function CampaignClient({
           <TimelineChart data={chartData} channel={message.channel} />
         </div>
 
-        {/* ── Recipients table ───────────────────────────────────────────── */}
+        {/* ── Recipients table ─────────────────────────────────────────────── */}
         <div className="rounded-xl border border-[#e7e7e7] bg-white animate-fade-up" style={{ animationDelay: "300ms" }}>
-          {/* Table toolbar */}
           <div className="px-5 pt-5 pb-0">
             <div className="flex items-center justify-between gap-4 mb-4">
               <h2 className="text-[13px] font-semibold text-[#0f0f0f]">
@@ -860,7 +984,6 @@ export function CampaignClient({
                 )}
               </h2>
 
-              {/* Search */}
               <div className="relative">
                 <Search size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#a1a1aa]" strokeWidth={2} />
                 <input
@@ -924,10 +1047,13 @@ export function CampaignClient({
                   <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">Status</th>
                   <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">Delivered</th>
                   {isEmail && (
-                    <>
-                      <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">Opened</th>
-                      <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">Clicked</th>
-                    </>
+                    <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">Opened</th>
+                  )}
+                  {isWhatsApp && (
+                    <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">Read</th>
+                  )}
+                  {!isEmail && (
+                    <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">Replied</th>
                   )}
                   <th className="pl-3 pr-5 py-2.5 text-right text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">
                     Last Activity
@@ -937,7 +1063,6 @@ export function CampaignClient({
               <tbody>
                 {filtered.map((r, i) => {
                   const status = recipientStatus(r);
-                  const meta = STATUS_META[status];
                   const isLast = i === filtered.length - 1;
                   const la = lastActivity(r);
                   const person = r.people;
@@ -947,8 +1072,7 @@ export function CampaignClient({
                       key={r.id}
                       onClick={() => setSelected(r)}
                       className={[
-                        "group cursor-pointer transition-colors duration-100",
-                        "hover:bg-[#fafafa]",
+                        "group cursor-pointer transition-colors duration-100 hover:bg-[#fafafa]",
                         !isLast ? "border-b border-[#f5f5f5]" : "",
                       ].join(" ")}
                     >
@@ -981,18 +1105,25 @@ export function CampaignClient({
                           : <span className="text-[#d4d4d8]">—</span>}
                       </td>
                       {isEmail && (
-                        <>
-                          <td className="px-3 py-3 text-center">
-                            {r.opened_at
-                              ? <CheckCircle2 size={14} className="mx-auto text-blue-500" strokeWidth={1.75} />
-                              : <span className="text-[#d4d4d8]">—</span>}
-                          </td>
-                          <td className="px-3 py-3 text-center">
-                            {r.clicked_at
-                              ? <CheckCircle2 size={14} className="mx-auto text-violet-500" strokeWidth={1.75} />
-                              : <span className="text-[#d4d4d8]">—</span>}
-                          </td>
-                        </>
+                        <td className="px-3 py-3 text-center">
+                          {r.opened_at
+                            ? <CheckCircle2 size={14} className="mx-auto text-sky-500" strokeWidth={1.75} />
+                            : <span className="text-[#d4d4d8]">—</span>}
+                        </td>
+                      )}
+                      {isWhatsApp && (
+                        <td className="px-3 py-3 text-center">
+                          {r.read_at
+                            ? <CheckCircle2 size={14} className="mx-auto text-blue-500" strokeWidth={1.75} />
+                            : <span className="text-[#d4d4d8]">—</span>}
+                        </td>
+                      )}
+                      {!isEmail && (
+                        <td className="px-3 py-3 text-center">
+                          {r.replied_at
+                            ? <CheckCircle2 size={14} className="mx-auto text-violet-500" strokeWidth={1.75} />
+                            : <span className="text-[#d4d4d8]">—</span>}
+                        </td>
                       )}
                       <td className="pl-3 pr-5 py-3 text-right">
                         <span className="text-[11px] tabular-nums text-[#a1a1aa]">
@@ -1008,7 +1139,6 @@ export function CampaignClient({
             </table>
           )}
 
-          {/* Table footer */}
           {filtered.length > 0 && (
             <div className="border-t border-[#f5f5f5] px-5 py-3">
               <p className="text-[11px] text-[#a1a1aa]">
@@ -1020,7 +1150,6 @@ export function CampaignClient({
         </div>
       </div>
 
-      {/* ── Recipient drawer ──────────────────────────────────────────────── */}
       {selected && (
         <RecipientDrawer
           recipient={selected}

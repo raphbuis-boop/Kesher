@@ -30,6 +30,8 @@ export type CampaignRecipient = {
   delivered_at: string | null;
   opened_at: string | null;
   clicked_at: string | null;
+  read_at: string | null;
+  replied_at: string | null;
   bounced_at: string | null;
   complained_at: string | null;
   bounce_type: string | null;
@@ -44,8 +46,9 @@ export type CampaignRecipient = {
 export type ChartBucket = {
   hour: number;
   delivered: number;
-  opened: number;
-  clicked: number;
+  opened: number;   // email
+  read: number;     // whatsapp
+  replied: number;  // sms + whatsapp
 };
 
 function buildChartBuckets(
@@ -56,9 +59,10 @@ function buildChartBuckets(
   const BUCKETS = 24;
   const BUCKET_MS = 3_600_000;
 
-  const del = new Array(BUCKETS).fill(0);
-  const open = new Array(BUCKETS).fill(0);
-  const click = new Array(BUCKETS).fill(0);
+  const del     = new Array(BUCKETS).fill(0);
+  const open    = new Array(BUCKETS).fill(0);
+  const read    = new Array(BUCKETS).fill(0);
+  const replied = new Array(BUCKETS).fill(0);
 
   const bucket = (ts: string) =>
     Math.min(
@@ -68,16 +72,18 @@ function buildChartBuckets(
 
   for (const r of recipients) {
     if (r.delivered_at) del[bucket(r.delivered_at)]++;
-    if (r.opened_at) open[bucket(r.opened_at)]++;
-    if (r.clicked_at) click[bucket(r.clicked_at)]++;
+    if (r.opened_at)    open[bucket(r.opened_at)]++;
+    if (r.read_at)      read[bucket(r.read_at)]++;
+    if (r.replied_at)   replied[bucket(r.replied_at)]++;
   }
 
-  let cd = 0, co = 0, cc = 0;
+  let cd = 0, co = 0, cr = 0, cp = 0;
   return Array.from({ length: BUCKETS }, (_, i) => {
     cd += del[i];
     co += open[i];
-    cc += click[i];
-    return { hour: i, delivered: cd, opened: co, clicked: cc };
+    cr += read[i];
+    cp += replied[i];
+    return { hour: i, delivered: cd, opened: co, read: cr, replied: cp };
   });
 }
 
@@ -100,7 +106,7 @@ export default async function CampaignPage({
     supabase
       .from("message_recipients")
       .select(
-        "id, person_id, contact_value, name, status, provider_id, sent_at, delivered_at, opened_at, clicked_at, bounced_at, complained_at, bounce_type, people(id, first_name, last_name, categories)"
+        "id, person_id, contact_value, name, status, provider_id, sent_at, delivered_at, opened_at, clicked_at, read_at, replied_at, bounced_at, complained_at, bounce_type, people(id, first_name, last_name, categories)"
       )
       .eq("message_id", id)
       .order("name"),
