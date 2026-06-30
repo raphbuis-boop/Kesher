@@ -32,13 +32,32 @@ export function AddContactsButton({
   const overlayRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
+  // Keyboard handler + body scroll lock
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") setOpen(false);
     }
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+
+    // Prevent page scroll without causing layout shift
+    const scrollY = window.scrollY;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.overflow = "hidden";
+    document.body.style.paddingRight = `${scrollbarWidth}px`;
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.position = "fixed";
+    document.body.style.width = "100%";
+
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+      document.body.style.paddingRight = "";
+      document.body.style.top = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+      window.scrollTo(0, scrollY);
+    };
   }, [open]);
 
   function openModal() {
@@ -136,10 +155,11 @@ export function AddContactsButton({
           onClick={(e) => {
             if (e.target === overlayRef.current) setOpen(false);
           }}
-          className="animate-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/25 px-4"
+          className="animate-backdrop fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-black/25 p-4"
         >
-          <div className="animate-fade-up flex w-full max-w-[740px] flex-col rounded-xl border border-[#e7e7e7] bg-white shadow-2xl shadow-black/10"
-            style={{ maxHeight: "80vh" }}
+          <div
+            className="animate-fade-up flex w-full max-w-[740px] flex-col overflow-hidden rounded-xl border border-[#e7e7e7] bg-white shadow-2xl shadow-black/10"
+            style={{ maxHeight: "min(85vh, calc(100dvh - 32px))" }}
           >
             {/* ── Fixed header ── */}
             <div className="shrink-0 flex items-center justify-between border-b border-[#f0f0f0] px-6 py-4">
