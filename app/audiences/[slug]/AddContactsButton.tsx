@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Plus, Search, X, Loader2, Check } from "lucide-react";
 import { addContactsToGroup } from "@/app/groups/actions";
@@ -149,13 +150,13 @@ export function AddContactsButton({
         Add Contacts
       </button>
 
-      {open && (
+      {open && createPortal(
         <div
           ref={overlayRef}
           onClick={(e) => {
             if (e.target === overlayRef.current) setOpen(false);
           }}
-          className="animate-backdrop fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-black/25 p-4"
+          className="animate-backdrop fixed inset-0 z-[9999] flex items-center justify-center bg-black/25 p-4"
         >
           <div
             className="animate-fade-up w-full max-w-[740px] rounded-xl border border-[#e7e7e7] bg-white shadow-2xl shadow-black/10"
@@ -369,7 +370,8 @@ export function AddContactsButton({
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
