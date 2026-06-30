@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 // ─── Resend webhook event types ───────────────────────────────────────────────
 // Resend uses svix for webhook delivery. Signature headers:
@@ -136,7 +136,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  const supabase = await createSupabaseServerClient();
+  // Webhooks arrive with no user session — use service-role client to bypass RLS
+  const supabase = createSupabaseAdminClient();
 
   // Build the update payload
   const update: Record<string, string | null> = {

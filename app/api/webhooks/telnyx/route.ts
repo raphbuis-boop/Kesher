@@ -23,7 +23,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -142,7 +142,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  const supabase = await createSupabaseServerClient();
+  // Webhooks arrive with no user session — use service-role client to bypass RLS
+  const supabase = createSupabaseAdminClient();
 
   if (event_type === "message.delivered") {
     const { error } = await supabase
