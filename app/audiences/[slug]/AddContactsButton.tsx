@@ -158,11 +158,15 @@ export function AddContactsButton({
           className="animate-backdrop fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-black/25 p-4"
         >
           <div
-            className="animate-fade-up flex w-full max-w-[740px] flex-col overflow-hidden rounded-xl border border-[#e7e7e7] bg-white shadow-2xl shadow-black/10"
-            style={{ maxHeight: "min(85vh, calc(100dvh - 32px))" }}
+            className="animate-fade-up w-full max-w-[740px] rounded-xl border border-[#e7e7e7] bg-white shadow-2xl shadow-black/10"
+            style={{
+              display: "grid",
+              gridTemplateRows: "auto minmax(0,1fr) auto",
+              maxHeight: "min(85dvh, 900px)",
+            }}
           >
-            {/* ── Fixed header ── */}
-            <div className="shrink-0 flex items-center justify-between border-b border-[#f0f0f0] px-6 py-4">
+            {/* ── Header ── */}
+            <div className="flex items-center justify-between border-b border-[#f0f0f0] px-6 py-4">
               <div>
                 <h2 className="text-[13px] font-semibold text-[#0f0f0f]">
                   Add Contacts
@@ -184,7 +188,9 @@ export function AddContactsButton({
               </button>
             </div>
 
-            {/* ── Sticky search + bulk actions ── */}
+            {/* ── Middle: search + scrollable list (single grid row) ── */}
+            <div className="flex min-h-0 flex-col">
+            {/* Search + bulk actions */}
             <div className="shrink-0 border-b border-[#f0f0f0] px-6 py-3 space-y-2.5">
               <div className="relative">
                 <Search
@@ -235,7 +241,7 @@ export function AddContactsButton({
               )}
             </div>
 
-            {/* ── Scrollable list ── */}
+            {/* Scrollable list */}
             <div className="min-h-0 flex-1 overflow-y-auto">
               {filtered.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -313,9 +319,10 @@ export function AddContactsButton({
                 </ul>
               )}
             </div>
+            </div>{/* end middle grid row */}
 
-            {/* ── Fixed footer ── */}
-            <div className="shrink-0 border-t border-[#e7e7e7] px-6 py-4">
+            {/* ── Footer ── */}
+            <div className="border-t border-[#e7e7e7] px-6 py-4">
               {error && (
                 <p className="mb-3 text-[12px] text-red-600">{error}</p>
               )}
