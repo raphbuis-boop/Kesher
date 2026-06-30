@@ -257,15 +257,22 @@ function EmailPreview({
   subject,
   body,
   attachments,
+  greetingTemplate,
 }: {
   subject: string;
   body: string;
   attachments: Attachment[];
+  greetingTemplate: string | null;
 }) {
   const rendered = renderTemplate(body, PREVIEW_PERSON);
   const paragraphs = rendered.split(/\n\n+/).filter((p) => p.trim());
   const images = attachments.filter((a) => IMAGE_RE.test(a.url));
   const docs = attachments.filter((a) => !IMAGE_RE.test(a.url));
+
+  // Resolve greeting for preview using the sample person's first name
+  const previewGreeting = greetingTemplate
+    ? greetingTemplate.replace("{{first_name}}", PREVIEW_PERSON.preferred_name)
+    : null;
 
   return (
     <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
@@ -277,6 +284,9 @@ function EmailPreview({
           <p className="mb-4 border-b border-zinc-100 pb-4 text-sm font-semibold text-zinc-900">
             {renderTemplate(subject, PREVIEW_PERSON)}
           </p>
+        )}
+        {previewGreeting && (
+          <p className="mb-4 text-sm font-semibold text-zinc-900">{previewGreeting}</p>
         )}
         {paragraphs.length > 0 ? (
           paragraphs.map((para, i) => (
@@ -389,6 +399,8 @@ export function ComposeFlow({
   const [channel, setChannel] = useState<Channel>("email");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const [greetingEnabled, setGreetingEnabled] = useState(false);
+  const [greetingTemplate, setGreetingTemplate] = useState("Hi {{first_name}},");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -521,7 +533,8 @@ export function ComposeFlow({
         channel,
         subject,
         body,
-        attachments.map((a) => a.url)
+        attachments.map((a) => a.url),
+        channel === "email" && greetingEnabled ? greetingTemplate : null
       );
       if (result.success) {
         router.push("/messages");
@@ -667,9 +680,10 @@ export function ComposeFlow({
               autoFocus={channel !== "email"}
             />
 
-            {/* Toolbar: personalization + character count */}
+            {/* Toolbar: personalization tokens + greeting toggle + char count */}
             <div className="flex items-center justify-between border-t border-zinc-100 pt-2.5">
-              <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Insert token dropdown */}
                 <div className="relative">
                   <select
                     defaultValue=""
@@ -681,7 +695,7 @@ export function ComposeFlow({
                     }}
                     className="appearance-none cursor-pointer rounded-md border border-zinc-200 bg-white py-1.5 pl-3 pr-7 text-xs font-medium text-zinc-600 outline-none transition-colors hover:border-zinc-300 hover:text-zinc-900 focus:border-zinc-300"
                   >
-                    <option value="" disabled>Insert personalization…</option>
+                    <option value="" disabled>Insert field…</option>
                     {TEMPLATE_TOKENS.map(({ token, label }) => (
                       <option key={token} value={token}>{label}</option>
                     ))}
@@ -693,9 +707,57 @@ export function ComposeFlow({
                     <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
                   </svg>
                 </div>
-                <p className="text-[11px] text-zinc-400">
-                  Automatically inserts each recipient's name into the message.
-                </p>
+
+                {/* Greeting toggle — email only */}
+                {channel === "email" && (
+                  <label className="flex cursor-pointer items-center gap-2 select-none">
+                    <div className="relative flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={greetingEnabled}
+                        onChange={(e) => setGreetingEnabled(e.target.checked)}
+                        className="sr-only"
+                      />
+                      <div
+                        className={[
+                          "flex h-4 w-4 items-center justify-center rounded border transition-colors",
+                          greetingEnabled
+                            ? "border-zinc-900 bg-zinc-900"
+                            : "border-zinc-300 bg-white",
+                        ].join(" ")}
+                      >
+                        {greetingEnabled && (
+                          <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-xs font-medium text-zinc-600">Personalize greeting</span>
+                  </label>
+                )}
+
+                {/* Greeting template picker — shown when enabled */}
+                {channel === "email" && greetingEnabled && (
+                  <div className="relative">
+                    <select
+                      value={greetingTemplate}
+                      onChange={(e) => setGreetingTemplate(e.target.value)}
+                      className="appearance-none cursor-pointer rounded-md border border-blue-200 bg-blue-50 py-1.5 pl-3 pr-7 text-xs font-medium text-blue-700 outline-none transition-colors hover:border-blue-300 focus:border-blue-300"
+                    >
+                      <option value="Hi {{first_name}},">Hi {"{{first_name}}"},</option>
+                      <option value="Dear {{first_name}},">Dear {"{{first_name}}"},</option>
+                      <option value="Hello {{first_name}},">Hello {"{{first_name}}"},</option>
+                      <option value="Shalom {{first_name}},">Shalom {"{{first_name}}"},</option>
+                    </select>
+                    <svg
+                      className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-blue-400"
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                    </svg>
+                  </div>
+                )}
               </div>
 
               {/* SMS character count */}
@@ -812,7 +874,7 @@ export function ComposeFlow({
         </button>
         {showPreview && (
           <div className="mt-4">
-            {channel === "email" && <EmailPreview subject={subject} body={body} attachments={attachments} />}
+            {channel === "email" && <EmailPreview subject={subject} body={body} attachments={attachments} greetingTemplate={greetingEnabled ? greetingTemplate : null} />}
             {channel === "sms" && <SmsPreview body={body} />}
             {channel === "whatsapp" && <WhatsAppPreview body={body} attachments={attachments} />}
           </div>

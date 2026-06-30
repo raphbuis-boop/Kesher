@@ -41,8 +41,26 @@ const SYSTEM_CATEGORY_MAP: Record<string, string> = {
 // ─── Email HTML builder ───────────────────────────────────────────────────────
 
 const EMAIL_IMAGE_RE = /\.(jpg|jpeg|png|gif|webp)$/i;
-// Patterns that indicate the user already opened with a salutation
-const GREETING_START_RE = /^(hi|hello|dear|shalom|good\s+morning|good\s+afternoon|gut\s+shabbos|shana\s+tova|greetings|to\s+whom)/i;
+
+/**
+ * Resolves a greeting template string (e.g. "Hi {{first_name}},") into a
+ * final greeting line, applying the fallback when the name is absent.
+ *
+ * @param template  - e.g. "Hi {{first_name}}," | "Dear {{first_name}}," | null
+ * @param firstName - recipient's first/preferred name, or null
+ * @param fallback  - used when firstName is absent, e.g. "Hi,"
+ * @returns resolved string like "Hi Sarah," or null when template is null
+ */
+function resolveGreeting(
+  template: string | null,
+  firstName: string | null,
+  fallback = "Hi,"
+): string | null {
+  if (!template) return null;
+  if (firstName) return template.replace("{{first_name}}", firstName);
+  // Strip the name placeholder and use fallback
+  return template.replace(/\{\{first_name\}\},?/, "").trim() || fallback;
+}
 
 /**
  * Build a plain-text fallback for multipart/alternative.
@@ -51,14 +69,14 @@ const GREETING_START_RE = /^(hi|hello|dear|shalom|good\s+morning|good\s+afternoo
 function buildEmailText(
   body: string,
   branding: BrandingSettings,
+  greetingTemplate: string | null,
   firstName: string | null
 ): string {
   const lines: string[] = [];
 
   const bodyTrimmed = body.trim();
-  if (firstName && !GREETING_START_RE.test(bodyTrimmed)) {
-    lines.push(`Hi ${firstName},`, "");
-  }
+  const greeting = resolveGreeting(greetingTemplate, firstName);
+  if (greeting) lines.push(greeting, "");
   lines.push(bodyTrimmed, "");
 
   if (branding.footerText) lines.push("---", branding.footerText);
@@ -72,6 +90,7 @@ function buildEmailText(
 function buildEmailHtml(
   body: string,
   branding: BrandingSettings,
+  greetingTemplate: string | null,
   firstName: string | null,
   attachmentUrls?: string[]
 ): string {
@@ -111,12 +130,12 @@ function buildEmailHtml(
     headerContentHtml = "";
   }
 
-  // ── Greeting line (auto-injected if body doesn't already open with one) ──
+  // ── Greeting line (only injected when composer has it enabled) ───────────
   const bodyTrimmed = body.trim();
-  const greetingHtml =
-    firstName && !GREETING_START_RE.test(bodyTrimmed)
-      ? `<p style="margin:0 0 22px;font-size:16px;font-weight:600;color:#111827;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">Hi ${firstName},</p>`
-      : "";
+  const resolvedGreeting = resolveGreeting(greetingTemplate, firstName);
+  const greetingHtml = resolvedGreeting
+    ? `<p style="margin:0 0 22px;font-size:16px;font-weight:600;color:#111827;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">${resolvedGreeting}</p>`
+    : "";
 
   // ── Body paragraphs ───────────────────────────────────────────────────────
   const paragraphs = bodyTrimmed.split(/\n\n+/).filter((p) => p.trim());
@@ -316,6 +335,7 @@ async function sendEmailBatch(
   messageId: string,
   now: string,
   branding: BrandingSettings,
+  greetingTemplate: string | null,
   attachmentUrls?: string[]
 ): Promise<{ inserts: RecipientInsert[]; sentCount: number; failedCount: number; batchError: string | null }> {
   const resend = new Resend(process.env.RESEND_API_KEY!);
@@ -342,8 +362,8 @@ async function sendEmailBatch(
         from,
         to: r.email!,
         subject,
-        html: buildEmailHtml(rendered, branding, firstName, attachmentUrls),
-        text: buildEmailText(rendered, branding, firstName),
+        html: buildEmailHtml(rendered, branding, greetingTemplate, firstName, attachmentUrls),
+        text: buildEmailText(rendered, branding, greetingTemplate, firstName),
         headers: {
           // Helps Gmail and Outlook route bulk mail correctly
           "Precedence": "bulk",
@@ -493,7 +513,8 @@ export async function sendMessage(
   channel: Channel,
   subject: string,
   body: string,
-  attachmentUrls?: string[]
+  attachmentUrls?: string[],
+  greetingTemplate?: string | null
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createSupabaseServerClient();
   const envError = validateEnv(channel);
@@ -582,7 +603,7 @@ export async function sendMessage(
   }
 
   if (channel === "email") {
-    const result = await sendEmailBatch(eligible, trimmedSubject, trimmedBody, messageId, now, branding, attachmentUrls);
+    const result = await sendEmailBatch(eligible, trimmedSubject, trimmedBody, messageId, now, branding, greetingTemplate ?? null, attachmentUrls);
     sentCount = result.sentCount;
     failedCount = result.failedCount;
     inserts = result.inserts;
