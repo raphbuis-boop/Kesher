@@ -427,7 +427,7 @@ async function sendEmailBatch(
   return { inserts, sentCount, failedCount, batchError };
 }
 
-// ─── SMS / WhatsApp send (Telnyx) ─────────────────────────────────────────────
+// ─── SMS / WhatsApp send ───────────────────────────────────────────────────────
 
 async function sendViaSmsProvider(
   channel: "sms" | "whatsapp",
@@ -456,8 +456,8 @@ async function sendViaSmsProvider(
 
   const fromNumber =
     channel === "whatsapp"
-      ? (process.env.TELNYX_WHATSAPP_FROM ?? "")
-      : (process.env.TELNYX_SMS_FROM ?? "");
+      ? (process.env.SINCH_WHATSAPP_SENDER ?? "")
+      : (process.env.SINCH_SMS_SENDER ?? "");
 
   const IMAGE_RE = /\.(jpg|jpeg|png|gif|webp)$/i;
   const firstImageUrl = attachmentUrls?.find((u) => IMAGE_RE.test(u));
