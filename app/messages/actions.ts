@@ -609,7 +609,7 @@ export async function sendMessage(
     inserts = result.inserts;
     batchError = result.batchError;
   } else {
-    // SMS or WhatsApp via provider abstraction (currently Telnyx)
+    // SMS or WhatsApp via provider abstraction (currently Sinch)
     const result = await sendViaSmsProvider(channel as "sms" | "whatsapp", eligible, trimmedBody, messageId, now, attachmentUrls);
     sentCount = result.sentCount;
     failedCount = result.failedCount;

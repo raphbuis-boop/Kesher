@@ -45,7 +45,16 @@ export function getSmsProvider(): SmsProvider | null {
   const accessKey    = process.env.SINCH_ACCESS_KEY;
   const accessSecret = process.env.SINCH_ACCESS_SECRET;
 
-  if (!projectId || !appId || !accessKey || !accessSecret) return null;
+  if (!projectId || !appId || !accessKey || !accessSecret) {
+    const missing = [
+      !projectId    && "SINCH_PROJECT_ID",
+      !appId        && "SINCH_APP_ID",
+      !accessKey    && "SINCH_ACCESS_KEY",
+      !accessSecret && "SINCH_ACCESS_SECRET",
+    ].filter(Boolean).join(", ");
+    console.warn(`[sinch] getSmsProvider: missing env vars: ${missing}`);
+    return null;
+  }
 
   const { SinchProvider } = require("./sinch-provider") as typeof import("./sinch-provider");
   return new SinchProvider(

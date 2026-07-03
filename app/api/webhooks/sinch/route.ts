@@ -139,6 +139,11 @@ export async function POST(req: NextRequest) {
     const report    = payload.message_delivery_report;
     const messageId = report.message_id;
     const status    = report.status;
+
+    if (!messageId) {
+      console.warn("[sinch-webhook] delivery_report missing message_id — skipping");
+      return NextResponse.json({ ok: true });
+    }
     const channel   = report.channel_identity.channel === "WHATSAPP" ? "whatsapp" : "sms";
 
     console.log(
@@ -188,6 +193,12 @@ export async function POST(req: NextRequest) {
   if (payload.message) {
     const msg         = payload.message;
     const sinchId     = msg.id;
+
+    if (!sinchId) {
+      console.warn("[sinch-webhook] inbound message missing id — skipping");
+      return NextResponse.json({ ok: true });
+    }
+
     const fromNumber  = msg.channel_identity.identity;
     const toNumber    = process.env.SINCH_SMS_SENDER ?? "";
     const channel     = msg.channel_identity.channel === "WHATSAPP" ? "whatsapp" : "sms";

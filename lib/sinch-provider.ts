@@ -91,13 +91,18 @@ export class SinchProvider implements SmsProvider {
         body: JSON.stringify(payload),
       });
 
+      // Sinch errors may be nested under .error OR at the root level depending
+      // on API version and error type — handle both shapes.
       const json = await res.json() as {
         message_id?: string;
-        error?: { message?: string; code?: number };
+        error?: { message?: string; code?: number; status?: string };
+        message?: string; // some error responses put message at root
+        status?: string;  // e.g. "INVALID_ARGUMENT"
       };
 
       if (!res.ok || !json.message_id) {
-        const detail = json.error?.message ?? `HTTP ${res.status}`;
+        const detail =
+          json.error?.message ?? json.message ?? `HTTP ${res.status} ${json.status ?? ""}`.trim();
         console.error(`[sinch] send failed to=${msg.to} channel=${channel}: ${detail}`);
         return { providerId: null, success: false, error: detail };
       }
