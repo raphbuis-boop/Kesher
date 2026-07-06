@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PublicHeader } from "@/app/components/PublicHeader";
+import { PublicFooter } from "@/app/components/PublicFooter";
 
 export const metadata: Metadata = {
   title: "Privacy Policy — Kesher",
@@ -13,27 +15,11 @@ const WEBSITE        = "https://www.kesherhq.co";
 
 export default function PrivacyPolicy() {
   return (
-    <div className="min-h-screen bg-white">
-      {/* Minimal public header */}
-      <header className="border-b border-zinc-100">
-        <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-[7px] bg-[#0f0f0f]">
-              <span className="text-[11px] font-bold text-white tracking-tight">K</span>
-            </div>
-            <span className="text-[13px] font-semibold text-[#0f0f0f]">Kesher</span>
-          </Link>
-          <Link
-            href="/sms-terms"
-            className="text-[12px] text-zinc-500 hover:text-zinc-800 underline underline-offset-2"
-          >
-            SMS Terms
-          </Link>
-        </div>
-      </header>
+    <div className="min-h-screen bg-white flex flex-col">
+      <PublicHeader />
 
       {/* Content */}
-      <main className="max-w-3xl mx-auto px-6 py-12">
+      <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-12">
         <h1 className="text-2xl font-semibold text-zinc-900 mb-1">Privacy Policy</h1>
         <p className="text-sm text-zinc-500 mb-8">Effective Date: {EFFECTIVE_DATE}</p>
 
@@ -310,16 +296,7 @@ export default function PrivacyPolicy() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-zinc-100 mt-12">
-        <div className="max-w-3xl mx-auto px-6 py-6 flex flex-wrap gap-4 items-center justify-between">
-          <p className="text-xs text-zinc-400">© {new Date().getFullYear()} Kesher. All rights reserved.</p>
-          <div className="flex gap-4">
-            <Link href="/privacy" className="text-xs text-zinc-500 underline underline-offset-2">Privacy Policy</Link>
-            <Link href="/sms-terms" className="text-xs text-zinc-500 underline underline-offset-2">SMS Terms</Link>
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }
