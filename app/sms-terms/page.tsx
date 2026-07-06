@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PublicHeader } from "@/app/components/PublicHeader";
 import { PublicFooter } from "@/app/components/PublicFooter";
+import { LegalPageHeader } from "@/app/components/LegalPageHeader";
 
 export const metadata: Metadata = {
   title: "SMS Terms & Conditions — Kesher",
@@ -18,23 +19,28 @@ export default function SmsTerms() {
     <div className="min-h-screen bg-white flex flex-col">
       <PublicHeader />
 
-      {/* Content */}
-      <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-12">
-        <h1 className="text-2xl font-semibold text-zinc-900 mb-1">SMS Terms &amp; Conditions</h1>
-        <p className="text-sm text-zinc-500 mb-8">Effective Date: {EFFECTIVE_DATE}</p>
+      <main className="flex-1 max-w-[860px] mx-auto w-full px-6 py-14">
 
-        <div className="text-sm text-zinc-700 space-y-8">
+        <LegalPageHeader
+          title="SMS Terms & Conditions"
+          effectiveDate={EFFECTIVE_DATE}
+          lastUpdated={EFFECTIVE_DATE}
+        />
+
+        <div className="text-[14px] text-zinc-600 space-y-12 leading-relaxed">
 
           {/* Program description */}
           <section>
-            <h2 className="text-base font-semibold text-zinc-900 mb-3">Program Description</h2>
+            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+              Program Description
+            </h2>
             <p>
               {COMPANY_NAME} ("{COMPANY_NAME}") provides a school communications platform that
               enables educational institutions to send SMS text messages to their communities
               — including parents, guardians, students, staff, alumni, and other authorized
               school community members.
             </p>
-            <p className="mt-3">
+            <p className="mt-4">
               Messages sent through Kesher may include: school event notifications, emergency
               alerts, attendance reminders, administrative announcements, schedule updates,
               fundraising information, and general school communications. Messages are sent
@@ -44,15 +50,17 @@ export default function SmsTerms() {
           </section>
 
           {/* Consent */}
-          <section className="border border-zinc-200 rounded-lg p-5 bg-zinc-50">
-            <h2 className="text-base font-semibold text-zinc-900 mb-3">Consent to Receive Messages</h2>
+          <section className="border border-zinc-200 rounded-xl p-6 bg-zinc-50">
+            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+              Consent to Receive Messages
+            </h2>
             <p>
               You are receiving SMS messages because your school has your phone number on file
               and has indicated that you have consented to receive communications from your
               school community. Your school is responsible for obtaining and maintaining
               appropriate consent from its community members.
             </p>
-            <p className="mt-3">
+            <p className="mt-4">
               By not opting out, you confirm that you consent to receive SMS text messages
               from your school via the Kesher platform. Consent is not a condition of any
               purchase or enrollment.
@@ -61,7 +69,9 @@ export default function SmsTerms() {
 
           {/* Frequency */}
           <section>
-            <h2 className="text-base font-semibold text-zinc-900 mb-3">Message Frequency</h2>
+            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+              Message Frequency
+            </h2>
             <p>
               Message frequency varies based on your school's activity and communication needs.
               You may receive multiple messages per week during active school periods.
@@ -70,13 +80,15 @@ export default function SmsTerms() {
 
           {/* Costs */}
           <section>
-            <h2 className="text-base font-semibold text-zinc-900 mb-3">Message and Data Rates</h2>
+            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+              Message and Data Rates
+            </h2>
             <p>
               <strong>Message and data rates may apply.</strong> Please check with your mobile
               service provider for details about your plan's SMS rates. {COMPANY_NAME} and your
               school do not charge a fee for SMS messages, but your carrier may.
             </p>
-            <p className="mt-3 text-xs text-zinc-500">
+            <p className="mt-4 text-[13px] text-zinc-400">
               Participating carriers include AT&amp;T, T-Mobile, Verizon, and others. Carrier
               availability and rates may vary. Carriers are not liable for delayed or undelivered
               messages.
@@ -84,18 +96,20 @@ export default function SmsTerms() {
           </section>
 
           {/* Opt-out */}
-          <section className="border-l-4 border-zinc-900 pl-4">
-            <h2 className="text-base font-semibold text-zinc-900 mb-3">How to Opt Out (STOP)</h2>
+          <section className="border-l-[3px] border-zinc-900 pl-5">
+            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+              How to Opt Out (STOP)
+            </h2>
             <p>
               You may opt out of SMS messages at any time by replying{" "}
               <strong>STOP</strong> to any text message. After opting out, you will receive
               one final confirmation message and no further messages will be sent to your number.
             </p>
-            <p className="mt-3">
+            <p className="mt-4">
               Opt-out requests are processed immediately. STOP, STOPALL, UNSUBSCRIBE, CANCEL,
               END, and QUIT are all recognized opt-out keywords.
             </p>
-            <p className="mt-3">
+            <p className="mt-4">
               To re-subscribe after opting out, reply <strong>UNSTOP</strong> or{" "}
               <strong>START</strong>.
             </p>
@@ -103,22 +117,24 @@ export default function SmsTerms() {
 
           {/* HELP */}
           <section>
-            <h2 className="text-base font-semibold text-zinc-900 mb-3">How to Get Help (HELP)</h2>
+            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+              How to Get Help (HELP)
+            </h2>
             <p>
               Reply <strong>HELP</strong> to any message to receive support contact information.
               You can also reach us at:
             </p>
-            <address className="not-italic mt-3 space-y-1">
+            <address className="not-italic mt-4 space-y-1.5">
               <p>
                 Email:{" "}
-                <a href={`mailto:${SUPPORT_EMAIL}`} className="underline">{SUPPORT_EMAIL}</a>
+                <a href={`mailto:${SUPPORT_EMAIL}`} className="underline underline-offset-2">{SUPPORT_EMAIL}</a>
               </p>
               <p>
                 Website:{" "}
-                <a href={WEBSITE} className="underline">{WEBSITE}</a>
+                <a href={WEBSITE} className="underline underline-offset-2">{WEBSITE}</a>
               </p>
             </address>
-            <p className="mt-3">
+            <p className="mt-4">
               For issues with messages from a specific school, please contact your school's
               administrative office directly.
             </p>
@@ -126,21 +142,25 @@ export default function SmsTerms() {
 
           {/* Data */}
           <section>
-            <h2 className="text-base font-semibold text-zinc-900 mb-3">Your Phone Number and Privacy</h2>
+            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+              Your Phone Number and Privacy
+            </h2>
             <p>
               Your mobile phone number and SMS consent information will not be shared with
               third parties or affiliates for marketing or promotional purposes.
             </p>
-            <p className="mt-3">
+            <p className="mt-4">
               Please review our full{" "}
-              <Link href="/privacy" className="underline">Privacy Policy</Link>{" "}
+              <Link href="/privacy" className="underline underline-offset-2">Privacy Policy</Link>{" "}
               for complete details on how we collect, use, and protect your information.
             </p>
           </section>
 
           {/* Liability */}
           <section>
-            <h2 className="text-base font-semibold text-zinc-900 mb-3">Limitation of Liability</h2>
+            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+              Limitation of Liability
+            </h2>
             <p>
               {COMPANY_NAME} is not liable for any delays or failures in the receipt of SMS
               messages. Delivery is subject to valid mobile service coverage and carrier network
@@ -151,7 +171,9 @@ export default function SmsTerms() {
 
           {/* Changes */}
           <section>
-            <h2 className="text-base font-semibold text-zinc-900 mb-3">Changes to These Terms</h2>
+            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+              Changes to These Terms
+            </h2>
             <p>
               We may update these SMS Terms from time to time. Material changes will be communicated
               through the platform or by email to school administrators. Continued use of the
@@ -161,39 +183,43 @@ export default function SmsTerms() {
 
           {/* Contact */}
           <section>
-            <h2 className="text-base font-semibold text-zinc-900 mb-3">Contact</h2>
-            <address className="not-italic space-y-1">
+            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+              Contact
+            </h2>
+            <address className="not-italic space-y-1.5">
               <p><strong>{COMPANY_NAME}</strong></p>
               <p>
                 Email:{" "}
-                <a href={`mailto:${SUPPORT_EMAIL}`} className="underline">{SUPPORT_EMAIL}</a>
+                <a href={`mailto:${SUPPORT_EMAIL}`} className="underline underline-offset-2">{SUPPORT_EMAIL}</a>
               </p>
               <p>
                 Website:{" "}
-                <a href={WEBSITE} className="underline">{WEBSITE}</a>
+                <a href={WEBSITE} className="underline underline-offset-2">{WEBSITE}</a>
               </p>
             </address>
           </section>
 
           {/* Quick reference */}
-          <section className="border border-zinc-200 rounded-lg p-5">
-            <h2 className="text-base font-semibold text-zinc-900 mb-4">Quick Reference</h2>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="bg-zinc-50 rounded-md p-3">
-                <p className="font-semibold text-zinc-800">STOP</p>
-                <p className="text-zinc-500 text-xs mt-0.5">Opt out of all messages</p>
+          <section className="border border-zinc-200 rounded-xl p-6">
+            <h2 className="text-[15px] font-semibold text-zinc-900 mb-5 tracking-tight">
+              Quick Reference
+            </h2>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-zinc-50 rounded-lg p-4">
+                <p className="text-[13px] font-semibold text-zinc-800">STOP</p>
+                <p className="text-[12px] text-zinc-400 mt-1">Opt out of all messages</p>
               </div>
-              <div className="bg-zinc-50 rounded-md p-3">
-                <p className="font-semibold text-zinc-800">UNSTOP / START</p>
-                <p className="text-zinc-500 text-xs mt-0.5">Re-subscribe to messages</p>
+              <div className="bg-zinc-50 rounded-lg p-4">
+                <p className="text-[13px] font-semibold text-zinc-800">UNSTOP / START</p>
+                <p className="text-[12px] text-zinc-400 mt-1">Re-subscribe to messages</p>
               </div>
-              <div className="bg-zinc-50 rounded-md p-3">
-                <p className="font-semibold text-zinc-800">HELP</p>
-                <p className="text-zinc-500 text-xs mt-0.5">Get support information</p>
+              <div className="bg-zinc-50 rounded-lg p-4">
+                <p className="text-[13px] font-semibold text-zinc-800">HELP</p>
+                <p className="text-[12px] text-zinc-400 mt-1">Get support information</p>
               </div>
-              <div className="bg-zinc-50 rounded-md p-3">
-                <p className="font-semibold text-zinc-800">Msg &amp; Data Rates May Apply</p>
-                <p className="text-zinc-500 text-xs mt-0.5">Check with your carrier</p>
+              <div className="bg-zinc-50 rounded-lg p-4">
+                <p className="text-[13px] font-semibold text-zinc-800">Msg &amp; Data Rates May Apply</p>
+                <p className="text-[12px] text-zinc-400 mt-1">Check with your carrier</p>
               </div>
             </div>
           </section>

@@ -7,7 +7,7 @@ import Link from "next/link";
 export function PublicHeader() {
   return (
     <header className="border-b border-zinc-100 bg-white">
-      <div className="max-w-4xl mx-auto px-6 h-14 flex items-center">
+      <div className="max-w-[860px] mx-auto px-6 h-14 flex items-center">
         <Link
           href="/"
           className="flex items-center gap-2.5 group"
