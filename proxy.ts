@@ -12,8 +12,14 @@ export const config = {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow unauthenticated access to login page and webhook endpoints
-  if (pathname === "/login" || pathname.startsWith("/api/webhooks/")) {
+  // Allow unauthenticated access to login, public legal pages, and webhook endpoints
+  if (
+    pathname === "/login" ||
+    pathname === "/privacy" ||
+    pathname === "/sms-terms" ||
+    pathname === "/terms" ||
+    pathname.startsWith("/api/webhooks/")
+  ) {
     return NextResponse.next();
   }
 

@@ -8,7 +8,7 @@ export default async function LoginPage({
   const { error } = await searchParams;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4">
+    <div className="flex flex-1 items-center justify-center bg-zinc-50 px-4 py-12">
       <div className="w-full max-w-sm">
         {/* Logo / wordmark */}
         <div className="mb-8 text-center">
