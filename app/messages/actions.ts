@@ -429,6 +429,10 @@ async function sendEmailBatch(
 
 // ─── SMS / WhatsApp send ───────────────────────────────────────────────────────
 
+// CTIA-required opt-out footer appended to every SMS.
+// Carriers require that recipients always know how to stop messages.
+const SMS_STOP_FOOTER = "\nReply STOP to opt out.";
+
 async function sendViaSmsProvider(
   channel: "sms" | "whatsapp",
   recipients: Person[],
@@ -461,7 +465,30 @@ async function sendViaSmsProvider(
 
   const IMAGE_RE = /\.(jpg|jpeg|png|gif|webp)$/i;
   const firstImageUrl = attachmentUrls?.find((u) => IMAGE_RE.test(u));
-  const eligible = recipients.filter((r) => r.phone);
+  const withPhone = recipients.filter((r) => r.phone);
+
+  // ── Suppress opted-out recipients ────────────────────────────────────────
+  // Check for any prior STOP / opted_out status on these phone numbers.
+  // This guards against re-contacting people who opted out of a previous campaign.
+  // Carriers also block at the network level, but we filter proactively to keep
+  // analytics clean and avoid failed send attempts.
+  const supabase = await createSupabaseServerClient();
+  const phones = withPhone.map((r) => r.phone!);
+  const { data: optedOutRows } = await supabase
+    .from("message_recipients")
+    .select("contact_value")
+    .in("contact_value", phones)
+    .eq("status", "opted_out")
+    .limit(phones.length);
+
+  const optedOutPhones = new Set((optedOutRows ?? []).map((r) => r.contact_value));
+  const eligible = withPhone.filter((r) => !optedOutPhones.has(r.phone!));
+
+  if (optedOutPhones.size > 0) {
+    console.log(
+      `[sendViaSmsProvider] Suppressed ${optedOutPhones.size} opted-out recipient(s) from message ${messageId}`
+    );
+  }
 
   let sentCount = 0;
   let failedCount = 0;
@@ -469,10 +496,14 @@ async function sendViaSmsProvider(
 
   for (const r of eligible) {
     const rendered = renderTemplate(bodyTemplate, r);
+    // CTIA requires opt-out instruction in every SMS. WhatsApp is exempt from
+    // carrier 10DLC rules but we include it for consistency.
+    const body = channel === "sms" ? rendered + SMS_STOP_FOOTER : rendered;
+
     const result = await provider.send(channel, {
       to: r.phone!,
       from: fromNumber,
-      body: rendered,
+      body,
       mediaUrl: firstImageUrl,
     });
 
