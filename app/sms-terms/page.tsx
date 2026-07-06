@@ -145,9 +145,14 @@ export default function SmsTerms() {
             <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
               Your Phone Number and Privacy
             </h2>
-            <p>
-              Your mobile phone number and SMS consent information will not be shared with
-              third parties or affiliates for marketing or promotional purposes.
+            <p className="font-semibold text-zinc-800">
+              No mobile information will be shared with third parties or affiliates for
+              marketing or promotional purposes.
+            </p>
+            <p className="mt-4">
+              All other categories of information described in our Privacy Policy exclude
+              text messaging originator opt-in data and consent; this information will not
+              be shared with any third parties.
             </p>
             <p className="mt-4">
               Please review our full{" "}

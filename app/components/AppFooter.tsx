@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 // Pages that render their own footer — suppress AppFooter on these
-const PUBLIC_ROUTES = new Set(["/privacy", "/sms-terms", "/terms", "/contact"]);
+const PUBLIC_ROUTES = new Set(["/privacy", "/sms-terms", "/terms", "/contact", "/cta", "/opt-in"]);
 
 const SUPPORT_EMAIL = "help@kesherhq.co";
 const PRIVACY_EMAIL = "privacy@kesherhq.co";
