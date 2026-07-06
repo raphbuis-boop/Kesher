@@ -33,6 +33,75 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
+// ─── CTIA-required keyword constants ──────────────────────────────────────────
+
+// Carriers handle STOP at the network level, but we must also update our DB
+// so analytics stay consistent and we never attempt to re-send to opted-out numbers.
+const STOP_KEYWORDS   = new Set(["STOP", "STOPALL", "UNSUBSCRIBE", "CANCEL", "END", "QUIT"]);
+const UNSTOP_KEYWORDS = new Set(["UNSTOP", "START"]);
+const HELP_KEYWORDS   = new Set(["HELP", "INFO"]);
+
+// CTIA-required auto-response templates.
+// Must include: program name, confirmation, opt-out / opt-in instruction.
+const STOP_CONFIRMATION =
+  "Kesher: You have been unsubscribed from school notifications. " +
+  "No further messages will be sent. Reply UNSTOP to re-subscribe. " +
+  "Questions? help@kesherhq.co";
+
+const UNSTOP_CONFIRMATION =
+  "Kesher: You have been re-subscribed to school notifications. " +
+  "Reply STOP at any time to opt out. Msg & Data rates may apply.";
+
+const HELP_RESPONSE =
+  "Kesher School Communications. " +
+  "Reply STOP to opt out. Reply UNSTOP to re-subscribe. " +
+  "Msg & Data rates may apply. Support: help@kesherhq.co | kesherhq.co/sms-terms";
+
+// ─── Send auto-response via Sinch Conversation API ───────────────────────────
+
+async function sendAutoResponse(to: string, text: string): Promise<void> {
+  const projectId    = process.env.SINCH_PROJECT_ID;
+  const appId        = process.env.SINCH_APP_ID;
+  const accessKey    = process.env.SINCH_ACCESS_KEY;
+  const accessSecret = process.env.SINCH_ACCESS_SECRET;
+  const region       = process.env.SINCH_REGION ?? "us";
+
+  if (!projectId || !appId || !accessKey || !accessSecret) {
+    console.warn("[sinch-webhook] Cannot send auto-response — Sinch credentials not configured");
+    return;
+  }
+
+  const credentials = Buffer.from(`${accessKey}:${accessSecret}`).toString("base64");
+  const url = `https://${region}.conversation.api.sinch.com/v1/projects/${projectId}/messages:send`;
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization:  `Basic ${credentials}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        app_id: appId,
+        recipient: {
+          identified_by: {
+            channel_identities: [{ channel: "SMS", identity: to }],
+          },
+        },
+        message: { text_message: { text } },
+        channel_priority_order: ["SMS"],
+      }),
+    });
+    if (!res.ok) {
+      console.error(`[sinch-webhook] Auto-response failed to=${to} status=${res.status}`);
+    } else {
+      console.log(`[sinch-webhook] Auto-response sent to=${to}`);
+    }
+  } catch (err) {
+    console.error("[sinch-webhook] Auto-response exception:", err);
+  }
+}
+
 // ─── Sinch payload types ──────────────────────────────────────────────────────
 
 type SinchDeliveryStatus =
@@ -211,7 +280,39 @@ export async function POST(req: NextRequest) {
       `[sinch-webhook] inbound messageId=${sinchId} from=${fromNumber} channel=${channel}`
     );
 
-    // Find the most recent outbound recipient with this phone — first reply wins
+    // ── CTIA-required keyword handling ──────────────────────────────────────
+    // Carriers handle STOP at the network level, but we must mirror it in our
+    // DB so analytics stay accurate and we never try to re-send to opted-out numbers.
+    // HELP must return an auto-response containing program name + support info.
+    const keyword = bodyText?.trim().toUpperCase() ?? "";
+
+    if (STOP_KEYWORDS.has(keyword)) {
+      console.log(`[sinch-webhook] STOP received from=${fromNumber} — marking opted out`);
+      // Mark all outbound recipients for this number as opted-out
+      await supabase
+        .from("message_recipients")
+        .update({ status: "opted_out" })
+        .eq("contact_value", fromNumber)
+        .not("status", "eq", "opted_out");
+      // CTIA requires a single confirmation message — carrier may also send one
+      // at network level, but we send ours to ensure it's received.
+      await sendAutoResponse(fromNumber, STOP_CONFIRMATION);
+      return NextResponse.json({ ok: true });
+    }
+
+    if (UNSTOP_KEYWORDS.has(keyword)) {
+      console.log(`[sinch-webhook] UNSTOP received from=${fromNumber}`);
+      await sendAutoResponse(fromNumber, UNSTOP_CONFIRMATION);
+      return NextResponse.json({ ok: true });
+    }
+
+    if (HELP_KEYWORDS.has(keyword)) {
+      console.log(`[sinch-webhook] HELP received from=${fromNumber}`);
+      await sendAutoResponse(fromNumber, HELP_RESPONSE);
+      // Still fall through to log the inbound message — don't return early
+    }
+
+    // ── Regular reply — Find the most recent outbound recipient ──────────────
     const { data: matched } = await supabase
       .from("message_recipients")
       .select("id")
