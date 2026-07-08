@@ -15,6 +15,7 @@ export async function proxy(request: NextRequest) {
   // Allow unauthenticated access to login, public legal pages, and webhook endpoints
   if (
     pathname === "/login" ||
+    pathname === "/home" ||
     pathname === "/privacy" ||
     pathname === "/sms-terms" ||
     pathname === "/terms" ||

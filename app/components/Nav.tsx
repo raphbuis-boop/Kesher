@@ -63,7 +63,7 @@ function NavItem({ href, label, icon: Icon, exact = false, extra = [] }: NavItem
 export function Nav() {
   const pathname = usePathname();
   // Public pages — no app chrome
-  if (pathname === "/login" || pathname === "/privacy" || pathname === "/sms-terms" || pathname === "/terms" || pathname === "/contact" || pathname === "/cta" || pathname === "/opt-in") return null;
+  if (pathname === "/login" || pathname === "/home" || pathname === "/privacy" || pathname === "/sms-terms" || pathname === "/terms" || pathname === "/contact" || pathname === "/cta" || pathname === "/opt-in") return null;
 
   return (
     <nav
