@@ -430,6 +430,7 @@ export function AddGroupButton() {
               </div>
               <button
                 onClick={() => setOpen(false)}
+                aria-label="Close"
                 className="rounded-md p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

@@ -93,14 +93,14 @@ export default async function NewMessagePage({
   const attachmentsEnabled = !!process.env.BLOB_READ_WRITE_TOKEN;
 
   return (
-    <div className="min-h-screen bg-zinc-50">
-      <div className="mx-auto max-w-2xl px-6 py-10">
-        <div className="mb-6">
-          <h1 className="text-xl font-semibold text-zinc-900">New Message</h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            Compose and send to your school community.
-          </p>
+    <div className="min-h-screen bg-[#fafafa]">
+      <header className="sticky top-0 z-10 border-b border-[#e7e7e7] bg-white/95 backdrop-blur-sm px-6 py-3.5">
+        <div className="max-w-2xl mx-auto">
+          <h1 className="text-[13px] font-semibold text-[#0f0f0f]">New Message</h1>
+          <p className="text-[11px] text-[#a1a1aa] mt-px">Compose and send to your school community.</p>
         </div>
+      </header>
+      <div className="mx-auto max-w-2xl px-6 py-6">
         <ComposeFlow
           audiences={audiences}
           fromEmail={fromEmail}

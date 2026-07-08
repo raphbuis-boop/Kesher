@@ -332,8 +332,9 @@ function DropZone({ onFile, error, onClearError }: {
       <div
         role="button"
         tabIndex={0}
+        aria-label="Upload CSV file — click or drag and drop"
         onClick={() => inputRef.current?.click()}
-        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") inputRef.current?.click(); }}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); inputRef.current?.click(); } }}
         onDragEnter={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragOver={(e) => e.preventDefault()}
         onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}

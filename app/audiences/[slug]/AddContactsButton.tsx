@@ -183,6 +183,7 @@ export function AddContactsButton({
               </div>
               <button
                 onClick={() => setOpen(false)}
+                aria-label="Close"
                 className="rounded-md p-1.5 text-[#a1a1aa] hover:bg-[#f5f5f5] hover:text-[#71717a]"
               >
                 <X size={15} strokeWidth={1.75} />
@@ -210,6 +211,7 @@ export function AddContactsButton({
                 {query && (
                   <button
                     onClick={() => setQuery("")}
+                    aria-label="Clear search"
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-[#a1a1aa] hover:text-[#71717a]"
                   >
                     <X size={12} />

@@ -780,7 +780,7 @@ function RecipientDrawer({
               <p className="text-[11px] text-[#a1a1aa] font-mono truncate">{recipient.contact_value}</p>
             </div>
           </div>
-          <button onClick={onClose} className="ml-2 flex-shrink-0 rounded-lg p-1.5 text-[#a1a1aa] hover:bg-[#f5f5f5] hover:text-[#0f0f0f]">
+          <button onClick={onClose} aria-label="Close" className="ml-2 flex-shrink-0 rounded-lg p-1.5 text-[#a1a1aa] hover:bg-[#f5f5f5] hover:text-[#0f0f0f]">
             <X size={14} strokeWidth={2} />
           </button>
         </div>
@@ -1112,6 +1112,7 @@ export function CampaignClient({
                 {search && (
                   <button
                     onClick={() => setSearch("")}
+                    aria-label="Clear search"
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-[#a1a1aa] hover:text-[#0f0f0f]"
                   >
                     <X size={11} strokeWidth={2} />

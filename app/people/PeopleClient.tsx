@@ -85,6 +85,8 @@ function Checkbox({
   return (
     <button
       type="button"
+      role="checkbox"
+      aria-checked={indeterminate ? "mixed" : checked}
       onClick={(e) => { e.stopPropagation(); onChange(); }}
       className={[
         "flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border transition-all duration-100",
@@ -163,6 +165,7 @@ function PersonDrawer({
           </div>
           <button
             onClick={onClose}
+            aria-label="Close"
             className="flex-shrink-0 rounded-lg p-1.5 text-[#a1a1aa] hover:bg-[#f5f5f5] hover:text-[#0f0f0f] transition-colors"
           >
             <X size={14} strokeWidth={2} />
@@ -332,6 +335,7 @@ function BulkToolbar({
         <div className="h-4 w-px bg-[#e7e7e7]" />
         <button
           onClick={onClear}
+          aria-label="Clear selection"
           className="rounded-lg p-1.5 text-[#a1a1aa] hover:bg-[#f5f5f5] hover:text-[#0f0f0f] transition-colors"
         >
           <X size={13} strokeWidth={2} />
@@ -539,6 +543,7 @@ export function PeopleClient({
             {search && (
               <button
                 onClick={() => { setSearch(""); resetPage(); }}
+                aria-label="Clear search"
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-[#a1a1aa] hover:text-[#0f0f0f] transition-colors"
               >
                 <X size={11} strokeWidth={2} />

@@ -444,7 +444,7 @@ export default async function AudiencePage({
                           <form action={removeContactFromGroup.bind(null, slug, person.id)}>
                             <button
                               type="submit"
-                              className="rounded px-2 py-1 text-[11px] font-medium text-[#a1a1aa] opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 hover:text-red-600"
+                              className="rounded px-2 py-1 text-[11px] font-medium text-[#a1a1aa] opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all hover:bg-red-50 hover:text-red-600"
                             >
                               Remove
                             </button>

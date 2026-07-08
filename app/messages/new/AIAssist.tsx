@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import type { ComposeAction } from "@/app/api/ai-compose/route";
 
 type ActionResult =
@@ -57,11 +57,22 @@ export function AIAssist({
   const [activeAction, setActiveAction] = useState<ComposeAction | null>(null);
   const promptRef = useRef<HTMLTextAreaElement>(null);
 
+  const handleClose = useCallback(() => setOpen(false), []);
+
   useEffect(() => {
     if (open && promptRef.current) {
       promptRef.current.focus();
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") handleClose();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, handleClose]);
 
   // Clear result when opening fresh
   function handleOpen() {
@@ -125,12 +136,18 @@ export function AIAssist({
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/20"
-            onClick={() => setOpen(false)}
+            onClick={handleClose}
+            aria-hidden="true"
           />
 
           {/* Panel */}
-          <div className="relative z-10 flex w-full flex-col rounded-t-xl border border-zinc-200 bg-white shadow-xl sm:w-96 sm:rounded-xl"
-            style={{ maxHeight: "80vh" }}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="AI Assist"
+            className="relative z-10 flex w-full flex-col rounded-t-xl border border-zinc-200 bg-white shadow-xl sm:w-96 sm:rounded-xl"
+            style={{ maxHeight: "80vh" }}
+          >
             {/* Header */}
             <div className="flex flex-shrink-0 items-center justify-between border-b border-zinc-100 px-4 py-3">
               <div className="flex items-center gap-2">
@@ -140,7 +157,8 @@ export function AIAssist({
                 <span className="text-sm font-semibold text-zinc-900">AI Assist</span>
               </div>
               <button
-                onClick={() => setOpen(false)}
+                onClick={handleClose}
+                aria-label="Close"
                 className="rounded-md p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

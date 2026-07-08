@@ -67,10 +67,17 @@ function PersonSearch({
     return () => document.removeEventListener("mousedown", onMouseDown);
   }, []);
 
+  const listboxId = "relationship-person-listbox";
+
   return (
     <div ref={containerRef} className="relative">
       <input
         type="text"
+        role="combobox"
+        aria-expanded={open && results.length > 0}
+        aria-autocomplete="list"
+        aria-controls={listboxId}
+        aria-haspopup="listbox"
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);
@@ -89,10 +96,16 @@ function PersonSearch({
       <input type="hidden" name="related_person_id" value={selectedId} />
 
       {open && results.length > 0 && (
-        <div className="absolute top-full left-0 right-0 z-10 mt-1 overflow-hidden rounded-md border border-zinc-200 bg-white shadow-lg">
+        <div
+          id={listboxId}
+          role="listbox"
+          className="absolute top-full left-0 right-0 z-10 mt-1 overflow-hidden rounded-md border border-zinc-200 bg-white shadow-lg"
+        >
           {results.map((p) => (
             <button
               key={p.id}
+              role="option"
+              aria-selected={selectedId === p.id}
               type="button"
               onMouseDown={(e) => {
                 // prevent blur from firing before click
@@ -146,6 +159,7 @@ function AddRelationshipForm({
             id="relationship_type"
             name="relationship_type"
             defaultValue=""
+            required
             disabled={isPending}
             className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-400 disabled:opacity-50"
           >

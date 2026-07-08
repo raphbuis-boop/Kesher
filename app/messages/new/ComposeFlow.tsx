@@ -430,6 +430,8 @@ export function ComposeFlow({
     if (c === "sms") setAttachments([]);
     setUploadError(null);
     setRecipientPreviews(null);
+    setRecipientTotal(0);
+    setShowRecipientPreviews(false);
   }
 
   function handleToggleRecipientPreviews() {
@@ -1006,12 +1008,15 @@ export function ComposeFlow({
     {confirmRecipients && (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setConfirmRecipients(null)}>
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="confirm-send-title"
           className="w-full max-w-md rounded-xl border border-zinc-200 bg-white shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           <div className="border-b border-zinc-100 px-5 py-4">
-            <h2 className="text-sm font-semibold text-zinc-900">
+            <h2 id="confirm-send-title" className="text-sm font-semibold text-zinc-900">
               Confirm send to {confirmRecipients.length.toLocaleString()} {confirmRecipients.length === 1 ? "recipient" : "recipients"}
             </h2>
             <p className="mt-0.5 text-xs text-zinc-500">

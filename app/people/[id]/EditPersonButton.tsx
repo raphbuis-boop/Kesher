@@ -293,7 +293,7 @@ function EditPersonForm({
 
       {/* ── Notes ─────────────────────────────────────────────────────── */}
       <Divider />
-      <SectionLabel>Notes</SectionLabel>
+      <label htmlFor="ep_notes" className="mb-3 block text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">Notes</label>
       <textarea
         id="ep_notes"
         name="notes"

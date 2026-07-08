@@ -113,7 +113,7 @@ export default async function AudiencesPage() {
                         <div className="flex items-center justify-end gap-3">
                           <Link
                             href={`/messages/new?audiences=${a.slug}`}
-                            className="text-[11px] font-medium text-[#a1a1aa] hover:text-[#0f0f0f] transition-colors opacity-0 group-hover:opacity-100"
+                            className="text-[11px] font-medium text-[#a1a1aa] hover:text-[#0f0f0f] transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
                           >
                             Message
                           </Link>
@@ -193,7 +193,7 @@ export default async function AudiencesPage() {
                           <div className="flex items-center justify-end gap-3">
                             <Link
                               href={`/messages/new?audiences=${g.id}`}
-                              className="text-[11px] font-medium text-[#a1a1aa] hover:text-[#0f0f0f] transition-colors opacity-0 group-hover:opacity-100"
+                              className="text-[11px] font-medium text-[#a1a1aa] hover:text-[#0f0f0f] transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
                             >
                               Message
                             </Link>

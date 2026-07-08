@@ -91,10 +91,13 @@ export default async function MessagesPage({
           </div>
         </div>
 
-        <div className="flex px-6 gap-0">
+        <div role="tablist" className="flex px-6 gap-0">
           {TABS.map((t) => (
             <Link
               key={t.key}
+              role="tab"
+              aria-selected={activeTab === t.key}
+              aria-current={activeTab === t.key ? "page" : undefined}
               href={t.key === "sent" ? "/messages" : `/messages?tab=${t.key}`}
               className={[
                 "inline-flex items-center gap-1.5 border-b-[1.5px] px-1 mr-4 pb-2.5 pt-0 text-[12px] font-medium transition-all duration-100",
@@ -229,7 +232,7 @@ export default async function MessagesPage({
                           </span>
                           <Link
                             href={`/messages/${msg.id}`}
-                            className="text-[10px] font-medium text-[#a1a1aa] opacity-0 group-hover:opacity-100 transition-opacity hover:text-[#0f0f0f]"
+                            className="text-[10px] font-medium text-[#a1a1aa] opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity hover:text-[#0f0f0f]"
                           >
                             View →
                           </Link>

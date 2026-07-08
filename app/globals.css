@@ -41,6 +41,14 @@ body {
   :root { scroll-behavior: smooth; }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 ::selection {
   background: #0f0f0f;
   color: #ffffff;
