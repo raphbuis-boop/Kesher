@@ -5,7 +5,7 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ error?: string; next?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, next } = await searchParams;
 
   return (
     <div className="flex flex-1 items-center justify-center bg-zinc-50 px-4 py-12">
@@ -26,16 +26,17 @@ export default async function LoginPage({
               {decodeURIComponent(error)}
             </div>
           )}
-          <LoginForm />
+          <LoginForm next={next} />
         </div>
       </div>
     </div>
   );
 }
 
-function LoginForm() {
+function LoginForm({ next }: { next?: string }) {
   return (
     <form action={signIn} className="flex flex-col gap-4">
+      <input type="hidden" name="next" value={next ?? "/dashboard"} />
       <div className="flex flex-col gap-1.5">
         <label
           htmlFor="email"

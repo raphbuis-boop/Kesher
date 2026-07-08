@@ -23,7 +23,7 @@ type NavItemDef = {
 };
 
 const PRIMARY_NAV: NavItemDef[] = [
-  { href: "/", label: "Overview", icon: LayoutDashboard, exact: true },
+  { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
   { href: "/people", label: "People", icon: Users },
   { href: "/audiences", label: "Audiences", icon: Layers, extra: ["/groups"] },
   { href: "/messages", label: "Messages", icon: MessageSquare },
@@ -63,7 +63,7 @@ function NavItem({ href, label, icon: Icon, exact = false, extra = [] }: NavItem
 export function Nav() {
   const pathname = usePathname();
   // Public pages — no app chrome
-  if (pathname === "/login" || pathname === "/home" || pathname === "/privacy" || pathname === "/sms-terms" || pathname === "/terms" || pathname === "/contact" || pathname === "/cta" || pathname === "/opt-in") return null;
+  if (pathname === "/" || pathname === "/login" || pathname === "/privacy" || pathname === "/sms-terms" || pathname === "/terms" || pathname === "/contact" || pathname === "/cta" || pathname === "/opt-in") return null;
 
   return (
     <nav

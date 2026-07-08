@@ -12,10 +12,10 @@ export const config = {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow unauthenticated access to login, public legal pages, and webhook endpoints
+  // Allow unauthenticated access to the public landing page, login, legal pages, and webhook endpoints
   if (
+    pathname === "/" ||
     pathname === "/login" ||
-    pathname === "/home" ||
     pathname === "/privacy" ||
     pathname === "/sms-terms" ||
     pathname === "/terms" ||
