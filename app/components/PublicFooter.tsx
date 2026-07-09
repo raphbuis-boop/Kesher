@@ -64,6 +64,24 @@ export function PublicFooter() {
               >
                 Terms of Service
               </Link>
+              <Link
+                href="/cta"
+                className="text-[12px] text-zinc-500 hover:text-zinc-900 transition-colors duration-150"
+              >
+                CTA Documentation
+              </Link>
+              <Link
+                href="/opt-in"
+                className="text-[12px] text-zinc-500 hover:text-zinc-900 transition-colors duration-150"
+              >
+                Opt-In Documentation
+              </Link>
+              <Link
+                href="/sample-form"
+                className="text-[12px] text-zinc-500 hover:text-zinc-900 transition-colors duration-150"
+              >
+                Sample Opt-In Form
+              </Link>
             </nav>
 
             {/* Column 2 — Contact */}

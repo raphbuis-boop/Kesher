@@ -722,10 +722,11 @@ function ComplianceSection() {
           <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-zinc-400 mb-4">Compliance Documentation</p>
           <div className="flex flex-wrap gap-3">
             {[
-              { label: "SMS Terms & Conditions",    href: "/sms-terms"  },
-              { label: "Privacy Policy",             href: "/privacy"    },
-              { label: "Call-to-Action (CTA) Docs", href: "/cta"        },
-              { label: "Terms of Service",           href: "/terms"      },
+              { label: "SMS Terms & Conditions",    href: "/sms-terms"    },
+              { label: "Privacy Policy",             href: "/privacy"      },
+              { label: "Call-to-Action (CTA) Docs", href: "/cta"          },
+              { label: "Sample Opt-In Form",         href: "/sample-form"  },
+              { label: "Terms of Service",           href: "/terms"        },
             ].map(({ label, href }) => (
               <Link
                 key={href}
@@ -780,9 +781,10 @@ function ForReviewersSection() {
             </div>
             <div className="flex flex-wrap gap-2.5">
               {[
-                { label: "CTA Documentation",     href: "/cta"       },
-                { label: "SMS Terms & Conditions", href: "/sms-terms" },
-                { label: "Privacy Policy",         href: "/privacy"   },
+                { label: "Sample Opt-In Form",     href: "/sample-form" },
+                { label: "CTA Documentation",      href: "/cta"         },
+                { label: "SMS Terms & Conditions", href: "/sms-terms"   },
+                { label: "Privacy Policy",         href: "/privacy"     },
               ].map(({ label, href }) => (
                 <Link
                   key={href}
@@ -957,10 +959,11 @@ function LandingFooter() {
             </nav>
             <nav className="flex flex-col gap-2.5" aria-label="Legal">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-0.5">Legal</p>
-              <Link href="/privacy"    className="text-[12px] text-zinc-500 hover:text-zinc-900 transition-colors">Privacy Policy</Link>
+              <Link href="/privacy"      className="text-[12px] text-zinc-500 hover:text-zinc-900 transition-colors">Privacy Policy</Link>
               <Link href="/sms-terms"  className="text-[12px] text-zinc-500 hover:text-zinc-900 transition-colors">SMS Terms</Link>
               <Link href="/terms"      className="text-[12px] text-zinc-500 hover:text-zinc-900 transition-colors">Terms of Service</Link>
               <Link href="/cta"        className="text-[12px] text-zinc-500 hover:text-zinc-900 transition-colors">CTA Documentation</Link>
+              <Link href="/sample-form" className="text-[12px] text-zinc-500 hover:text-zinc-900 transition-colors">Sample Opt-In Form</Link>
             </nav>
             <div className="flex flex-col gap-2.5">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-0.5">Contact</p>

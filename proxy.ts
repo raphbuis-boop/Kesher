@@ -22,6 +22,7 @@ export async function proxy(request: NextRequest) {
     pathname === "/contact" ||
     pathname === "/cta" ||
     pathname === "/opt-in" ||
+    pathname === "/sample-form" ||
     pathname.startsWith("/api/webhooks/")
   ) {
     return NextResponse.next();

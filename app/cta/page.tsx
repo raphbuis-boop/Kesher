@@ -107,7 +107,9 @@ export default function CtaDocumentation() {
                 updates, and other school-related communications. Message frequency varies.
                 Message and data rates may apply. Reply <strong>STOP</strong> to opt out at any
                 time. Reply <strong>HELP</strong> for help. View our privacy policy at{" "}
-                <span className="underline">{WEBSITE}/privacy</span>.
+                <span className="underline">{WEBSITE}/privacy</span> and SMS Terms at{" "}
+                <span className="underline">{WEBSITE}/sms-terms</span>.{" "}
+                <strong>Consent to receive text messages is not a condition of enrollment or any purchase.</strong>
               </p>
             </div>
 
@@ -123,7 +125,10 @@ export default function CtaDocumentation() {
                 attendance alerts. Msg &amp; data rates may apply. Frequency varies by school
                 activity. You may opt out at any time by replying <strong>STOP</strong>.
                 For support, reply <strong>HELP</strong> or contact{" "}
-                <span className="underline">{SUPPORT_EMAIL}</span>.
+                <span className="underline">{SUPPORT_EMAIL}</span>. View our privacy policy at{" "}
+                <span className="underline">{WEBSITE}/privacy</span> and SMS Terms at{" "}
+                <span className="underline">{WEBSITE}/sms-terms</span>.{" "}
+                <strong>Consent is not a condition of enrollment or any purchase.</strong>
               </p>
             </div>
           </section>
