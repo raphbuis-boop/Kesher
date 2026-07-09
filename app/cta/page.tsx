@@ -277,8 +277,8 @@ export default function CtaDocumentation() {
             </p>
             <div className="border border-zinc-200 rounded-lg p-4 bg-zinc-50 mt-4">
               <p className="text-[14px] text-zinc-700 italic">
-                "[School Name] via Kesher School Comms. For support: {SUPPORT_EMAIL} or
-                {WEBSITE}. Msg &amp; data rates may apply. Reply STOP to opt out."
+                &ldquo;[School Name] via Kesher School Comms. For support:{" "}
+                {SUPPORT_EMAIL} or {WEBSITE}. Msg &amp; data rates may apply. Reply STOP to opt out.&rdquo;
               </p>
             </div>
           </section>

@@ -179,8 +179,8 @@ export default function OptInDocumentation() {
                   HELP Response (support information)
                 </p>
                 <p className="text-[14px] text-zinc-700 italic">
-                  "[School Name] via Kesher School Comms. For support: {SUPPORT_EMAIL}
-                  or {WEBSITE}. Msg &amp; data rates may apply. Reply STOP to opt out."
+                  &ldquo;[School Name] via Kesher School Comms. For support:{" "}
+                  {SUPPORT_EMAIL} or {WEBSITE}. Msg &amp; data rates may apply. Reply STOP to opt out.&rdquo;
                 </p>
               </div>
 
