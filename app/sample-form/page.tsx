@@ -111,12 +111,8 @@ export default function SampleFormPage() {
 
               {/* The opt-in checkbox and disclosure */}
               <div className="flex gap-3 items-start">
-                {/* Checkbox (visual only) */}
-                <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 border-blue-400 bg-blue-500">
-                  {/* Checkmark SVG */}
-                  <svg width="11" height="9" viewBox="0 0 11 9" fill="none" aria-hidden="true">
-                    <path d="M1 4.5L4 7.5L10 1.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                {/* Checkbox (visual only — shown unchecked to demonstrate explicit opt-in; user must actively check) */}
+                <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 border-zinc-400 bg-white">
                 </div>
 
                 {/* Disclosure text */}
@@ -272,7 +268,7 @@ export default function SampleFormPage() {
               <p className="text-[12px] font-semibold text-zinc-600">
                 Online Parent Portal — Account Registration
               </p>
-              <p className="text-[11px] text-zinc-400 mt-0.5">portal.mappleridgedayschool.edu / Account Setup</p>
+              <p className="text-[11px] text-zinc-400 mt-0.5">portal.mapleridgedayschool.edu / Account Setup</p>
             </div>
             <div className="px-6 py-6">
               <div className="flex gap-3 items-start">
