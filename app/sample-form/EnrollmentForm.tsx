@@ -3,8 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 
-const SUPPORT_EMAIL = "help@kesherhq.co";
-
 const CTA_ITEMS = [
   "Brand name: Maple Ridge Day School via Kesher",
   "Message types described",

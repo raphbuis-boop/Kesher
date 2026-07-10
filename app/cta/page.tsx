@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 const EFFECTIVE_DATE = "July 6, 2026";
-const SUPPORT_EMAIL  = "help@kesherhq.co";
+const CONTACT_EMAIL  = "contact@kesherhq.co";
 const COMPANY_NAME   = "Kesher";
 const WEBSITE        = "https://www.kesherhq.co";
 
@@ -125,7 +125,7 @@ export default function CtaDocumentation() {
                 attendance alerts. Msg &amp; data rates may apply. Frequency varies by school
                 activity. You may opt out at any time by replying <strong>STOP</strong>.
                 For support, reply <strong>HELP</strong> or contact{" "}
-                <span className="underline">{SUPPORT_EMAIL}</span>. View our privacy policy at{" "}
+                <span className="underline">{CONTACT_EMAIL}</span>. View our privacy policy at{" "}
                 <span className="underline">{WEBSITE}/privacy</span> and SMS Terms at{" "}
                 <span className="underline">{WEBSITE}/sms-terms</span>.{" "}
                 <strong>Consent is not a condition of enrollment or any purchase.</strong>
@@ -278,7 +278,7 @@ export default function CtaDocumentation() {
             <div className="border border-zinc-200 rounded-lg p-4 bg-zinc-50 mt-4">
               <p className="text-[14px] text-zinc-700 italic">
                 &ldquo;[School Name] via Kesher School Comms. For support:{" "}
-                {SUPPORT_EMAIL} or {WEBSITE}. Msg &amp; data rates may apply. Reply STOP to opt out.&rdquo;
+                {CONTACT_EMAIL} or {WEBSITE}. Msg &amp; data rates may apply. Reply STOP to opt out.&rdquo;
               </p>
             </div>
           </section>
@@ -307,7 +307,7 @@ export default function CtaDocumentation() {
               <p><strong>{COMPANY_NAME}</strong></p>
               <p>
                 Email:{" "}
-                <a href={`mailto:${SUPPORT_EMAIL}`} className="underline underline-offset-2">{SUPPORT_EMAIL}</a>
+                <a href={`mailto:${CONTACT_EMAIL}`} className="underline underline-offset-2">{CONTACT_EMAIL}</a>
               </p>
               <p>
                 Website:{" "}

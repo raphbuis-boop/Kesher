@@ -28,7 +28,6 @@ export const metadata: Metadata = {
 };
 
 const CONTACT_EMAIL = "contact@kesherhq.co";
-const SUPPORT_EMAIL  = "help@kesherhq.co";
 const DEMO_MAILTO   = `mailto:${CONTACT_EMAIL}?subject=Demo%20Request%20%E2%80%94%20Kesher`;
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
@@ -762,7 +761,7 @@ function ForReviewersSection() {
                 { label: "Message content", value: "Announcements, emergency alerts, event reminders, attendance, schedule changes" },
                 { label: "Opt-out",         value: "STOP keyword — processed in real time, suppressed permanently" },
                 { label: "Help response",   value: "HELP keyword triggers automated message with support contact" },
-                { label: "Contact",         value: SUPPORT_EMAIL },
+                { label: "Contact",         value: CONTACT_EMAIL },
               ].map(({ label, value }) => (
                 <div key={label} className="flex gap-4 py-2 border-b border-zinc-100 last:border-0">
                   <span className="w-32 shrink-0 text-[12px] font-semibold text-zinc-500">{label}</span>
@@ -786,11 +785,11 @@ function ForReviewersSection() {
                 </Link>
               ))}
               <a
-                href={`mailto:${SUPPORT_EMAIL}`}
+                href={`mailto:${CONTACT_EMAIL}`}
                 className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-[12px] font-medium text-zinc-700 hover:bg-zinc-100 transition-colors"
               >
                 <Mail size={12} strokeWidth={1.75} className="text-zinc-400" />
-                {SUPPORT_EMAIL}
+                {CONTACT_EMAIL}
               </a>
             </div>
           </div>
@@ -833,7 +832,7 @@ function ContactSection() {
                 <ArrowRight size={14} className="text-zinc-300 group-hover:text-zinc-500 shrink-0 transition-colors" strokeWidth={2} />
               </a>
               <a
-                href={`mailto:${SUPPORT_EMAIL}`}
+                href={`mailto:${CONTACT_EMAIL}`}
                 className="flex items-center gap-4 rounded-xl border border-zinc-200 bg-white px-5 py-4 hover:border-zinc-300 hover:shadow-sm transition-all duration-150 group"
               >
                 <div className="h-10 w-10 shrink-0 rounded-lg border border-zinc-200 bg-zinc-50 flex items-center justify-center">
@@ -841,7 +840,7 @@ function ContactSection() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-semibold text-[#0f0f0f]">Questions &amp; Support</p>
-                  <p className="text-[12px] text-zinc-500">{SUPPORT_EMAIL}</p>
+                  <p className="text-[12px] text-zinc-500">{CONTACT_EMAIL}</p>
                 </div>
                 <ArrowRight size={14} className="text-zinc-300 group-hover:text-zinc-500 shrink-0 transition-colors" strokeWidth={2} />
               </a>
@@ -904,11 +903,11 @@ function CtaSection() {
             <ArrowRight size={14} strokeWidth={2} />
           </a>
           <a
-            href={`mailto:${SUPPORT_EMAIL}`}
+            href={`mailto:${CONTACT_EMAIL}`}
             className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-5 py-2.5 text-[14px] font-medium text-zinc-300 hover:border-zinc-500 hover:text-white transition-colors"
           >
             <Mail size={14} strokeWidth={1.75} />
-            {SUPPORT_EMAIL}
+            {CONTACT_EMAIL}
           </a>
         </div>
       </div>
@@ -957,8 +956,6 @@ function LandingFooter() {
             <div className="flex flex-col gap-2.5">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-0.5">Contact</p>
               <a href={`mailto:${CONTACT_EMAIL}`}  className="text-[12px] text-zinc-500 hover:text-zinc-900 transition-colors">{CONTACT_EMAIL}</a>
-              <a href={`mailto:${SUPPORT_EMAIL}`}  className="text-[12px] text-zinc-500 hover:text-zinc-900 transition-colors">{SUPPORT_EMAIL}</a>
-              <a href="mailto:privacy@kesherhq.co" className="text-[12px] text-zinc-500 hover:text-zinc-900 transition-colors">privacy@kesherhq.co</a>
             </div>
           </div>
         </div>

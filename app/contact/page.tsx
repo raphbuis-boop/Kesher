@@ -7,8 +7,7 @@ export const metadata: Metadata = {
   description: "Contact Kesher for general support and privacy questions.",
 };
 
-const SUPPORT_EMAIL = "help@kesherhq.co";
-const PRIVACY_EMAIL = "privacy@kesherhq.co";
+const CONTACT_EMAIL = "contact@kesherhq.co";
 
 export default function ContactPage() {
   return (
@@ -42,10 +41,10 @@ export default function ContactPage() {
               General Support
             </p>
             <a
-              href={`mailto:${SUPPORT_EMAIL}`}
+              href={`mailto:${CONTACT_EMAIL}`}
               className="text-[15px] font-medium text-zinc-900 hover:text-blue-600 transition-colors duration-150 block"
             >
-              {SUPPORT_EMAIL}
+              {CONTACT_EMAIL}
             </a>
             <p className="text-sm text-zinc-400 mt-2 leading-relaxed">
               Questions about the platform, your account, or sending messages.
@@ -57,10 +56,10 @@ export default function ContactPage() {
               Privacy Questions
             </p>
             <a
-              href={`mailto:${PRIVACY_EMAIL}`}
+              href={`mailto:${CONTACT_EMAIL}`}
               className="text-[15px] font-medium text-zinc-900 hover:text-blue-600 transition-colors duration-150 block"
             >
-              {PRIVACY_EMAIL}
+              {CONTACT_EMAIL}
             </a>
             <p className="text-sm text-zinc-400 mt-2 leading-relaxed">
               Data requests, opt-out assistance, and privacy policy inquiries.

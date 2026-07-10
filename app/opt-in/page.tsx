@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 const EFFECTIVE_DATE = "July 6, 2026";
-const SUPPORT_EMAIL  = "help@kesherhq.co";
+const CONTACT_EMAIL  = "contact@kesherhq.co";
 const COMPANY_NAME   = "Kesher";
 const WEBSITE        = "https://www.kesherhq.co";
 
@@ -180,7 +180,7 @@ export default function OptInDocumentation() {
                 </p>
                 <p className="text-[14px] text-zinc-700 italic">
                   &ldquo;[School Name] via Kesher School Comms. For support:{" "}
-                  {SUPPORT_EMAIL} or {WEBSITE}. Msg &amp; data rates may apply. Reply STOP to opt out.&rdquo;
+                  {CONTACT_EMAIL} or {WEBSITE}. Msg &amp; data rates may apply. Reply STOP to opt out.&rdquo;
                 </p>
               </div>
 
@@ -313,7 +313,7 @@ export default function OptInDocumentation() {
               <p><strong>{COMPANY_NAME}</strong></p>
               <p>
                 Email:{" "}
-                <a href={`mailto:${SUPPORT_EMAIL}`} className="underline underline-offset-2">{SUPPORT_EMAIL}</a>
+                <a href={`mailto:${CONTACT_EMAIL}`} className="underline underline-offset-2">{CONTACT_EMAIL}</a>
               </p>
               <p>
                 Website:{" "}

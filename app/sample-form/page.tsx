@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     "A representative sample of the SMS consent opt-in language used on school enrollment forms in the Kesher messaging platform. Provided for carrier compliance review.",
 };
 
-const SUPPORT_EMAIL = "help@kesherhq.co";
+const CONTACT_EMAIL = "contact@kesherhq.co";
 const WEBSITE = "https://www.kesherhq.co";
 
 export default function SampleFormPage() {
@@ -138,8 +138,8 @@ export default function SampleFormPage() {
                     Frequency varies by school activity. Reply <strong>STOP</strong> to
                     opt out at any time. For support, reply <strong>HELP</strong> or
                     contact{" "}
-                    <a href={`mailto:${SUPPORT_EMAIL}`} className="underline underline-offset-2 text-blue-600">
-                      {SUPPORT_EMAIL}
+                    <a href={`mailto:${CONTACT_EMAIL}`} className="underline underline-offset-2 text-blue-600">
+                      {CONTACT_EMAIL}
                     </a>
                     . View our{" "}
                     <Link href="/privacy" className="underline underline-offset-2 text-blue-600">
@@ -176,7 +176,7 @@ export default function SampleFormPage() {
               {
                 keyword: "HELP",
                 label: "Support Response",
-                response: `[Maple Ridge Day School] via Kesher School Comms. For support: ${SUPPORT_EMAIL} or ${WEBSITE}. Msg & data rates may apply. Reply STOP to opt out.`,
+                response: `[Maple Ridge Day School] via Kesher School Comms. For support: ${CONTACT_EMAIL} or ${WEBSITE}. Msg & data rates may apply. Reply STOP to opt out.`,
               },
               {
                 keyword: "UNSTOP",
@@ -210,8 +210,8 @@ export default function SampleFormPage() {
           </p>
           <p className="text-[13px] text-zinc-600">
             Email:{" "}
-            <a href={`mailto:${SUPPORT_EMAIL}`} className="underline underline-offset-2">
-              {SUPPORT_EMAIL}
+            <a href={`mailto:${CONTACT_EMAIL}`} className="underline underline-offset-2">
+              {CONTACT_EMAIL}
             </a>
           </p>
           <p className="text-[13px] text-zinc-600 mt-1">

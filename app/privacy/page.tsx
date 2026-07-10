@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 const EFFECTIVE_DATE = "July 6, 2026";
-const CONTACT_EMAIL  = "privacy@kesherhq.co";
+const CONTACT_EMAIL  = "contact@kesherhq.co";
 const COMPANY_NAME   = "Kesher";
 const WEBSITE        = "https://www.kesherhq.co";
 

@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 const EFFECTIVE_DATE = "July 6, 2026";
-const SUPPORT_EMAIL  = "help@kesherhq.co";
+const CONTACT_EMAIL  = "contact@kesherhq.co";
 const COMPANY_NAME   = "Kesher";
 const WEBSITE        = "https://www.kesherhq.co";
 
@@ -64,7 +64,7 @@ export default function TermsOfService() {
               administrators are responsible for maintaining the security of their login
               credentials and for all activity that occurs under their account. You must
               notify us immediately at{" "}
-              <a href={`mailto:${SUPPORT_EMAIL}`} className="underline underline-offset-2">{SUPPORT_EMAIL}</a>{" "}
+              <a href={`mailto:${CONTACT_EMAIL}`} className="underline underline-offset-2">{CONTACT_EMAIL}</a>{" "}
               of any unauthorized use of your account.
             </p>
           </section>
@@ -220,7 +220,7 @@ export default function TermsOfService() {
               <p><strong>{COMPANY_NAME}</strong></p>
               <p>
                 Email:{" "}
-                <a href={`mailto:${SUPPORT_EMAIL}`} className="underline underline-offset-2">{SUPPORT_EMAIL}</a>
+                <a href={`mailto:${CONTACT_EMAIL}`} className="underline underline-offset-2">{CONTACT_EMAIL}</a>
               </p>
               <p>
                 Website:{" "}

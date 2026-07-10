@@ -46,7 +46,7 @@ const HELP_KEYWORDS   = new Set(["HELP", "INFO"]);
 const STOP_CONFIRMATION =
   "Kesher: You have been unsubscribed from school notifications. " +
   "No further messages will be sent. Reply UNSTOP to re-subscribe. " +
-  "Questions? help@kesherhq.co";
+  "Questions? contact@kesherhq.co";
 
 const UNSTOP_CONFIRMATION =
   "Kesher: You have been re-subscribed to school notifications. " +
@@ -55,7 +55,7 @@ const UNSTOP_CONFIRMATION =
 const HELP_RESPONSE =
   "Kesher School Communications. " +
   "Reply STOP to opt out. Reply UNSTOP to re-subscribe. " +
-  "Msg & Data rates may apply. Support: help@kesherhq.co | kesherhq.co/sms-terms";
+  "Msg & Data rates may apply. Support: contact@kesherhq.co | kesherhq.co/sms-terms";
 
 // ─── Send auto-response via Sinch Conversation API ───────────────────────────
 

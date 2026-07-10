@@ -1,7 +1,6 @@
 import Link from "next/link";
 
-const SUPPORT_EMAIL = "help@kesherhq.co";
-const PRIVACY_EMAIL = "privacy@kesherhq.co";
+const CONTACT_EMAIL = "contact@kesherhq.co";
 
 /**
  * Polished site footer for all public-facing pages.
@@ -96,16 +95,10 @@ export function PublicFooter() {
                 Contact Us
               </Link>
               <a
-                href={`mailto:${SUPPORT_EMAIL}`}
+                href={`mailto:${CONTACT_EMAIL}`}
                 className="text-[12px] text-zinc-500 hover:text-zinc-900 transition-colors duration-150"
               >
-                {SUPPORT_EMAIL}
-              </a>
-              <a
-                href={`mailto:${PRIVACY_EMAIL}`}
-                className="text-[12px] text-zinc-500 hover:text-zinc-900 transition-colors duration-150"
-              >
-                {PRIVACY_EMAIL}
+                {CONTACT_EMAIL}
               </a>
             </div>
 

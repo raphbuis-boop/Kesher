@@ -6,8 +6,7 @@ import { usePathname } from "next/navigation";
 // Pages that render their own footer — suppress AppFooter on these
 const PUBLIC_ROUTES = new Set(["/", "/privacy", "/sms-terms", "/terms", "/contact", "/cta", "/opt-in", "/sample-form"]);
 
-const SUPPORT_EMAIL = "help@kesherhq.co";
-const PRIVACY_EMAIL = "privacy@kesherhq.co";
+const CONTACT_EMAIL = "contact@kesherhq.co";
 
 /**
  * Site footer rendered inside <main> in the root layout.
@@ -82,16 +81,10 @@ export function AppFooter() {
               Contact Us
             </Link>
             <a
-              href={`mailto:${SUPPORT_EMAIL}`}
+              href={`mailto:${CONTACT_EMAIL}`}
               className="text-[12px] text-zinc-500 hover:text-zinc-900 transition-colors duration-150"
             >
-              {SUPPORT_EMAIL}
-            </a>
-            <a
-              href={`mailto:${PRIVACY_EMAIL}`}
-              className="text-[12px] text-zinc-500 hover:text-zinc-900 transition-colors duration-150"
-            >
-              {PRIVACY_EMAIL}
+              {CONTACT_EMAIL}
             </a>
           </div>
 
