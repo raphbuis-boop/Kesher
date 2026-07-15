@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getOrgId } from "@/lib/org";
 import { AddPersonButton } from "@/app/people/AddPersonButton";
 import { AddContactsButton } from "./AddContactsButton";
 import { removeContactFromGroup } from "@/app/groups/actions";
@@ -72,6 +73,7 @@ export default async function AudiencePage({
   searchParams: Promise<{ q?: string; tag?: string; grade?: string }>;
 }) {
   const supabase = await createSupabaseServerClient();
+  const orgId = await getOrgId();
 
   const { slug } = await params;
   const { q, tag: activeTag, grade: activeGrade } = await searchParams;
@@ -90,6 +92,7 @@ export default async function AudiencePage({
   const { data: allTagsData } = await supabase
     .from("tags")
     .select("id, name")
+    .eq("org_id", orgId)
     .order("name");
   const allTags = (allTagsData ?? []) as Tag[];
 
@@ -102,6 +105,7 @@ export default async function AudiencePage({
       .select(
         "id, first_name, last_name, email, phone, categories, grade, person_tags ( tag_id, tags ( id, name ) )"
       )
+      .eq("org_id", orgId)
       .contains("categories", [systemConfig!.category])
       .order("last_name");
 
@@ -111,6 +115,7 @@ export default async function AudiencePage({
     const { data: group, error: groupError } = await supabase
       .from("groups")
       .select("id, name, description, group_tags ( tag_id )")
+      .eq("org_id", orgId)
       .eq("id", slug)
       .single();
 
@@ -127,6 +132,7 @@ export default async function AudiencePage({
       .select(
         "id, first_name, last_name, email, phone, categories, grade, person_tags ( tag_id, tags ( id, name ) )"
       )
+      .eq("org_id", orgId)
       .order("last_name");
 
     if (error) throw new Error(error.message);

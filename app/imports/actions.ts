@@ -1,6 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getOrgId } from "@/lib/org";
 import { revalidatePath } from "next/cache";
 
 export type ParsedRow = {
@@ -24,6 +25,7 @@ export async function importPeople(
   formData: FormData
 ): Promise<ImportActionState> {
   const supabase = await createSupabaseServerClient();
+  const orgId = await getOrgId();
   const fileName =
     (formData.get("file_name") as string | null)?.trim() || "import.csv";
   const rowsJson = formData.get("rows") as string | null;
@@ -44,7 +46,7 @@ export async function importPeople(
   }
 
   // Fetch all existing tags once for tag name → id resolution
-  const { data: allTags } = await supabase.from("tags").select("id, name");
+  const { data: allTags } = await supabase.from("tags").select("id, name").eq("org_id", orgId);
   const tagsByName = new Map(
     (allTags ?? []).map((t) => [t.name.toLowerCase().trim(), t.id as string])
   );
@@ -71,7 +73,7 @@ export async function importPeople(
 
     const { data: person, error: insertError } = await supabase
       .from("people")
-      .insert({ first_name: firstName, last_name: lastName, email, phone, graduation_year })
+      .insert({ org_id: orgId, first_name: firstName, last_name: lastName, email, phone, graduation_year })
       .select("id")
       .single();
 
@@ -102,6 +104,7 @@ export async function importPeople(
 
   // Record in import history
   await supabase.from("imports").insert({
+    org_id: orgId,
     file_name: fileName,
     imported_count: imported,
     failed_count: failed,

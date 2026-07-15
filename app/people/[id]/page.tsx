@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getOrgId } from "@/lib/org";
 import { EditPersonButton, type Tag } from "./EditPersonButton";
 import { AddRelationshipButton, type PersonOption } from "./AddRelationshipButton";
 import { gradYearLabel } from "@/lib/gradYear";
@@ -129,6 +130,7 @@ export default async function PersonPage({
   params: Promise<{ id: string }>;
 }) {
   const supabase = await createSupabaseServerClient();
+  const orgId = await getOrgId();
 
   const { id } = await params;
 
@@ -139,17 +141,20 @@ export default async function PersonPage({
         .select(
           "id, first_name, last_name, email, phone, whatsapp, address, grade, graduation_year, organization, notes, categories, created_at, person_tags ( tag_id, tags ( id, name ) )"
         )
+        .eq("org_id", orgId)
         .eq("id", id)
         .single(),
-      supabase.from("tags").select("id, name").order("name"),
+      supabase.from("tags").select("id, name").eq("org_id", orgId).order("name"),
       supabase
         .from("relationships")
         .select("id, relationship_type, related_person_id")
+        .eq("org_id", orgId)
         .eq("person_id", id)
         .order("relationship_type"),
       supabase
         .from("people")
         .select("id, first_name, last_name")
+        .eq("org_id", orgId)
         .neq("id", id)
         .order("last_name"),
       supabase

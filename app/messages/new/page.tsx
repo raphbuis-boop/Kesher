@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getOrgId } from "@/lib/org";
 import { ComposeFlow, type AudienceOption } from "./ComposeFlow";
 
 const SYSTEM_AUDIENCES: { slug: string; label: string; category: string }[] = [
@@ -24,11 +25,13 @@ export default async function NewMessagePage({
   const initialAudienceSlugs = audiencesParam ? audiencesParam.split(",") : undefined;
   const fromEmail = process.env.RESEND_FROM_EMAIL ?? "";
   const supabase = await createSupabaseServerClient();
+  const orgId = await getOrgId();
 
   // Fetch all people once — compute all counts in one pass
   const { data: allPeople } = await supabase
     .from("people")
-    .select("id, categories, email, phone");
+    .select("id, categories, email, phone")
+    .eq("org_id", orgId);
 
   const people = (allPeople ?? []) as {
     id: string;
@@ -55,7 +58,7 @@ export default async function NewMessagePage({
 
   // Custom audiences (groups with tag-based membership)
   const [groupsResult, personTagsResult] = await Promise.all([
-    supabase.from("groups").select("id, name, group_tags ( tag_id )").order("name"),
+    supabase.from("groups").select("id, name, group_tags ( tag_id )").eq("org_id", orgId).order("name"),
     supabase.from("person_tags").select("person_id, tag_id"),
   ]);
 

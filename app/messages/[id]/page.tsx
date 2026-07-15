@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { notFound } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getOrgId } from "@/lib/org";
 import { CampaignClient } from "./CampaignClient";
 
 export type CampaignMessage = {
@@ -94,6 +95,7 @@ export default async function CampaignPage({
 }) {
   const { id } = await params;
   const supabase = await createSupabaseServerClient();
+  const orgId = await getOrgId();
 
   const [msgRes, recRes] = await Promise.all([
     supabase
@@ -101,6 +103,7 @@ export default async function CampaignPage({
       .select(
         "id, subject, body, channel, audience_label, audience_slug, recipient_count, sent_count, failed_count, status, sent_at, created_at"
       )
+      .eq("org_id", orgId)
       .eq("id", id)
       .single(),
     supabase

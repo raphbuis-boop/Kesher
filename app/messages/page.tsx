@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getOrgId } from "@/lib/org";
 import { Plus, Mail, Smartphone, MessageSquare, Send } from "lucide-react";
 
 type Message = {
@@ -57,9 +58,11 @@ export default async function MessagesPage({
   const activeTab = tab ?? "sent";
 
   const supabase = await createSupabaseServerClient();
+  const orgId = await getOrgId();
   const { data } = await supabase
     .from("messages")
     .select("id, subject, body, channel, audience_label, recipient_count, sent_count, failed_count, status, sent_at, created_at")
+    .eq("org_id", orgId)
     .order("created_at", { ascending: false });
 
   const messages = (data ?? []) as Message[];

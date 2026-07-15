@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getOrgId } from "@/lib/org";
 
 type PersonRow = {
   id: string;
@@ -20,10 +21,12 @@ type DuplicateGroup = {
 
 export default async function DuplicatesPage() {
   const supabase = await createSupabaseServerClient();
+  const orgId = await getOrgId();
 
   const { data, error } = await supabase
     .from("people")
     .select("id, first_name, last_name, email, phone, categories, created_at")
+    .eq("org_id", orgId)
     .order("last_name");
 
   if (error) {

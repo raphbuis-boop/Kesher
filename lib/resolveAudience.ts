@@ -13,6 +13,7 @@
  */
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getOrgId } from "@/lib/org";
 
 export type FilterNode =
   | { type: "and"; filters: FilterNode[] }
@@ -50,9 +51,11 @@ function matchesNode(person: PersonRow, node: FilterNode): boolean {
 
 export async function resolveAudience(filterConfig: FilterNode): Promise<string[]> {
   const supabase = await createSupabaseServerClient();
+  const orgId = await getOrgId();
   const { data } = await supabase
     .from("people")
-    .select("id, categories, graduation_year");
+    .select("id, categories, graduation_year")
+    .eq("org_id", orgId);
 
   const people = (data ?? []) as PersonRow[];
   return people.filter((p) => matchesNode(p, filterConfig)).map((p) => p.id);

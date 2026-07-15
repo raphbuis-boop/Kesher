@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getOrgId } from "@/lib/org";
 import { AddGroupButton } from "@/app/groups/AddGroupButton";
 import { Plus, Users, ArrowRight } from "lucide-react";
 
@@ -23,10 +24,11 @@ const SYSTEM_AUDIENCES = [
 
 export default async function AudiencesPage() {
   const supabase = await createSupabaseServerClient();
+  const orgId = await getOrgId();
   const [peopleResult, groupPeopleResult, groupsResult] = await Promise.all([
-    supabase.from("people").select("id, categories"),
-    supabase.from("people").select("id, person_tags ( tag_id )"),
-    supabase.from("groups").select("id, name, description, group_tags ( tag_id )").order("name"),
+    supabase.from("people").select("id, categories").eq("org_id", orgId),
+    supabase.from("people").select("id, person_tags ( tag_id )").eq("org_id", orgId),
+    supabase.from("groups").select("id, name, description, group_tags ( tag_id )").eq("org_id", orgId).order("name"),
   ]);
 
   const people = (peopleResult.data ?? []) as unknown as PersonRow[];

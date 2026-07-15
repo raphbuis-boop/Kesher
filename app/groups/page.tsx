@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getOrgId } from "@/lib/org";
 import { AddGroupButton, type Tag } from "./AddGroupButton";
 import { Users } from "lucide-react";
 
@@ -34,13 +35,15 @@ function countMatchingPeople(group: GroupWithTags, people: PersonWithTags[]): nu
 
 export default async function GroupsPage() {
   const supabase = await createSupabaseServerClient();
+  const orgId = await getOrgId();
   const [groupsResult, peopleResult, tagsResult] = await Promise.all([
     supabase
       .from("groups")
       .select("id, name, description, created_at, group_tags ( tag_id )")
+      .eq("org_id", orgId)
       .order("created_at", { ascending: false }),
-    supabase.from("people").select("id, person_tags ( tag_id )"),
-    supabase.from("tags").select("id, name").order("name"),
+    supabase.from("people").select("id, person_tags ( tag_id )").eq("org_id", orgId),
+    supabase.from("tags").select("id, name").eq("org_id", orgId).order("name"),
   ]);
 
   if (groupsResult.error) {

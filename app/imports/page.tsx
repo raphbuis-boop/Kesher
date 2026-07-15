@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getOrgId } from "@/lib/org";
 import { ImportWidget } from "./ImportWidget";
 import { FileText } from "lucide-react";
 
@@ -22,9 +23,11 @@ function formatTime(d: string) {
 
 export default async function ImportsPage() {
   const supabase = await createSupabaseServerClient();
+  const orgId = await getOrgId();
   const { data: imports } = await supabase
     .from("imports")
     .select("id, file_name, imported_count, failed_count, created_at")
+    .eq("org_id", orgId)
     .order("created_at", { ascending: false });
 
   const records = (imports ?? []) as ImportRecord[];
