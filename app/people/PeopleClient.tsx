@@ -389,6 +389,7 @@ export function PeopleClient({
         (p) =>
           p.first_name.toLowerCase().includes(q) ||
           p.last_name.toLowerCase().includes(q) ||
+          `${p.first_name} ${p.last_name}`.toLowerCase().includes(q) ||
           (p.email?.toLowerCase().includes(q) ?? false) ||
           (p.phone?.includes(q) ?? false) ||
           (p.grade?.toLowerCase().includes(q) ?? false) ||
