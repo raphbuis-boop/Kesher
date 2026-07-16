@@ -724,20 +724,9 @@ export function ImportWidget() {
             : "Import did not save any contacts"}
         </p>
 
-        {/* Diagnostic panel — always visible until we confirm the root cause */}
-        <div className="mt-4 rounded-md border border-zinc-200 bg-zinc-50 px-4 py-3 text-left text-xs font-mono space-y-1">
-          <p className="text-zinc-500 font-sans font-semibold text-[11px] uppercase tracking-wide mb-2">Diagnostic</p>
-          <p><span className="text-zinc-400">rows sent:</span> <span className="text-zinc-900">{stage.imported + stage.failed}</span></p>
-          <p><span className="text-zinc-400">reported imported:</span> <span className="text-zinc-900">{stage.imported}</span></p>
-          <p><span className="text-zinc-400">reported failed:</span> <span className="text-zinc-900">{stage.failed}</span></p>
-          <p><span className="text-zinc-400">people count before:</span> <span className="text-zinc-900">{stage.countBefore === -1 ? "could not read" : stage.countBefore}</span></p>
-          <p><span className="text-zinc-400">people count after:</span> <span className={stage.countAfter > stage.countBefore ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>{stage.countAfter === -1 ? "could not read" : stage.countAfter}</span></p>
-          <p><span className="text-zinc-400">db error:</span> <span className={stage.dbError ? "text-red-600" : "text-zinc-400"}>{stage.dbError ?? "none"}</span></p>
-        </div>
-
         {stage.failed > 0 && (
           <p className="mt-3 text-sm text-zinc-500">
-            {stage.failed} {stage.failed === 1 ? "contact" : "contacts"} could not be added — check the db error above.
+            {stage.failed} {stage.failed === 1 ? "contact" : "contacts"} could not be added.
           </p>
         )}
 
