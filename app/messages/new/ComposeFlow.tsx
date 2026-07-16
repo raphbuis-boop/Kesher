@@ -710,56 +710,6 @@ export function ComposeFlow({
                   </svg>
                 </div>
 
-                {/* Greeting toggle — email only */}
-                {channel === "email" && (
-                  <label className="flex cursor-pointer items-center gap-2 select-none">
-                    <div className="relative flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={greetingEnabled}
-                        onChange={(e) => setGreetingEnabled(e.target.checked)}
-                        className="sr-only"
-                      />
-                      <div
-                        className={[
-                          "flex h-4 w-4 items-center justify-center rounded border transition-colors",
-                          greetingEnabled
-                            ? "border-zinc-900 bg-zinc-900"
-                            : "border-zinc-300 bg-white",
-                        ].join(" ")}
-                      >
-                        {greetingEnabled && (
-                          <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-                    <span className="text-xs font-medium text-zinc-600">Personalize greeting</span>
-                  </label>
-                )}
-
-                {/* Greeting template picker — shown when enabled */}
-                {channel === "email" && greetingEnabled && (
-                  <div className="relative">
-                    <select
-                      value={greetingTemplate}
-                      onChange={(e) => setGreetingTemplate(e.target.value)}
-                      className="appearance-none cursor-pointer rounded-md border border-blue-200 bg-blue-50 py-1.5 pl-3 pr-7 text-xs font-medium text-blue-700 outline-none transition-colors hover:border-blue-300 focus:border-blue-300"
-                    >
-                      <option value="Hi {{first_name}},">Hi {"{{first_name}}"},</option>
-                      <option value="Dear {{first_name}},">Dear {"{{first_name}}"},</option>
-                      <option value="Hello {{first_name}},">Hello {"{{first_name}}"},</option>
-                      <option value="Shalom {{first_name}},">Shalom {"{{first_name}}"},</option>
-                    </select>
-                    <svg
-                      className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-blue-400"
-                      fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                    </svg>
-                  </div>
-                )}
               </div>
 
               {/* SMS character count */}
