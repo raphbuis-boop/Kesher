@@ -218,6 +218,7 @@ export default function TermsOfService() {
             <p>Questions about these Terms? Contact us:</p>
             <address className="not-italic mt-4 space-y-1.5">
               <p><strong>{COMPANY_NAME}</strong></p>
+              <p>Operated by La Voral LLC</p>
               <p>
                 Email:{" "}
                 <a href={`mailto:${CONTACT_EMAIL}`} className="underline underline-offset-2">{CONTACT_EMAIL}</a>
