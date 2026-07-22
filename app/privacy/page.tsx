@@ -34,7 +34,10 @@ export default function PrivacyPolicy() {
               1. About This Policy
             </h2>
             <p>
-              {COMPANY_NAME} ("{COMPANY_NAME}", "we", "us", or "our") operates a school
+              Kesher is a product of La Voral LLC (&ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;). This Privacy Policy explains how we collect, use, and protect your information.
+            </p>
+            <p className="mt-4">
+              {COMPANY_NAME} operates a school
               communications platform that enables educational institutions to communicate with
               their communities via email, SMS, and WhatsApp. This Privacy Policy explains how we
               collect, use, share, and protect information when schools and their authorized

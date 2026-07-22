@@ -92,12 +92,9 @@ export function AppFooter() {
       </div>
 
       {/* ── Bottom bar ───────────────────────────────────────────────── */}
-      <div className="border-t border-zinc-100 px-6 py-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+      <div className="border-t border-zinc-100 px-6 py-4">
         <p className="text-[11px] text-zinc-400">
-          © {year} Kesher. All rights reserved.
-        </p>
-        <p className="text-[11px] text-zinc-400">
-          Kesher is a product of La Voral LLC.
+          © {year} Kesher. Kesher is a product of La Voral LLC. All rights reserved.
         </p>
       </div>
 

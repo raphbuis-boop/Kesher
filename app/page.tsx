@@ -974,7 +974,7 @@ function LandingFooter() {
 
       <div className="border-t border-zinc-100">
         <div className="max-w-6xl mx-auto px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-          <p className="text-[11px] text-zinc-400">© {year} Kesher. All rights reserved.</p>
+          <p className="text-[11px] text-zinc-400">© {year} Kesher. Kesher is a product of La Voral LLC. All rights reserved.</p>
           <p className="text-[11px] text-zinc-300">
             Kesher is not affiliated with any individual school. Schools are responsible for obtaining and maintaining consent records.
           </p>

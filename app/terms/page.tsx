@@ -33,6 +33,9 @@ export default function TermsOfService() {
               1. Acceptance of Terms
             </h2>
             <p>
+              These Terms govern your use of Kesher, a product operated by La Voral LLC.
+            </p>
+            <p className="mt-4">
               By accessing or using the Kesher platform ("Service") operated by {COMPANY_NAME}
               ("we", "us", or "our"), you agree to be bound by these Terms of Service ("Terms").
               If you are using Kesher on behalf of a school or organization, you represent
