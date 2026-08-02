@@ -209,6 +209,14 @@ function verifySignature(headers: Headers, rawBody: string): boolean {
   const signedData = `${rawBody}.${nonce}.${timestamp}`;
   const expected   = crypto.createHmac("sha256", appSecret).update(signedData).digest("base64");
 
+  // DEBUG: log body and signed-string lengths to detect truncation/extra bytes
+  console.log(
+    `[sinch-webhook] DEBUG lengths: rawBody=${rawBody.length} nonce=${nonce.length} timestamp=${timestamp.length} signedData=${signedData.length}`
+  );
+  // DEBUG: log first 120 chars of rawBody to spot encoding/whitespace issues
+  console.log(
+    `[sinch-webhook] DEBUG rawBody preview: ${rawBody.slice(0, 120)}`
+  );
   // DEBUG: compare computed vs received (safe to log — reveals no secret)
   console.log(
     `[sinch-webhook] DEBUG signature check: received=${signature} computed=${expected} match=${signature === expected}`
