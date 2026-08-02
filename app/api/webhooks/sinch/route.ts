@@ -166,10 +166,18 @@ type SinchWebhookPayload = {
 
 // Sinch Conversation API signs every webhook with HMAC-SHA256 using the App Secret.
 // Signed payload = rawBody + "." + nonce + "." + timestamp
-// Signature      = base64(HMAC-SHA256(key=appSecret, data=signedPayload))
+// Signature      = base64(HMAC-SHA256(key=base64Decode(appSecret), data=signedPayload))
+// IMPORTANT: The App Secret in the Sinch Dashboard is base64-encoded. It must be
+// decoded to raw bytes before use as the HMAC key.
 // Docs: https://developers.sinch.com/docs/conversation/callbacks/#validating-callbacks
 function verifySignature(headers: Headers, rawBody: string): boolean {
   const appSecret = process.env.SINCH_WEBHOOK_SECRET;
+
+  // DEBUG: log secret presence (length only, never the value)
+  console.log(
+    `[sinch-webhook] DEBUG SINCH_WEBHOOK_SECRET present=${!!appSecret} length=${appSecret?.length ?? 0}`
+  );
+
   if (!appSecret) {
     console.error(
       "[sinch-webhook] SINCH_WEBHOOK_SECRET is not set — rejecting request. " +
@@ -182,6 +190,13 @@ function verifySignature(headers: Headers, rawBody: string): boolean {
   const nonce     = headers.get("x-sinch-webhook-signature-nonce");
   const timestamp = headers.get("x-sinch-webhook-signature-timestamp");
 
+  // DEBUG: log which headers are present/missing
+  console.log(
+    `[sinch-webhook] DEBUG headers: signature=${signature ? "present" : "MISSING"} ` +
+    `nonce=${nonce ? "present" : "MISSING"} ` +
+    `timestamp=${timestamp ? "present" : "MISSING"}`
+  );
+
   if (!signature || !nonce || !timestamp) {
     console.error(
       "[sinch-webhook] Missing signature headers — got: " +
@@ -190,11 +205,26 @@ function verifySignature(headers: Headers, rawBody: string): boolean {
     return false;
   }
 
+  // The App Secret from the Sinch Dashboard is base64-encoded; decode to raw bytes.
+  const keyBytes   = Buffer.from(appSecret, "base64");
   const signedData = `${rawBody}.${nonce}.${timestamp}`;
-  const expected   = crypto.createHmac("sha256", appSecret).update(signedData).digest("base64");
+  const expected   = crypto.createHmac("sha256", keyBytes).update(signedData).digest("base64");
+
+  // DEBUG: compare computed vs received (safe to log — reveals no secret)
+  console.log(
+    `[sinch-webhook] DEBUG signature check: received=${signature} computed=${expected} match=${signature === expected}`
+  );
 
   // Constant-time comparison to prevent timing attacks
-  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+  try {
+    return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+  } catch {
+    // Buffers of different lengths throw — means definite mismatch
+    console.error(
+      `[sinch-webhook] DEBUG timingSafeEqual length mismatch: received.length=${signature.length} computed.length=${expected.length}`
+    );
+    return false;
+  }
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
