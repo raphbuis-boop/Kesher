@@ -2,9 +2,13 @@
  * Sinch Conversation API webhook handler.
  *
  * Signature verification:
- *   Sinch sends x-sinch-webhook-secret header containing the shared secret
- *   configured in Sinch Dashboard → Conversation → Apps → your app → Webhooks.
- *   We compare it against SINCH_WEBHOOK_SECRET env var.
+ *   Sinch sends three headers for HMAC-SHA256 validation:
+ *     x-sinch-webhook-signature           — base64(HMAC-SHA256(key, body.nonce.timestamp))
+ *     x-sinch-webhook-signature-nonce     — random nonce (replay protection)
+ *     x-sinch-webhook-signature-timestamp — unix timestamp of the request
+ *   The signing key is the Sinch Conversation App Secret, stored in SINCH_WEBHOOK_SECRET.
+ *   Set SINCH_WEBHOOK_SECRET to the App Secret shown in Sinch Dashboard →
+ *   Conversation → Apps → your app → Show Credentials → App Secret.
  *
  * Triggers handled:
  *   MESSAGE_DELIVERY_REPORT — delivery status updates (DELIVERED, FAILED, etc.)
@@ -27,9 +31,10 @@
  *   Conversation → Apps → your app → Webhooks → Add Webhook
  *   URL: https://www.kesherhq.co/api/webhooks/sinch
  *   Triggers: MESSAGE_DELIVERY_REPORT, INBOUND_MESSAGE
- *   Secret: set SINCH_WEBHOOK_SECRET to the value you enter in the dashboard
+ *   (No "secret" field in the Sinch webhook form — auth is via App Secret HMAC)
  */
 
+import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
@@ -159,29 +164,37 @@ type SinchWebhookPayload = {
 
 // ─── Signature verification ───────────────────────────────────────────────────
 
-function verifySecret(headers: Headers): boolean {
-  const webhookSecret = process.env.SINCH_WEBHOOK_SECRET;
-  if (!webhookSecret) {
-    // SINCH_WEBHOOK_SECRET is required. Reject all requests if it is unset so
-    // that a misconfigured deployment fails loudly rather than accepting
-    // unauthenticated payloads.
+// Sinch Conversation API signs every webhook with HMAC-SHA256 using the App Secret.
+// Signed payload = rawBody + "." + nonce + "." + timestamp
+// Signature      = base64(HMAC-SHA256(key=appSecret, data=signedPayload))
+// Docs: https://developers.sinch.com/docs/conversation/callbacks/#validating-callbacks
+function verifySignature(headers: Headers, rawBody: string): boolean {
+  const appSecret = process.env.SINCH_WEBHOOK_SECRET;
+  if (!appSecret) {
     console.error(
       "[sinch-webhook] SINCH_WEBHOOK_SECRET is not set — rejecting request. " +
-      "Set this env var to the secret configured in Sinch Dashboard → Webhooks."
+      "Set this to the App Secret from Sinch Dashboard → Conversation → Apps → Show Credentials."
     );
     return false;
   }
 
-  const incoming = headers.get("x-sinch-webhook-secret");
-  if (!incoming) return false;
+  const signature = headers.get("x-sinch-webhook-signature");
+  const nonce     = headers.get("x-sinch-webhook-signature-nonce");
+  const timestamp = headers.get("x-sinch-webhook-signature-timestamp");
+
+  if (!signature || !nonce || !timestamp) {
+    console.error(
+      "[sinch-webhook] Missing signature headers — got: " +
+      `signature=${signature} nonce=${nonce} timestamp=${timestamp}`
+    );
+    return false;
+  }
+
+  const signedData = `${rawBody}.${nonce}.${timestamp}`;
+  const expected   = crypto.createHmac("sha256", appSecret).update(signedData).digest("base64");
 
   // Constant-time comparison to prevent timing attacks
-  if (incoming.length !== webhookSecret.length) return false;
-  let mismatch = 0;
-  for (let i = 0; i < incoming.length; i++) {
-    mismatch |= incoming.charCodeAt(i) ^ webhookSecret.charCodeAt(i);
-  }
-  return mismatch === 0;
+  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
@@ -189,8 +202,8 @@ function verifySecret(headers: Headers): boolean {
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
 
-  if (!verifySecret(req.headers)) {
-    return NextResponse.json({ error: "Invalid secret" }, { status: 401 });
+  if (!verifySignature(req.headers, rawBody)) {
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
   let payload: SinchWebhookPayload;
