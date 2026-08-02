@@ -326,7 +326,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    const fromNumber  = msg.channel_identity.identity;
+    // Sinch delivers inbound numbers without a leading + (e.g. "19172468571").
+    // Normalize to E.164 here so all DB queries match stored contact_value (+1...).
+    const fromNumber  = normalizePhone(msg.channel_identity.identity);
     const toNumber    = process.env.SINCH_SMS_SENDER ?? "";
     const channel     = msg.channel_identity.channel === "WHATSAPP" ? "whatsapp" : "sms";
     const bodyText    =
