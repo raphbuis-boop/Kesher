@@ -36,6 +36,7 @@ type RecipientStatus =
   | "bounced"
   | "complained"
   | "failed"
+  | "opted_out"
   | "sent";
 
 type FilterKey = "all" | "delivered" | "opened" | "not_opened" | "read" | "replied" | "failed";
@@ -58,6 +59,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 function recipientStatus(r: CampaignRecipient): RecipientStatus {
+  if (r.status === "opted_out") return "opted_out";
   if (r.replied_at)          return "replied";
   if (r.complained_at)       return "complained";
   if (r.bounced_at)          return "bounced";
@@ -76,6 +78,7 @@ const STATUS_META: Record<RecipientStatus, { label: string; textColor: string; b
   bounced:   { label: "Bounced",   textColor: "text-amber-700",   bg: "bg-amber-50",   dot: "bg-amber-500"   },
   complained:{ label: "Spam",      textColor: "text-orange-700",  bg: "bg-orange-50",  dot: "bg-orange-500"  },
   failed:    { label: "Failed",    textColor: "text-red-600",     bg: "bg-red-50",     dot: "bg-red-500"     },
+  opted_out: { label: "Opted out", textColor: "text-rose-700",    bg: "bg-rose-50",    dot: "bg-rose-500"    },
   sent:      { label: "Sent",      textColor: "text-[#71717a]",   bg: "bg-[#f5f5f5]", dot: "bg-[#a1a1aa]"  },
 };
 
@@ -422,7 +425,9 @@ function ActivityFeed({
 
     for (const r of recipients) {
       const name = r.name.split(" ")[0];
-      if (r.replied_at) {
+      if (r.replied_at && r.status === "opted_out") {
+        evs.push({ label: `${name} opted out (replied STOP)`, time: r.replied_at, color: "text-rose-600", bg: "bg-rose-50", icon: XCircle });
+      } else if (r.replied_at) {
         evs.push({ label: `${name} replied`, time: r.replied_at, color: "text-violet-600", bg: "bg-violet-50", icon: Reply });
       }
       if (isEmail && r.opened_at) {
@@ -751,8 +756,11 @@ function RecipientDrawer({
     isWhatsApp && recipient.read_at
       ? { label: "Read", time: recipient.read_at, icon: BookOpen, color: "text-blue-600", bg: "bg-blue-50" }
       : null,
-    !isEmail && recipient.replied_at
+    !isEmail && recipient.replied_at && recipient.status !== "opted_out"
       ? { label: "Replied", time: recipient.replied_at, icon: Reply, color: "text-violet-600", bg: "bg-violet-50" }
+      : null,
+    !isEmail && recipient.replied_at && recipient.status === "opted_out"
+      ? { label: "Opted out (replied STOP)", time: recipient.replied_at, icon: XCircle, color: "text-rose-600", bg: "bg-rose-50" }
       : null,
     recipient.bounced_at
       ? { label: `Bounced${recipient.bounce_type ? ` (${recipient.bounce_type})` : ""}`, time: recipient.bounced_at, icon: AlertCircle, color: "text-amber-600", bg: "bg-amber-50" }
@@ -866,6 +874,14 @@ function RecipientDrawer({
               <p className="text-[11px] font-semibold text-red-600">Delivery Failed</p>
               <p className="mt-0.5 text-[12px] text-red-500">
                 {recipient.bounce_type ? `Error code: ${recipient.bounce_type}` : "The message could not be delivered."}
+              </p>
+            </div>
+          )}
+          {status === "opted_out" && (
+            <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3.5">
+              <p className="text-[11px] font-semibold text-rose-700">SMS Opt-Out</p>
+              <p className="mt-0.5 text-[12px] text-rose-500 leading-relaxed">
+                This recipient replied STOP and is opted out of future messages.
               </p>
             </div>
           )}

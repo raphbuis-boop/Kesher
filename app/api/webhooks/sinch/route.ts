@@ -171,12 +171,6 @@ type SinchWebhookPayload = {
 // Docs: https://developers.sinch.com/docs/conversation/callbacks
 function verifySignature(headers: Headers, rawBody: string): boolean {
   const appSecret = process.env.SINCH_WEBHOOK_SECRET;
-
-  // DEBUG: log secret presence (length only, never the value)
-  console.log(
-    `[sinch-webhook] DEBUG SINCH_WEBHOOK_SECRET present=${!!appSecret} length=${appSecret?.length ?? 0}`
-  );
-
   if (!appSecret) {
     console.error(
       "[sinch-webhook] SINCH_WEBHOOK_SECRET is not set — rejecting request. " +
@@ -189,13 +183,6 @@ function verifySignature(headers: Headers, rawBody: string): boolean {
   const nonce     = headers.get("x-sinch-webhook-signature-nonce");
   const timestamp = headers.get("x-sinch-webhook-signature-timestamp");
 
-  // DEBUG: log which headers are present/missing
-  console.log(
-    `[sinch-webhook] DEBUG headers: signature=${signature ? "present" : "MISSING"} ` +
-    `nonce=${nonce ? "present" : "MISSING"} ` +
-    `timestamp=${timestamp ? "present" : "MISSING"}`
-  );
-
   if (!signature || !nonce || !timestamp) {
     console.error(
       "[sinch-webhook] Missing signature headers — got: " +
@@ -204,32 +191,16 @@ function verifySignature(headers: Headers, rawBody: string): boolean {
     return false;
   }
 
-  // Use the App Secret raw (UTF-8) as the HMAC key — Sinch docs confirm this,
-  // their own JS example: crypto.createHmac('sha256', secret).update(signedData).digest('base64')
+  // The App Secret is used raw (UTF-8) as the HMAC key per Sinch Conversation API docs.
+  // Signed payload: rawBody + "." + nonce + "." + timestamp
   const signedData = `${rawBody}.${nonce}.${timestamp}`;
   const expected   = crypto.createHmac("sha256", appSecret).update(signedData).digest("base64");
-
-  // DEBUG: log body and signed-string lengths to detect truncation/extra bytes
-  console.log(
-    `[sinch-webhook] DEBUG lengths: rawBody=${rawBody.length} nonce=${nonce.length} timestamp=${timestamp.length} signedData=${signedData.length}`
-  );
-  // DEBUG: log first 120 chars of rawBody to spot encoding/whitespace issues
-  console.log(
-    `[sinch-webhook] DEBUG rawBody preview: ${rawBody.slice(0, 120)}`
-  );
-  // DEBUG: compare computed vs received (safe to log — reveals no secret)
-  console.log(
-    `[sinch-webhook] DEBUG signature check: received=${signature} computed=${expected} match=${signature === expected}`
-  );
 
   // Constant-time comparison to prevent timing attacks
   try {
     return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
   } catch {
-    // Buffers of different lengths throw — means definite mismatch
-    console.error(
-      `[sinch-webhook] DEBUG timingSafeEqual length mismatch: received.length=${signature.length} computed.length=${expected.length}`
-    );
+    // timingSafeEqual throws if buffer lengths differ — means definite mismatch
     return false;
   }
 }
@@ -272,16 +243,21 @@ export async function POST(req: NextRequest) {
     );
 
     if (status === "DELIVERED") {
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from("message_recipients")
         .update({ status: "delivered", delivered_at: eventTime })
         .eq("provider_id", messageId)
-        .is("delivered_at", null); // idempotent — only set once
+        .is("delivered_at", null) // idempotent — only set once
+        .select("id");
 
       if (error) {
         console.error(
           `[sinch-webhook] DB update failed (delivered) messageId=${messageId}:`,
           error.message
+        );
+      } else if (!updated || updated.length === 0) {
+        console.warn(
+          `[sinch-webhook] DELIVERED matched no recipient for messageId=${messageId} — already set or provider_id mismatch`
         );
       }
       return NextResponse.json({ ok: true });
@@ -292,15 +268,20 @@ export async function POST(req: NextRequest) {
       const update: Record<string, string | null> = { status: "failed" };
       if (reasonCode) update.bounce_type = reasonCode;
 
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from("message_recipients")
         .update(update)
-        .eq("provider_id", messageId);
+        .eq("provider_id", messageId)
+        .select("id");
 
       if (error) {
         console.error(
           `[sinch-webhook] DB update failed (failed) messageId=${messageId}:`,
           error.message
+        );
+      } else if (!updated || updated.length === 0) {
+        console.warn(
+          `[sinch-webhook] FAILED matched no recipient for messageId=${messageId} — provider_id mismatch`
         );
       }
       return NextResponse.json({ ok: true });
@@ -339,16 +320,45 @@ export async function POST(req: NextRequest) {
     const keyword = bodyText?.trim().toUpperCase() ?? "";
 
     if (STOP_KEYWORDS.has(keyword)) {
-      console.log(`[sinch-webhook] STOP received from=${fromNumber} — marking opted out`);
-      // Mark all outbound recipients for this number as opted-out
+      console.log(`[sinch-webhook] STOP received from=${fromNumber} — sending confirmation then marking opted out`);
+      // Send confirmation FIRST per CTIA rules. sendAutoResponse calls the Sinch
+      // Conversation API directly — it does not go through the app's send path so
+      // it is never blocked by our opt-out suppression logic.
+      await sendAutoResponse(fromNumber, STOP_CONFIRMATION);
+      // Mark ALL prior outbound recipients for this number as opted-out.
       await supabase
         .from("message_recipients")
         .update({ status: "opted_out" })
         .eq("contact_value", fromNumber)
         .not("status", "eq", "opted_out");
-      // CTIA requires a single confirmation message — carrier may also send one
-      // at network level, but we send ours to ensure it's received.
-      await sendAutoResponse(fromNumber, STOP_CONFIRMATION);
+      // Record STOP as a reply on the most recent opted-out recipient so it
+      // appears in the campaign activity feed and increments the REPLIED counter.
+      const { data: stopMatched } = await supabase
+        .from("message_recipients")
+        .select("id")
+        .eq("contact_value", fromNumber)
+        .eq("status", "opted_out")
+        .is("replied_at", null)
+        .order("sent_at", { ascending: false })
+        .limit(1);
+      const stopRecipientId = stopMatched?.[0]?.id ?? null;
+      if (stopRecipientId) {
+        await supabase
+          .from("message_recipients")
+          .update({ replied_at: eventTime })
+          .eq("id", stopRecipientId);
+      }
+      // Persist the STOP message for audit trail.
+      await supabase.from("inbound_messages").insert({
+        channel,
+        from_number:          fromNumber,
+        to_number:            toNumber,
+        body:                 bodyText,
+        received_at:          eventTime,
+        message_recipient_id: stopRecipientId,
+        telnyx_id:            sinchId,
+        raw_payload:          msg,
+      });
       return NextResponse.json({ ok: true });
     }
 

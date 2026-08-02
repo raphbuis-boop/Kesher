@@ -170,6 +170,7 @@ export default async function PersonPage({
   const allPeople = (allPeopleResult.data ?? []) as PersonOption[];
   const messageHistory = (messageHistoryResult.data ?? []) as any[];
 
+  const isOptedOut = messageHistory.some((item: any) => item.status === "opted_out");
   const peopleById = new Map(allPeople.map((p) => [p.id, p]));
   const currentTagIds = person.person_tags.map((pt) => pt.tag_id);
   const currentCategories = Array.isArray(person.categories) ? person.categories : [];
@@ -222,7 +223,7 @@ export default async function PersonPage({
               <p className="mt-0.5 text-[11px] text-[#a1a1aa]">
                 Added {formatDate(person.created_at)}
               </p>
-              {currentCategories.length > 0 && (
+              {(currentCategories.length > 0 || isOptedOut) && (
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {currentCategories.map((cat) => (
                     <Link
@@ -233,6 +234,12 @@ export default async function PersonPage({
                       {CATEGORY_LABELS[cat] ?? cat}
                     </Link>
                   ))}
+                  {isOptedOut && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-0.5 text-[11px] font-medium text-rose-700">
+                      <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+                      SMS opted out
+                    </span>
+                  )}
                 </div>
               )}
             </div>
@@ -287,6 +294,10 @@ export default async function PersonPage({
                       ) : item.status === "failed" ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-600">
                           <span className="h-1 w-1 rounded-full bg-red-500" />Failed
+                        </span>
+                      ) : item.status === "opted_out" ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-1.5 py-0.5 text-[10px] font-medium text-rose-700">
+                          <span className="h-1 w-1 rounded-full bg-rose-500" />Opted out
                         </span>
                       ) : (
                         <span className="inline-flex items-center rounded-full bg-[#f5f5f5] px-1.5 py-0.5 text-[10px] font-medium text-[#71717a]">
