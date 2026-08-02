@@ -1,0 +1,21 @@
+[     960ms] Invalid or unexpected token
+[    1206ms] [WARNING] Unrecognized feature: '*'. @ https://storage.googleapis.com/static.dev.europe-west1.gcp.chatlayer.ai/widget/sdk.js:0
+[    1298ms] [WARNING] i18next::backendConnector: No backend was added via i18next.use. Will not load resources. @ https://storage.googleapis.com/static.dev.europe-west1.gcp.chatlayer.ai/widget/frame.js:1
+[    1298ms] [LOG] i18next: languageChanged en @ https://storage.googleapis.com/static.dev.europe-west1.gcp.chatlayer.ai/widget/frame.js:1
+[    1298ms] [LOG] i18next: initialized {debug: true, initImmediate: true, ns: Array(1), defaultNS: Array(1), fallbackLng: Array(1)} @ https://storage.googleapis.com/static.dev.europe-west1.gcp.chatlayer.ai/widget/frame.js:1
+[    1298ms] [WARNING] i18next::backendConnector: No backend was added via i18next.use. Will not load resources. @ https://storage.googleapis.com/static.dev.europe-west1.gcp.chatlayer.ai/widget/frame.js:1
+[    1299ms] [LOG] i18next: languageChanged en @ https://storage.googleapis.com/static.dev.europe-west1.gcp.chatlayer.ai/widget/frame.js:1
+[    1342ms] ReferenceError: rudderanalytics is not defined
+    at <anonymous>:1:1
+    at https://www.googletagmanager.com/gtm.js?id=GTM-WQTGQLN:787:429
+    at nS (https://www.googletagmanager.com/gtm.js?id=GTM-WQTGQLN:789:31)
+    at Ld.mS (https://www.googletagmanager.com/gtm.js?id=GTM-WQTGQLN:786:95)
+    at Ld.<anonymous> (https://www.googletagmanager.com/gtm.js?id=GTM-WQTGQLN:340:187)
+    at k.apply (https://www.googletagmanager.com/gtm.js?id=GTM-WQTGQLN:262:465)
+    at hb (https://www.googletagmanager.com/gtm.js?id=GTM-WQTGQLN:225:711)
+    at gb (https://www.googletagmanager.com/gtm.js?id=GTM-WQTGQLN:225:462)
+    at Ld.<anonymous> (https://www.googletagmanager.com/gtm.js?id=GTM-WQTGQLN:286:473)
+    at k.apply (https://www.googletagmanager.com/gtm.js?id=GTM-WQTGQLN:262:465)
+[    1625ms] Unexpected identifier 'content'
+[    1702ms] [LOG] shouldShow {userRejectedPushNotifications: false, userEnabledPushNotifications: false, supportsPush: false, userSentHisFirstMessage: false, dismissed: false} @ https://storage.googleapis.com/static.dev.europe-west1.gcp.chatlayer.ai/widget/frame.js:1
+[    1766ms] [ERROR] This version of the RudderStack JavaScript SDK is deprecated and no longer maintained. While your events are still being tracked and delivered, we strongly recommend you to migrate to the latest version (v3) for enhanced features, security updates, and ongoing support. For more details, visit the migration guide: https://www.rudderstack.com/docs/sources/event-streams/sdks/rudderstack-javascript-sdk/migration-guide/. @ https://cdn.rudderlabs.com/v1.1/rudder-analytics.min.js:0

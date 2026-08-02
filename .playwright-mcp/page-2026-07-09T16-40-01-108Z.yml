@@ -1,0 +1,134 @@
+- generic [active] [ref=f23e1]:
+  - main [ref=f23e2]:
+    - generic [ref=f23e3]:
+      - link "Kesher home" [ref=f23e6] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f23e8]: K
+        - generic [ref=f23e9]: Kesher
+      - main [ref=f23e10]:
+        - generic [ref=f23e11]:
+          - generic [ref=f23e12]:
+            - generic [ref=f23e14]: K
+            - generic [ref=f23e15]:
+              - paragraph [ref=f23e16]: Kesher
+              - paragraph [ref=f23e17]: The modern communications platform for schools.
+          - heading "Terms of Service" [level=1] [ref=f23e18]
+          - generic [ref=f23e19]:
+            - paragraph [ref=f23e20]: Effective July 6, 2026
+            - paragraph [ref=f23e21]: Last Updated July 6, 2026
+        - generic [ref=f23e22]:
+          - generic [ref=f23e23]:
+            - heading "1. Acceptance of Terms" [level=2] [ref=f23e24]
+            - paragraph [ref=f23e25]: By accessing or using the Kesher platform ("Service") operated by Kesher("we", "us", or "our"), you agree to be bound by these Terms of Service ("Terms"). If you are using Kesher on behalf of a school or organization, you represent that you have authority to bind that organization to these Terms.
+            - paragraph [ref=f23e26]: If you do not agree to these Terms, do not use the Service.
+          - generic [ref=f23e27]:
+            - heading "2. Description of Service" [level=2] [ref=f23e28]
+            - paragraph [ref=f23e29]: Kesher is a school communications platform that enables educational institutions to manage their community directories and send communications — including email, SMS, and WhatsApp messages — to parents, guardians, students, staff, alumni, and other authorized school community members.
+          - generic [ref=f23e30]:
+            - heading "3. Account Registration" [level=2] [ref=f23e31]
+            - paragraph [ref=f23e32]:
+              - text: Access to the Kesher platform requires registration and approval. School administrators are responsible for maintaining the security of their login credentials and for all activity that occurs under their account. You must notify us immediately at
+              - link "help@kesherhq.co" [ref=f23e33] [cursor=pointer]:
+                - /url: mailto:help@kesherhq.co
+              - text: of any unauthorized use of your account.
+          - generic [ref=f23e34]:
+            - heading "4. Acceptable Use" [level=2] [ref=f23e35]
+            - paragraph [ref=f23e36]: "You agree to use Kesher only for lawful school communications purposes. You may not use the Service to:"
+            - list [ref=f23e37]:
+              - listitem [ref=f23e38]: Send unsolicited bulk messages (spam)
+              - listitem [ref=f23e39]: Send messages to individuals who have opted out or requested not to be contacted
+              - listitem [ref=f23e40]: Transmit content that is abusive, threatening, harassing, or unlawful
+              - listitem [ref=f23e41]: Violate any applicable law or regulation, including TCPA, CAN-SPAM, or CTIA guidelines
+              - listitem [ref=f23e42]: Impersonate any person or organization
+              - listitem [ref=f23e43]: Collect or harvest contact information for any purpose other than school communications
+              - listitem [ref=f23e44]: Resell, sublicense, or otherwise commercialize access to the Service
+          - generic [ref=f23e45]:
+            - heading "5. SMS Messaging" [level=2] [ref=f23e46]
+            - paragraph [ref=f23e47]: "Schools are solely responsible for ensuring that recipients have consented to receive SMS messages before importing phone numbers into Kesher. By sending SMS through the Service, you represent and warrant that:"
+            - list [ref=f23e48]:
+              - listitem [ref=f23e49]: You have obtained appropriate consent from all SMS recipients
+              - listitem [ref=f23e50]: You will honor all opt-out requests immediately
+              - listitem [ref=f23e51]: Your messages comply with TCPA, CTIA Messaging Principles, and all applicable carrier requirements
+              - listitem [ref=f23e52]: You will maintain accurate consent records as required by law
+            - paragraph [ref=f23e53]:
+              - text: Please review our
+              - link "SMS Terms" [ref=f23e54] [cursor=pointer]:
+                - /url: /sms-terms
+              - text: for full details on our SMS messaging program and opt-out procedures.
+          - generic [ref=f23e55]:
+            - heading "6. Data and Privacy" [level=2] [ref=f23e56]
+            - paragraph [ref=f23e57]:
+              - text: Your use of Kesher is subject to our
+              - link "Privacy Policy" [ref=f23e58] [cursor=pointer]:
+                - /url: /privacy
+              - text: ", which is incorporated into these Terms by reference. You retain ownership of all contact data you upload to Kesher. By uploading data, you grant us the limited right to process that data solely for the purpose of providing the Service."
+          - generic [ref=f23e59]:
+            - heading "7. Intellectual Property" [level=2] [ref=f23e60]
+            - paragraph [ref=f23e61]: The Kesher platform, including its design, software, and content, is owned by Kesher and protected by intellectual property laws. You may not copy, modify, distribute, or reverse engineer any part of the Service without our express written permission.
+          - generic [ref=f23e62]:
+            - heading "8. Service Availability" [level=2] [ref=f23e63]
+            - paragraph [ref=f23e64]: We strive to maintain high availability but do not guarantee uninterrupted access to the Service. We may perform maintenance, updates, or modifications that temporarily affect availability. We will provide reasonable notice of planned downtime where possible.
+          - generic [ref=f23e65]:
+            - heading "9. Disclaimers" [level=2] [ref=f23e66]
+            - paragraph [ref=f23e67]: THE SERVICE IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED. TO THE FULLEST EXTENT PERMITTED BY LAW, KESHER DISCLAIMS ALL WARRANTIES, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+            - paragraph [ref=f23e68]: We are not responsible for the content of messages sent by schools through the platform, or for the accuracy of contact information uploaded by schools.
+          - generic [ref=f23e69]:
+            - heading "10. Limitation of Liability" [level=2] [ref=f23e70]
+            - paragraph [ref=f23e71]: TO THE FULLEST EXTENT PERMITTED BY LAW, KESHER SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING FROM YOUR USE OF THE SERVICE, EVEN IF WE HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. OUR TOTAL LIABILITY SHALL NOT EXCEED THE AMOUNT PAID BY YOU FOR THE SERVICE IN THE TWELVE MONTHS PRECEDING THE CLAIM.
+          - generic [ref=f23e72]:
+            - heading "11. Termination" [level=2] [ref=f23e73]
+            - paragraph [ref=f23e74]: We may suspend or terminate your access to the Service at any time for violation of these Terms, non-payment, or any other reason with reasonable notice. You may request account deletion by contacting us. Upon termination, you may request an export of your data within 30 days.
+          - generic [ref=f23e75]:
+            - heading "12. Modifications" [level=2] [ref=f23e76]
+            - paragraph [ref=f23e77]: We may update these Terms from time to time. Material changes will be communicated by email to registered administrators or by notice on the platform. Your continued use of the Service after changes take effect constitutes acceptance of the updated Terms.
+          - generic [ref=f23e78]:
+            - heading "13. Governing Law" [level=2] [ref=f23e79]
+            - paragraph [ref=f23e80]: These Terms are governed by the laws of the State of New Jersey, United States, without regard to conflict of law principles. Any disputes arising under these Terms shall be resolved through binding arbitration or in the courts of New Jersey, as applicable.
+          - generic [ref=f23e81]:
+            - heading "14. Contact" [level=2] [ref=f23e82]
+            - paragraph [ref=f23e83]: "Questions about these Terms? Contact us:"
+            - generic [ref=f23e84]:
+              - paragraph [ref=f23e85]:
+                - strong [ref=f23e86]: Kesher
+              - paragraph [ref=f23e87]:
+                - text: "Email:"
+                - link "help@kesherhq.co" [ref=f23e88] [cursor=pointer]:
+                  - /url: mailto:help@kesherhq.co
+              - paragraph [ref=f23e89]:
+                - text: "Website:"
+                - link "https://www.kesherhq.co" [ref=f23e90] [cursor=pointer]:
+                  - /url: https://www.kesherhq.co
+      - generic [ref=f23e91]:
+        - generic [ref=f23e93]:
+          - generic [ref=f23e94]:
+            - link "Kesher home" [ref=f23e95] [cursor=pointer]:
+              - /url: /
+              - generic [ref=f23e97]: K
+              - generic [ref=f23e98]: Kesher
+            - paragraph [ref=f23e99]: The modern communications platform for schools.
+            - paragraph [ref=f23e100]: Email · SMS · WhatsApp
+          - generic [ref=f23e101]:
+            - navigation "Legal" [ref=f23e102]:
+              - paragraph [ref=f23e103]: Legal
+              - link "Privacy Policy" [ref=f23e104] [cursor=pointer]:
+                - /url: /privacy
+              - link "SMS Terms" [ref=f23e105] [cursor=pointer]:
+                - /url: /sms-terms
+              - link "Terms of Service" [ref=f23e106] [cursor=pointer]:
+                - /url: /terms
+              - link "CTA Documentation" [ref=f23e107] [cursor=pointer]:
+                - /url: /cta
+              - link "Opt-In Documentation" [ref=f23e108] [cursor=pointer]:
+                - /url: /opt-in
+              - link "Sample Opt-In Form" [ref=f23e109] [cursor=pointer]:
+                - /url: /sample-form
+            - generic [ref=f23e110]:
+              - paragraph [ref=f23e111]: Contact
+              - link "Contact Us" [ref=f23e112] [cursor=pointer]:
+                - /url: /contact
+              - link "help@kesherhq.co" [ref=f23e113] [cursor=pointer]:
+                - /url: mailto:help@kesherhq.co
+              - link "privacy@kesherhq.co" [ref=f23e114] [cursor=pointer]:
+                - /url: mailto:privacy@kesherhq.co
+        - paragraph [ref=f23e117]: © 2026 Kesher. All rights reserved.
+  - alert [ref=f23e118]

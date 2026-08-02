@@ -1,0 +1,302 @@
+- generic [active] [ref=f34e1]:
+  - navigation [ref=f34e2]:
+    - generic [ref=f34e4]:
+      - generic [ref=f34e6]: K
+      - generic [ref=f34e7]:
+        - text: Kesher
+        - paragraph [ref=f34e8]: School Comms
+    - paragraph [ref=f34e10]: Navigation
+    - generic [ref=f34e11]:
+      - link "Overview" [ref=f34e12] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=f34e13]
+        - text: Overview
+      - link "People" [ref=f34e18] [cursor=pointer]:
+        - /url: /people
+        - img [ref=f34e19]
+        - text: People
+      - link "Audiences" [ref=f34e24] [cursor=pointer]:
+        - /url: /audiences
+        - img [ref=f34e25]
+        - text: Audiences
+      - link "Messages" [ref=f34e29] [cursor=pointer]:
+        - /url: /messages
+        - img [ref=f34e30]
+        - text: Messages
+      - link "Activity" [ref=f34e32] [cursor=pointer]:
+        - /url: /activity
+        - img [ref=f34e33]
+        - text: Activity
+      - link "Imports" [ref=f34e35] [cursor=pointer]:
+        - /url: /imports
+        - img [ref=f34e36]
+        - text: Imports
+    - generic [ref=f34e40]:
+      - link "Settings" [ref=f34e41] [cursor=pointer]:
+        - /url: /settings
+        - img [ref=f34e42]
+        - text: Settings
+      - button "Sign out" [ref=f34e46]:
+        - img [ref=f34e47]
+        - text: Sign out
+  - main [ref=f34e50]:
+    - generic [ref=f34e51]:
+      - link "Kesher home" [ref=f34e54] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f34e56]: K
+        - generic [ref=f34e57]: Kesher
+      - main [ref=f34e58]:
+        - generic [ref=f34e59]:
+          - paragraph [ref=f34e60]: For Carrier & Compliance Reviewers
+          - paragraph [ref=f34e61]: This page demonstrates the compliant call-to-action (CTA) language that Kesher provides to schools for use on their enrollment forms and parent portals. It represents what a parent or guardian sees when providing SMS consent to receive school communications. This is the opt-in point-of-consent form for the Kesher A2P 10DLC SMS program.
+          - paragraph [ref=f34e62]:
+            - text: "Full documentation:"
+            - link "CTA Documentation" [ref=f34e63] [cursor=pointer]:
+              - /url: /cta
+            - text: ·
+            - link "Opt-In Documentation" [ref=f34e64] [cursor=pointer]:
+              - /url: /opt-in
+            - text: ·
+            - link "SMS Terms" [ref=f34e65] [cursor=pointer]:
+              - /url: /sms-terms
+            - text: ·
+            - link "Privacy Policy" [ref=f34e66] [cursor=pointer]:
+              - /url: /privacy
+        - generic [ref=f34e67]:
+          - paragraph [ref=f34e68]: Sample Opt-In Form
+          - heading "School Enrollment SMS Consent" [level=1] [ref=f34e69]
+          - paragraph [ref=f34e70]: The following is a representative example of how a school collects SMS consent from parents and guardians using the Kesher platform. Schools are required to use language substantially similar to this before importing phone numbers.
+        - generic [ref=f34e71]:
+          - generic [ref=f34e73]:
+            - generic [ref=f34e75]: EF
+            - generic [ref=f34e76]:
+              - paragraph [ref=f34e77]: Maple Ridge Day School
+              - paragraph [ref=f34e78]: 2025–2026 Annual Re-Enrollment Form
+          - generic [ref=f34e79]:
+            - generic [ref=f34e80]:
+              - heading "Parent / Guardian Contact Information" [level=2] [ref=f34e81]
+              - generic [ref=f34e82]:
+                - generic [ref=f34e83]:
+                  - generic [ref=f34e84]: First Name
+                  - generic [ref=f34e86]: Rachel
+                - generic [ref=f34e87]:
+                  - generic [ref=f34e88]: Last Name
+                  - generic [ref=f34e90]: Cohen
+                - generic [ref=f34e91]:
+                  - generic [ref=f34e92]: Email Address
+                  - generic [ref=f34e94]: rachel.cohen@example.com
+                - generic [ref=f34e95]:
+                  - generic [ref=f34e96]: Mobile Phone Number
+                  - generic [ref=f34e98]: (201) 555-0100
+                - generic [ref=f34e99]:
+                  - generic [ref=f34e100]: Student Name
+                  - generic [ref=f34e102]: David Cohen
+                - generic [ref=f34e103]:
+                  - generic [ref=f34e104]: Grade (2025–2026)
+                  - generic [ref=f34e106]: 7th Grade
+            - generic [ref=f34e107]:
+              - heading "SMS / Text Message Communications" [level=2] [ref=f34e108]
+              - generic [ref=f34e109]:
+                - img [ref=f34e111]
+                - paragraph [ref=f34e114]:
+                  - strong [ref=f34e115]: I consent to receive SMS text messages
+                  - text: from
+                  - strong [ref=f34e116]: Maple Ridge Day School
+                  - text: via
+                  - strong [ref=f34e117]: Kesher
+                  - text: ", our school communications platform. Messages may include school announcements, emergency alerts, event reminders, attendance updates, and other school-related communications. Message frequency varies. Message and data rates may apply. Reply"
+                  - strong [ref=f34e118]: STOP
+                  - text: to opt out at any time. Reply
+                  - strong [ref=f34e119]: HELP
+                  - text: for help. View our
+                  - link "Privacy Policy" [ref=f34e120] [cursor=pointer]:
+                    - /url: /privacy
+                  - text: and
+                  - link "SMS Terms & Conditions" [ref=f34e121] [cursor=pointer]:
+                    - /url: /sms-terms
+                  - text: .
+                  - strong [ref=f34e122]: Consent to receive text messages is not a condition of enrollment or any purchase.
+              - generic [ref=f34e123]:
+                - paragraph [ref=f34e124]: CTA Element Checklist (for reviewer reference)
+                - generic [ref=f34e125]:
+                  - generic [ref=f34e126]:
+                    - img [ref=f34e127]
+                    - generic [ref=f34e130]: "Brand name: Maple Ridge Day School via Kesher"
+                  - generic [ref=f34e131]:
+                    - img [ref=f34e132]
+                    - generic [ref=f34e135]: Message types described
+                  - generic [ref=f34e136]:
+                    - img [ref=f34e137]
+                    - generic [ref=f34e140]: "Message frequency: varies"
+                  - generic [ref=f34e141]:
+                    - img [ref=f34e142]
+                    - generic [ref=f34e145]: Msg & data rates may apply
+                  - generic [ref=f34e146]:
+                    - img [ref=f34e147]
+                    - generic [ref=f34e150]: STOP opt-out instructions
+                  - generic [ref=f34e151]:
+                    - img [ref=f34e152]
+                    - generic [ref=f34e155]: HELP support instructions
+                  - generic [ref=f34e156]:
+                    - img [ref=f34e157]
+                    - generic [ref=f34e160]: Privacy Policy link
+                  - generic [ref=f34e161]:
+                    - img [ref=f34e162]
+                    - generic [ref=f34e165]: SMS Terms & Conditions link
+                  - generic [ref=f34e166]:
+                    - img [ref=f34e167]
+                    - generic [ref=f34e170]: Not a condition of enrollment
+            - generic [ref=f34e171]:
+              - heading "Emergency Contact" [level=2] [ref=f34e172]
+              - generic [ref=f34e173]:
+                - generic [ref=f34e174]:
+                  - generic [ref=f34e175]: Emergency Contact Name
+                  - generic [ref=f34e177]: Michael Cohen
+                - generic [ref=f34e178]:
+                  - generic [ref=f34e179]: Emergency Contact Phone
+                  - generic [ref=f34e181]: (201) 555-0101
+            - generic [ref=f34e182]:
+              - paragraph [ref=f34e183]: All fields are required. Form submitted securely.
+              - generic [ref=f34e185]: Submit Enrollment Form
+        - generic [ref=f34e186]:
+          - heading "What Happens After the Form Is Submitted" [level=2] [ref=f34e187]
+          - generic [ref=f34e188]:
+            - generic [ref=f34e189]:
+              - generic [ref=f34e190]: "1"
+              - generic [ref=f34e191]:
+                - paragraph [ref=f34e192]: School exports consented numbers
+                - paragraph [ref=f34e193]: After enrollment forms are collected, the school administrator exports the phone numbers of consented parents and guardians into a CSV file.
+            - generic [ref=f34e194]:
+              - generic [ref=f34e195]: "2"
+              - generic [ref=f34e196]:
+                - paragraph [ref=f34e197]: Administrator imports to Kesher with certification
+                - paragraph [ref=f34e198]: The administrator uploads the CSV to Kesher. Before any numbers are saved, they must check a certification box confirming that all contacts have explicitly consented to receive SMS from the school.
+            - generic [ref=f34e199]:
+              - generic [ref=f34e200]: "3"
+              - generic [ref=f34e201]:
+                - paragraph [ref=f34e202]: Kesher records the import and consent certification
+                - paragraph [ref=f34e203]: Kesher logs the import timestamp, the administrator's identity, and the certification acknowledgment. This creates an auditable consent trail.
+            - generic [ref=f34e204]:
+              - generic [ref=f34e205]: "4"
+              - generic [ref=f34e206]:
+                - paragraph [ref=f34e207]: School sends messages; STOP/HELP handled automatically
+                - paragraph [ref=f34e208]: School administrators send campaigns through Kesher. Every message automatically includes opt-out instructions. STOP, HELP, and UNSTOP are processed in real time with no manual intervention.
+        - generic [ref=f34e209]:
+          - 'heading "Alternative: Online Parent Portal Opt-In" [level=2] [ref=f34e210]'
+          - paragraph [ref=f34e211]: "Schools with online parent portals or re-enrollment websites use the following CTA language on their digital registration page:"
+          - generic [ref=f34e212]:
+            - generic [ref=f34e213]:
+              - paragraph [ref=f34e214]: Online Parent Portal — Account Registration
+              - paragraph [ref=f34e215]: portal.mappleridgedayschool.edu / Account Setup
+            - generic [ref=f34e219]:
+              - paragraph [ref=f34e220]: Text Alerts — Optional
+              - paragraph [ref=f34e221]:
+                - text: I agree to receive text (SMS) messages from
+                - strong [ref=f34e222]: Maple Ridge Day School
+                - text: to the mobile number provided above. These messages are sent through
+                - strong [ref=f34e223]: Kesher
+                - text: ", a school communications platform, and may include important school announcements, emergency notifications, event reminders, and attendance alerts. Msg & data rates may apply. Frequency varies by school activity. Reply"
+                - strong [ref=f34e224]: STOP
+                - text: to opt out at any time. For support, reply
+                - strong [ref=f34e225]: HELP
+                - text: or contact
+                - link "help@kesherhq.co" [ref=f34e226] [cursor=pointer]:
+                  - /url: mailto:help@kesherhq.co
+                - text: . View our
+                - link "Privacy Policy" [ref=f34e227] [cursor=pointer]:
+                  - /url: /privacy
+                - text: and
+                - link "SMS Terms" [ref=f34e228] [cursor=pointer]:
+                  - /url: /sms-terms
+                - text: .
+                - strong [ref=f34e229]: Consent is not a condition of enrollment or any purchase.
+        - generic [ref=f34e230]:
+          - heading "Automated Keyword Responses" [level=2] [ref=f34e231]
+          - generic [ref=f34e232]:
+            - generic [ref=f34e233]:
+              - generic [ref=f34e234]:
+                - generic [ref=f34e235]: STOP
+                - generic [ref=f34e236]: Opt-Out Confirmation
+              - paragraph [ref=f34e237]: "“[Maple Ridge Day School] via Kesher: You have been unsubscribed. No further messages will be sent to this number. Reply UNSTOP to re-subscribe.”"
+            - generic [ref=f34e238]:
+              - generic [ref=f34e239]:
+                - generic [ref=f34e240]: HELP
+                - generic [ref=f34e241]: Support Response
+              - paragraph [ref=f34e242]: "“[Maple Ridge Day School] via Kesher School Comms. For support: help@kesherhq.co or https://www.kesherhq.co. Msg & data rates may apply. Reply STOP to opt out.”"
+            - generic [ref=f34e243]:
+              - generic [ref=f34e244]:
+                - generic [ref=f34e245]: UNSTOP
+                - generic [ref=f34e246]: Re-Subscribe Confirmation
+              - paragraph [ref=f34e247]: "“[Maple Ridge Day School] via Kesher: You have been re-subscribed. Messages will resume. Msg & data rates may apply. Reply STOP to opt out at any time.”"
+        - generic [ref=f34e248]:
+          - paragraph [ref=f34e249]: Contact for Compliance Questions
+          - paragraph [ref=f34e250]:
+            - strong [ref=f34e251]: Kesher
+          - paragraph [ref=f34e252]:
+            - text: "Email:"
+            - link "help@kesherhq.co" [ref=f34e253] [cursor=pointer]:
+              - /url: mailto:help@kesherhq.co
+          - paragraph [ref=f34e254]:
+            - text: "Website:"
+            - link "https://www.kesherhq.co" [ref=f34e255] [cursor=pointer]:
+              - /url: https://www.kesherhq.co
+      - generic [ref=f34e256]:
+        - generic [ref=f34e258]:
+          - generic [ref=f34e259]:
+            - link "Kesher home" [ref=f34e260] [cursor=pointer]:
+              - /url: /
+              - generic [ref=f34e262]: K
+              - generic [ref=f34e263]: Kesher
+            - paragraph [ref=f34e264]: The modern communications platform for schools.
+            - paragraph [ref=f34e265]: Email · SMS · WhatsApp
+          - generic [ref=f34e266]:
+            - navigation "Legal" [ref=f34e267]:
+              - paragraph [ref=f34e268]: Legal
+              - link "Privacy Policy" [ref=f34e269] [cursor=pointer]:
+                - /url: /privacy
+              - link "SMS Terms" [ref=f34e270] [cursor=pointer]:
+                - /url: /sms-terms
+              - link "Terms of Service" [ref=f34e271] [cursor=pointer]:
+                - /url: /terms
+              - link "CTA Documentation" [ref=f34e272] [cursor=pointer]:
+                - /url: /cta
+              - link "Opt-In Documentation" [ref=f34e273] [cursor=pointer]:
+                - /url: /opt-in
+              - link "Sample Opt-In Form" [ref=f34e274] [cursor=pointer]:
+                - /url: /sample-form
+            - generic [ref=f34e275]:
+              - paragraph [ref=f34e276]: Contact
+              - link "Contact Us" [ref=f34e277] [cursor=pointer]:
+                - /url: /contact
+              - link "help@kesherhq.co" [ref=f34e278] [cursor=pointer]:
+                - /url: mailto:help@kesherhq.co
+              - link "privacy@kesherhq.co" [ref=f34e279] [cursor=pointer]:
+                - /url: mailto:privacy@kesherhq.co
+        - paragraph [ref=f34e282]: © 2026 Kesher. All rights reserved.
+    - generic [ref=f34e283]:
+      - generic [ref=f34e284]:
+        - generic [ref=f34e285]:
+          - generic [ref=f34e286]:
+            - generic [ref=f34e288]: K
+            - generic [ref=f34e289]: Kesher
+          - paragraph [ref=f34e290]: The modern communications platform for schools.
+          - paragraph [ref=f34e291]: Email · SMS · WhatsApp
+        - generic [ref=f34e292]:
+          - navigation "Legal" [ref=f34e293]:
+            - paragraph [ref=f34e294]: Legal
+            - link "Privacy Policy" [ref=f34e295] [cursor=pointer]:
+              - /url: /privacy
+            - link "SMS Terms" [ref=f34e296] [cursor=pointer]:
+              - /url: /sms-terms
+            - link "Terms of Service" [ref=f34e297] [cursor=pointer]:
+              - /url: /terms
+          - generic [ref=f34e298]:
+            - paragraph [ref=f34e299]: Contact
+            - link "Contact Us" [ref=f34e300] [cursor=pointer]:
+              - /url: /contact
+            - link "help@kesherhq.co" [ref=f34e301] [cursor=pointer]:
+              - /url: mailto:help@kesherhq.co
+            - link "privacy@kesherhq.co" [ref=f34e302] [cursor=pointer]:
+              - /url: mailto:privacy@kesherhq.co
+      - paragraph [ref=f34e304]: © 2026 Kesher. All rights reserved.
+  - alert [ref=f34e305]

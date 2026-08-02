@@ -1,21 +1,103 @@
 @import "tailwindcss";
 
+/* ─── KESHER DESIGN SYSTEM ───────────────────────────────────────────────────
+ * Hallmark · warm editorial · cream + charcoal + amber-bronze
+ * Paper: oklch(97.5% 0.006 80) · Accent: oklch(52% 0.13 52)
+ * ─────────────────────────────────────────────────────────────────────────── */
+
 :root {
-  --bg: #fafafa;
-  --surface: #ffffff;
-  --border: #e7e7e7;
-  --border-subtle: #f0f0f0;
-  --text-primary: #0f0f0f;
-  --text-secondary: #6b7280;
-  --text-muted: #a1a1aa;
-  --accent: #0f0f0f;
-  --sidebar-bg: #f5f5f5;
-  --sidebar-border: #ebebeb;
+  /* ── Backgrounds ─────────────────────────────────────────────────────── */
+  --bg:             oklch(97.5% 0.006 80);   /* warm cream — page bg         */
+  --surface:        oklch(99.5% 0.003 80);   /* warm white — cards, panels   */
+  --surface-2:      oklch(96.0% 0.008 78);   /* deeper cream — inputs, aside */
+
+  /* ── Borders ─────────────────────────────────────────────────────────── */
+  --border:         oklch(89.0% 0.010 75);   /* standard border              */
+  --border-subtle:  oklch(93.5% 0.006 78);   /* subtle row separator         */
+
+  /* ── Text ────────────────────────────────────────────────────────────── */
+  --text-primary:   oklch(17.0% 0.008 280);  /* near-black charcoal          */
+  --text-secondary: oklch(42.0% 0.010 260);  /* secondary labels             */
+  --text-muted:     oklch(63.0% 0.008 255);  /* placeholder / captions       */
+
+  /* ── Accent — restrained warm amber-bronze ───────────────────────────── */
+  --accent:         oklch(52.0% 0.130 52);   /* primary CTA / brand          */
+  --accent-hover:   oklch(46.0% 0.125 52);   /* accent on hover              */
+  --accent-fg:      oklch(98.0% 0.004 80);   /* text on accent bg            */
+  --accent-tint:    oklch(95.5% 0.028 58);   /* subtle accent fill           */
+  --accent-border:  oklch(87.0% 0.042 56);   /* accent-tinted border         */
+
+  /* ── Sidebar (interior app) ──────────────────────────────────────────── */
+  --sidebar-bg:     oklch(96.0% 0.008 78);
+  --sidebar-border: oklch(91.0% 0.009 76);
+
+  /* ── Semantic ────────────────────────────────────────────────────────── */
+  --color-error:    oklch(52.0% 0.185 24);
+  --color-error-bg: oklch(97.0% 0.018 20);
+  --color-success:  oklch(54.0% 0.140 148);
+  --color-warning:  oklch(70.0% 0.150 72);
+
+  /* ── Typography ──────────────────────────────────────────────────────── */
+  --font-display: var(--font-geist-sans);
+  --font-body:    var(--font-geist-sans);
+  --font-mono:    var(--font-geist-mono);
+
+  --text-xs:        0.6875rem;   /* 11px */
+  --text-sm:        0.8125rem;   /* 13px */
+  --text-base:      0.9375rem;   /* 15px */
+  --text-lg:        1.0625rem;   /* 17px */
+  --text-xl:        1.25rem;     /* 20px */
+  --text-2xl:       1.5rem;      /* 24px */
+  --text-3xl:       1.875rem;    /* 30px */
+  --text-4xl:       2.25rem;     /* 36px */
+  --text-display-s: 3.0rem;      /* 48px */
+  --text-display:   3.75rem;     /* 60px */
+
+  /* ── Spacing (4pt scale) ─────────────────────────────────────────────── */
+  --space-1:  0.25rem;    /*  4px */
+  --space-2:  0.5rem;     /*  8px */
+  --space-3:  0.75rem;    /* 12px */
+  --space-4:  1rem;       /* 16px */
+  --space-5:  1.25rem;    /* 20px */
+  --space-6:  1.5rem;     /* 24px */
+  --space-8:  2rem;       /* 32px */
+  --space-10: 2.5rem;     /* 40px */
+  --space-12: 3rem;       /* 48px */
+  --space-16: 4rem;       /* 64px */
+  --space-20: 5rem;       /* 80px */
+  --space-24: 6rem;       /* 96px */
+
+  /* ── Radii ───────────────────────────────────────────────────────────── */
+  --radius-xs:   4px;
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   14px;
+  --radius-xl:   20px;
+  --radius-full: 9999px;
+
+  /* ── Shadows (warm-tinted) ───────────────────────────────────────────── */
+  --shadow-xs: 0 1px 2px oklch(17% 0.008 280 / 0.05);
+  --shadow-sm: 0 1px 3px oklch(17% 0.008 280 / 0.07), 0 1px 2px oklch(17% 0.008 280 / 0.04);
+  --shadow-md: 0 4px 12px oklch(17% 0.008 280 / 0.09), 0 2px 4px oklch(17% 0.008 280 / 0.04);
+  --shadow-lg: 0 12px 32px oklch(17% 0.008 280 / 0.10), 0 4px 8px oklch(17% 0.008 280 / 0.05);
+
+  /* ── Motion ──────────────────────────────────────────────────────────── */
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in:     cubic-bezier(0.4, 0, 1, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  --dur-instant: 80ms;
+  --dur-fast:    150ms;
+  --dur-base:    240ms;
+  --dur-slow:    400ms;
 }
 
 @theme inline {
   --color-background: var(--bg);
   --color-foreground: var(--text-primary);
+  --color-surface:    var(--surface);
+  --color-border:     var(--border);
+  --color-accent:     var(--accent);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -50,20 +132,20 @@ body {
 }
 
 ::selection {
-  background: #0f0f0f;
-  color: #ffffff;
+  background: var(--text-primary);
+  color: var(--surface);
 }
 
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: var(--radius-full); }
+::-webkit-scrollbar-thumb:hover { background: oklch(78% 0.010 75); }
 
 /* ── Focus ring ─────────────────────────────────────────────────────────── */
 :focus-visible {
-  outline: 2px solid #2563eb;
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 
 /* ── Animations ─────────────────────────────────────────────────────────── */
@@ -119,10 +201,15 @@ body {
 /* ── Skeleton loader ────────────────────────────────────────────────────── */
 
 .skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 25%,
+    var(--border-subtle) 50%,
+    var(--surface-2) 75%
+  );
   background-size: 200% 100%;
   animation: shimmer 1.4s ease-in-out infinite;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 /* ── Transition defaults ────────────────────────────────────────────────── */

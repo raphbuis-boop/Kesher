@@ -1,0 +1,714 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e8]:
+    - generic [ref=e12]:
+      - generic [ref=e15]:
+        - generic [ref=e16]:
+          - text: 
+          - heading "Sinch Community" [level=1] [ref=e18]:
+            - link "Sinch Community" [ref=e19] [cursor=pointer]:
+              - /url: /
+          - navigation [ref=e21]:
+            - list [ref=e22]:
+              - listitem [ref=e23]:
+                - link "Developers" [ref=e24] [cursor=pointer]:
+                  - /url: /t5/Developer-Community/ct-p/DeveloperCommunity
+              - listitem [ref=e25]:
+                - link "Partners" [ref=e26] [cursor=pointer]:
+                  - /url: https://community.sinch.com/t5/Partner-Hub/ct-p/SinchPartnerHub
+              - listitem [ref=e27]:
+                - link "Operators" [ref=e28] [cursor=pointer]:
+                  - /url: /t5/Operator-Support/tkb-p/OperatorSupport
+              - listitem [ref=e29]:
+                - link "Service Status" [ref=e30] [cursor=pointer]:
+                  - /url: https://status.sinch.com/
+              - listitem [ref=e31]:
+                - link "Contact Support" [ref=e32] [cursor=pointer]:
+                  - /url: javascript:;
+              - listitem [ref=e33]:
+                - link "sinch.com" [ref=e34] [cursor=pointer]:
+                  - /url: https://www.sinch.com
+        - link "Community sign in" [ref=e37] [cursor=pointer]:
+          - /url: https://community.sinch.com/t5/user/userloginpage?dest_url=https%3A%2F%2Fcommunity.sinch.com%2Ft5%2F10DLC%2F10DLC-Campaign-Rejection-Codes%2Fta-p%2F15722
+      - generic [ref=e43]:
+        - generic [ref=e44]:
+          - generic [ref=e45]:
+            - text: 
+            - combobox "Search Granularity" [ref=e46] [cursor=pointer]:
+              - option "All community"
+              - option "This category"
+              - option "Knowledge base" [selected]
+              - option "Users"
+              - option "Products"
+          - generic [ref=e48]:
+            - button "Search" [ref=e49] [cursor=pointer]
+            - combobox "Search" [ref=e51]
+        - text: 
+      - generic [ref=e58]:
+        - navigation "breadcrumbs" [ref=e59]:
+          - list [ref=e60]:
+            - listitem [ref=e61]:
+              - link "Sinch Community" [ref=e62] [cursor=pointer]:
+                - /url: /
+            - text:  
+            - listitem [ref=e63]:
+              - text: 
+              - link "Numbers" [ref=e64] [cursor=pointer]:
+                - /url: /t5/Numbers/ct-p/Numbers
+            - text:  
+            - listitem [ref=e65]:
+              - text: 
+              - link "10DLC" [ref=e66] [cursor=pointer]:
+                - /url: /t5/10DLC/tkb-p/10DLC
+            - text:  
+            - listitem [ref=e67]:
+              - text: 
+              - link "10DLC Campaign Rejection Codes" [disabled] [ref=e68]
+        - button "Options" [ref=e72] [cursor=pointer]: Options 
+    - generic [ref=e73]:
+      - generic [ref=e77]:
+        - generic [ref=e78]:
+          - generic [ref=e84]:
+            - heading "10DLC Campaign Rejection Codes" [level=2] [ref=e85]:
+              - link "10DLC Campaign Rejection Codes" [ref=e87] [cursor=pointer]:
+                - /url: /t5/10DLC/10DLC-Campaign-Rejection-Codes/ta-p/15722
+            - text: 
+          - generic [ref=e90]:
+            - generic [ref=e94]:
+              - paragraph [ref=e95]:
+                - text: Before you launch your 10DLC message program, Sinch must review your campaign to make sure your message program aligns with carrier and industry requirements. Principally we look for alignment with
+                - link "CTIA Messaging Principles and Best Practices" [ref=e96] [cursor=pointer]:
+                  - /url: https://community.sinch.com/t5/SMS/CTIA-Messaging-Principles-and-Best-Practices/ta-p/7087?attachment-id=1107
+                - generic [ref=e97]:
+                  - text: . For more details on 10DLC campaign requirements, refer to
+                  - link "10DLC Compliance Requirements and Guidance." [ref=e98] [cursor=pointer]:
+                    - /url: https://community.sinch.com/t5/10DLC/10DLC-Compliance-Requirements-and-Guidance/ta-p/10706
+              - paragraph [ref=e99]
+              - paragraph [ref=e100]: If Sinch rejects your 10DLC campaign, we will provide a rejection code with a description. In most cases, after addressing the reason for the rejection, you can resubmit your campaign to Sinch for review.*
+              - paragraph [ref=e101]: "Rejection codes are grouped into categories based on the part of the 10DLC campaign that they relate to:"
+              - list [ref=e102]:
+                - listitem [ref=e103]: Brand Inconsistencies
+                - listitem [ref=e104]: Campaign
+                - listitem [ref=e105]: Call-to-Action
+                - listitem [ref=e106]: Terms and Conditions
+                - listitem [ref=e107]: Privacy Policy
+                - listitem [ref=e108]: Mandatory Messages
+                - listitem [ref=e109]: Sample Messages
+                - listitem [ref=e110]: Disallowed Content.
+              - paragraph [ref=e111]
+              - paragraph [ref=e112]: "Details of the rejection codes and descriptions for each of these categories can be found in the tables below:"
+              - paragraph [ref=e113]
+              - table [ref=e114]:
+                - rowgroup [ref=e115]:
+                  - row "Brand Inconsistencies" [ref=e116]:
+                    - cell "Brand Inconsistencies" [ref=e117]:
+                      - heading "Brand Inconsistencies" [level=2] [ref=e118]:
+                        - strong [ref=e119]: Brand Inconsistencies
+                  - row "Rejection Code Description Action" [ref=e120]:
+                    - cell "Rejection Code" [ref=e121]:
+                      - strong [ref=e122]: Rejection Code
+                    - cell "Description" [ref=e123]:
+                      - strong [ref=e124]: Description
+                    - cell "Action" [ref=e125]:
+                      - strong [ref=e126]: Action
+                  - row "CR2001 Brand support email is a free email domain If brand email domain is a free domain, like gmail or yahoo, it may be rejected. Update the brand's email address to use a branded email domain and resubmit." [ref=e127]:
+                    - cell "CR2001" [ref=e128]
+                    - cell "Brand support email is a free email domain" [ref=e129]
+                    - cell "If brand email domain is a free domain, like gmail or yahoo, it may be rejected. Update the brand's email address to use a branded email domain and resubmit." [ref=e130]
+                  - row "CR2002 Brand's physical address is invalid If the brand address cannot be verified or doesn't exist, the campaign may be rejected. Check the address is correct and resubmit." [ref=e131]:
+                    - cell "CR2002" [ref=e132]
+                    - cell "Brand's physical address is invalid" [ref=e133]
+                    - cell "If the brand address cannot be verified or doesn't exist, the campaign may be rejected. Check the address is correct and resubmit." [ref=e134]
+                  - row "CR2003 Brand is blacklisted In some cases a brand may not be allowed to run a campaign with Sinch." [ref=e135]:
+                    - cell "CR2003" [ref=e136]
+                    - cell "Brand is blacklisted" [ref=e137]
+                    - cell "In some cases a brand may not be allowed to run a campaign with Sinch." [ref=e138]
+                  - row "CR2004 Brand is an ISV/Reseller and not the content provider The brand that is registered should be the end brand, i.e. the business whose name is in the message content and who the end user believes to be sending the message. Register the brand and campaign again with the correct information and resubmit." [ref=e139]:
+                    - cell "CR2004" [ref=e140]
+                    - cell "Brand is an ISV/Reseller and not the content provider" [ref=e141]
+                    - cell "The brand that is registered should be the end brand, i.e. the business whose name is in the message content and who the end user believes to be sending the message. Register the brand and campaign again with the correct information and resubmit." [ref=e142]
+                  - row "CR2005 Brand website is missing/inaccessible or online presence could not be validated The website associated with the brand is not live. Check the link is correct and resubmit." [ref=e143]:
+                    - cell "CR2005" [ref=e144]
+                    - cell "Brand website is missing/inaccessible or online presence could not be validated" [ref=e145]
+                    - cell "The website associated with the brand is not live. Check the link is correct and resubmit." [ref=e146]
+                  - row "CR2006 Brand associated with or website references third party job boards Messaging content related to third party job boards is not permitted. If the brand's website indicates their message program will be sending this type of content, the campaign will be rejected.*" [ref=e147]:
+                    - cell "CR2006" [ref=e148]
+                    - cell "Brand associated with or website references third party job boards" [ref=e149]
+                    - cell "Messaging content related to third party job boards is not permitted. If the brand's website indicates their message program will be sending this type of content, the campaign will be rejected.*" [ref=e150]
+                  - row "CR2009 Brand website references sweepstakes and declared use case is not sweepstakes If the brand's website indicates that they are sending sweepstakes related messaging, then the campaign use case should be Sweepstakes. Register the campaign again with the correct use case and resubmit." [ref=e151]:
+                    - cell "CR2009" [ref=e152]
+                    - cell "Brand website references sweepstakes and declared use case is not sweepstakes" [ref=e153]
+                    - cell "If the brand's website indicates that they are sending sweepstakes related messaging, then the campaign use case should be Sweepstakes. Register the campaign again with the correct use case and resubmit." [ref=e154]
+                  - row "CR2010 Brand website references charitable donations and declared use case is not charity If the brand's website indicates that they are soliciting charitable donations through their message program, then the campaign use case should be Charity. Register the campaign again with the correct use case and resubmit." [ref=e155]:
+                    - cell "CR2010" [ref=e156]
+                    - cell "Brand website references charitable donations and declared use case is not charity" [ref=e157]
+                    - cell "If the brand's website indicates that they are soliciting charitable donations through their message program, then the campaign use case should be Charity. Register the campaign again with the correct use case and resubmit." [ref=e158]
+                  - row "CR2011 Brand associated with or website references political content and declared use case is not political If the brand's website indicates that they are sending political content through their message program, then the campaign use case should be Political. Register the campaign again with the correct use case and resubmit." [ref=e159]:
+                    - cell "CR2011" [ref=e160]
+                    - cell "Brand associated with or website references political content and declared use case is not political" [ref=e161]
+                    - cell "If the brand's website indicates that they are sending political content through their message program, then the campaign use case should be Political. Register the campaign again with the correct use case and resubmit." [ref=e162]
+                  - row "CR2012 Brand associated with or website references lead generation/affiliate marketing Message content related to lead generation or affiliate marketing is not permitted. All promotional content must be directly related to the registered brand. If the brand's website indicates that their message program will be sending this type of content, the campaign will be rejected.*" [ref=e163]:
+                    - cell "CR2012" [ref=e164]
+                    - cell "Brand associated with or website references lead generation/affiliate marketing" [ref=e165]
+                    - cell "Message content related to lead generation or affiliate marketing is not permitted. All promotional content must be directly related to the registered brand. If the brand's website indicates that their message program will be sending this type of content, the campaign will be rejected.*" [ref=e166]
+                  - row "CR2018 Brand support email address is missing/invalid Check that the brand's email was provided and is in a working state and resubmit." [ref=e167]:
+                    - cell "CR2018" [ref=e168]
+                    - cell "Brand support email address is missing/invalid" [ref=e169]
+                    - cell "Check that the brand's email was provided and is in a working state and resubmit." [ref=e170]
+                  - row "CR2019 Brand support phone number is missing/invalid Check that the brand's phone number was provided and is in a working state and resubmit." [ref=e171]:
+                    - cell "CR2019" [ref=e172]
+                    - cell "Brand support phone number is missing/invalid" [ref=e173]
+                    - cell "Check that the brand's phone number was provided and is in a working state and resubmit." [ref=e174]
+                  - row "CR2020 Brand name on website does not match registered/DBA brand name The company name on the brand's website must match the registered brand name or DBA name shown in TCR. Update and resubmit." [ref=e175]:
+                    - cell "CR2020" [ref=e176]
+                    - cell "Brand name on website does not match registered/DBA brand name" [ref=e177]
+                    - cell "The company name on the brand's website must match the registered brand name or DBA name shown in TCR. Update and resubmit." [ref=e178]:
+                      - paragraph [ref=e179]:
+                        - text: The company name on the brand's website must match the registered brand name or DBA name shown in
+                        - link "TCR" [ref=e180] [cursor=pointer]:
+                          - /url: https://community.sinch.com/t5/10DLC/What-is-The-Campaign-Registry-TCR/ta-p/7024
+                        - text: . Update and resubmit.
+                  - row "CR2021 Sole proprietor brand is not small business/individual without an EIN Campaigns registered as sole proprietor use case must be associated with a brand that does not have a registered tax ID. Register the brand as the correct entity and resubmit." [ref=e181]:
+                    - cell "CR2021" [ref=e182]
+                    - cell "Sole proprietor brand is not small business/individual without an EIN" [ref=e183]
+                    - cell "Campaigns registered as sole proprietor use case must be associated with a brand that does not have a registered tax ID. Register the brand as the correct entity and resubmit." [ref=e184]
+                  - row "CR2022 Vetted brand does not meet minimum vetting score requirements In some cases, a brand's vetting score may be a value that it insufficient for campaign approval." [ref=e185]:
+                    - cell "CR2022" [ref=e186]
+                    - cell "Vetted brand does not meet minimum vetting score requirements" [ref=e187]
+                    - cell "In some cases, a brand's vetting score may be a value that it insufficient for campaign approval." [ref=e188]
+                  - row "CR2023 Brand address associated with known spam/scam complaints The address provided in the brand registration is associated with an address that is known for sending spam and unwanted messaging. If this is the case, the campaign will be rejected." [ref=e189]:
+                    - cell "CR2023" [ref=e190]
+                    - cell "Brand address associated with known spam/scam complaints" [ref=e191]
+                    - cell "The address provided in the brand registration is associated with an address that is known for sending spam and unwanted messaging. If this is the case, the campaign will be rejected." [ref=e192]
+              - paragraph [ref=e193]
+              - table [ref=e194]:
+                - rowgroup [ref=e195]:
+                  - row "Campaign (Declared Use Case, Description, and Campaign Attributes)" [ref=e196]:
+                    - cell "Campaign (Declared Use Case, Description, and Campaign Attributes)" [ref=e197]:
+                      - heading "Campaign (Declared Use Case, Description, and Campaign Attributes)" [level=2] [ref=e198]:
+                        - strong [ref=e199]: Campaign (Declared Use Case, Description, and Campaign Attributes)
+                  - row "Rejection Code Description Action" [ref=e200]:
+                    - cell "Rejection Code" [ref=e201]:
+                      - strong [ref=e202]: Rejection Code
+                    - cell "Description" [ref=e203]:
+                      - strong [ref=e204]: Description
+                    - cell "Action" [ref=e205]:
+                      - strong [ref=e206]: Action
+                  - row "CR3001 Campaign description is not unique or duplicate campaign Sinch may reject a campaign if it appears that the content has been duplicated and indicates the disallowed practice of snowshoeing. Make sure that only one campaign is registered for your use case." [ref=e207]:
+                    - cell "CR3001" [ref=e208]
+                    - cell "Campaign description is not unique or duplicate campaign" [ref=e209]
+                    - cell "Sinch may reject a campaign if it appears that the content has been duplicated and indicates the disallowed practice of snowshoeing. Make sure that only one campaign is registered for your use case." [ref=e210]:
+                      - text: Sinch may reject a campaign if it appears that the content has been duplicated and indicates the disallowed practice of
+                      - link "snowshoeing" [ref=e211] [cursor=pointer]:
+                        - /url: https://community.sinch.com/t5/10DLC/What-is-Snowshoeing/ta-p/8882
+                      - text: . Make sure that only one campaign is registered for your use case.
+                  - row "CR3002 Campaign description does not sufficiently describe the service the message program is providing to the end user It must be clear from your campaign description what the purpose of your message program is. Add more details to the description and resubmit." [ref=e212]:
+                    - cell "CR3002" [ref=e213]
+                    - cell "Campaign description does not sufficiently describe the service the message program is providing to the end user" [ref=e214]
+                    - cell "It must be clear from your campaign description what the purpose of your message program is. Add more details to the description and resubmit." [ref=e215]
+                  - row "CR3003 Campaign description does not match declared use case(s) The use case described in the campaign description must match the registered use case. Update the description or register the campaign again with the correct use case and resubmit." [ref=e216]:
+                    - cell "CR3003" [ref=e217]
+                    - cell "Campaign description does not match declared use case(s)" [ref=e218]
+                    - cell "The use case described in the campaign description must match the registered use case. Update the description or register the campaign again with the correct use case and resubmit." [ref=e219]
+                  - row "CR3004 Campaign description does not match sample messages The use case described in the campaign description must match the use case demonstrated in the sample message content. Update the description or sample message content and resubmit." [ref=e220]:
+                    - cell "CR3004" [ref=e221]
+                    - cell "Campaign description does not match sample messages" [ref=e222]
+                    - cell "The use case described in the campaign description must match the use case demonstrated in the sample message content. Update the description or sample message content and resubmit." [ref=e223]
+                  - row "CR3005 Campaign description references third party job boards Messaging content related to third party job boards is not permitted. If the campaign description indicates the message program will be sending this type of content, the campaign will be rejected.*" [ref=e224]:
+                    - cell "CR3005" [ref=e225]
+                    - cell "Campaign description references third party job boards" [ref=e226]
+                    - cell "Messaging content related to third party job boards is not permitted. If the campaign description indicates the message program will be sending this type of content, the campaign will be rejected.*" [ref=e227]
+                  - row "CR3008 Campaign description references lead generation/affiliate marketing Messaging content related to lead generation or affiliate marketing is not permitted. All promotional content must be directly related to the registered brand. If the campaign description indicates the message program will be sending this type of content, the campaign will be rejected.*" [ref=e228]:
+                    - cell "CR3008" [ref=e229]
+                    - cell "Campaign description references lead generation/affiliate marketing" [ref=e230]
+                    - cell "Messaging content related to lead generation or affiliate marketing is not permitted. All promotional content must be directly related to the registered brand. If the campaign description indicates the message program will be sending this type of content, the campaign will be rejected.*" [ref=e231]
+                  - row "CR3009 Campaign description references sweepstakes and declared use case is not sweepstakes If the campaign description indicates that the brand is sending sweepstakes related messaging, then the campaign use case should be Sweepstakes. Update the description or register the campaign again with the correct use case and resubmit." [ref=e232]:
+                    - cell "CR3009" [ref=e233]
+                    - cell "Campaign description references sweepstakes and declared use case is not sweepstakes" [ref=e234]
+                    - cell "If the campaign description indicates that the brand is sending sweepstakes related messaging, then the campaign use case should be Sweepstakes. Update the description or register the campaign again with the correct use case and resubmit." [ref=e235]
+                  - row "CR3010 Campaign description references charitable donations and declared use case is not charity If the campaign description indicates that the brand is soliciting charitable donations through their message program, then the campaign use case should be Charity. Update the description or register the campaign again with the correct use case and resubmit." [ref=e236]:
+                    - cell "CR3010" [ref=e237]
+                    - cell "Campaign description references charitable donations and declared use case is not charity" [ref=e238]
+                    - cell "If the campaign description indicates that the brand is soliciting charitable donations through their message program, then the campaign use case should be Charity. Update the description or register the campaign again with the correct use case and resubmit." [ref=e239]
+                  - row "CR3011 Campaign description references political content and declared use case is not political If the campaign description indicates that the brand is sending political content through their message program, then the campaign use case should be Political. Update the description or register the campaign again with the correct use case and resubmit." [ref=e240]:
+                    - cell "CR3011" [ref=e241]
+                    - cell "Campaign description references political content and declared use case is not political" [ref=e242]
+                    - cell "If the campaign description indicates that the brand is sending political content through their message program, then the campaign use case should be Political. Update the description or register the campaign again with the correct use case and resubmit." [ref=e243]
+                  - row "CR3017 Machine-to-Machine use case selected for subscriber-facing message program The Machine-to-Machine (M2M) use case is restricted to non-subscriber facing message programs only. Register the campaign again with the correct use case and resubmit." [ref=e244]:
+                    - cell "CR3017" [ref=e245]
+                    - cell "Machine-to-Machine use case selected for subscriber-facing message program" [ref=e246]
+                    - cell "The Machine-to-Machine (M2M) use case is restricted to non-subscriber facing message programs only. Register the campaign again with the correct use case and resubmit." [ref=e247]
+                  - row "CR3018 Brand referenced in campaign description does not match registered/DBA brand The company name referenced in the campaign description should match the registered brand name or DBA name shown in TCR. You can use a shortened brand name in your messages, but it can't be so different that it's not clear who the sender is. Update the campaign description and resubmit." [ref=e248]:
+                    - cell "CR3018" [ref=e249]
+                    - cell "Brand referenced in campaign description does not match registered/DBA brand" [ref=e250]
+                    - cell "The company name referenced in the campaign description should match the registered brand name or DBA name shown in TCR. You can use a shortened brand name in your messages, but it can't be so different that it's not clear who the sender is. Update the campaign description and resubmit." [ref=e251]:
+                      - text: The company name referenced in the campaign description should match the registered brand name or DBA name shown in
+                      - link "TCR" [ref=e252] [cursor=pointer]:
+                        - /url: https://community.sinch.com/t5/10DLC/What-is-The-Campaign-Registry-TCR/ta-p/7024
+                      - text: . You can use a shortened brand name in your messages, but it can't be so different that it's not clear who the sender is. Update the campaign description and resubmit.
+              - paragraph [ref=e253]
+              - table [ref=e254]:
+                - rowgroup [ref=e255]:
+                  - row "Call-to-Action (Message Flow)" [ref=e256]:
+                    - cell "Call-to-Action (Message Flow)" [ref=e257]:
+                      - heading "Call-to-Action (Message Flow)" [level=2] [ref=e258]:
+                        - strong [ref=e259]: Call-to-Action (Message Flow)
+                  - row "Rejection Code Description Action" [ref=e260]:
+                    - cell "Rejection Code" [ref=e261]:
+                      - strong [ref=e262]: Rejection Code
+                    - cell "Description" [ref=e263]:
+                      - strong [ref=e264]: Description
+                    - cell "Action" [ref=e265]:
+                      - strong [ref=e266]: Action
+                  - row "CR4001 Call-to-action does not obtain sufficient consent The call-to-action must show that the appropriate type of consent is gained for the message program. If it does not, update the call-to-action and resubmit. Refer to CTIA Messaging Principles and Best Practices for more info." [ref=e267]:
+                    - cell "CR4001" [ref=e268]
+                    - cell "Call-to-action does not obtain sufficient consent" [ref=e269]
+                    - cell "The call-to-action must show that the appropriate type of consent is gained for the message program. If it does not, update the call-to-action and resubmit. Refer to CTIA Messaging Principles and Best Practices for more info." [ref=e270]:
+                      - text: The call-to-action must show that the appropriate type of consent is gained for the message program. If it does not, update the call-to-action and resubmit. Refer to
+                      - link "CTIA Messaging Principles and Best Practices" [ref=e271] [cursor=pointer]:
+                        - /url: https://community.sinch.com/t5/SMS/CTIA-Messaging-Principles-and-Best-Practices/ta-p/7087
+                      - text: for more info.
+                  - row "CR4002 Call-to-action does not contain registered/DBA brand name The company name referenced in the call-to-action must match the registered brand name or DBA name shown in TCR.You can use a shortened brand name in your messages, but it can't be so different that it's not clear who the sender is. Update the call-to-action and resubmit." [ref=e272]:
+                    - cell "CR4002" [ref=e273]
+                    - cell "Call-to-action does not contain registered/DBA brand name" [ref=e274]
+                    - cell "The company name referenced in the call-to-action must match the registered brand name or DBA name shown in TCR.You can use a shortened brand name in your messages, but it can't be so different that it's not clear who the sender is. Update the call-to-action and resubmit." [ref=e275]:
+                      - text: The company name referenced in the call-to-action must match the registered brand name or DBA name shown in
+                      - link "TCR" [ref=e276] [cursor=pointer]:
+                        - /url: https://community.sinch.com/t5/10DLC/What-is-The-Campaign-Registry-TCR/ta-p/7024
+                      - text: .You can use a shortened brand name in your messages, but it can't be so different that it's not clear who the sender is. Update the call-to-action and resubmit.
+                  - row "CR4003 Call-to-action does not contain HELP instructions (e.g. Reply HELP for help) or HELP instructions in Terms & Conditions The call-to-action must include instructions on how the end user can receive further support from the brand regarding the message program (e.g. Reply HELP for help), or this information must be present in the brand's terms and conditions. Update the call-to-action and resubmit." [ref=e277]:
+                    - cell "CR4003" [ref=e278]
+                    - cell "Call-to-action does not contain HELP instructions (e.g. Reply HELP for help) or HELP instructions in Terms & Conditions" [ref=e279]
+                    - cell "The call-to-action must include instructions on how the end user can receive further support from the brand regarding the message program (e.g. Reply HELP for help), or this information must be present in the brand's terms and conditions. Update the call-to-action and resubmit." [ref=e280]
+                  - row "CR4004 Call-to-action does not contain STOP instructions (e.g. Reply STOP to cancel) The call-to-action must include instructions on how the end user can opt-out of the message program (e.g., Reply STOP to opt-out). Update the call-to-action and resubmit." [ref=e281]:
+                    - cell "CR4004" [ref=e282]
+                    - cell "Call-to-action does not contain STOP instructions (e.g. Reply STOP to cancel)" [ref=e283]
+                    - cell "The call-to-action must include instructions on how the end user can opt-out of the message program (e.g., Reply STOP to opt-out). Update the call-to-action and resubmit." [ref=e284]
+                  - row "CR4005 Call-to-action does not contain message frequency disclosure for recurring message program The call-to-action must include the frequency at which messages will be sent to end users (e.g.,#msgs/mo, msg frequency varies, recurring messages, etc.). Update the call-to-action and resubmit." [ref=e285]:
+                    - cell "CR4005" [ref=e286]
+                    - cell "Call-to-action does not contain message frequency disclosure for recurring message program" [ref=e287]
+                    - cell "The call-to-action must include the frequency at which messages will be sent to end users (e.g.,#msgs/mo, msg frequency varies, recurring messages, etc.). Update the call-to-action and resubmit." [ref=e288]
+                  - row "CR4006 Call-to-action does not contain \"message and data rates may apply\" disclosure The call-to-action must include the message and data rate disclosure, as mandated by U.S. carriers. Update the call-to-action and resubmit." [ref=e289]:
+                    - cell "CR4006" [ref=e290]
+                    - cell "Call-to-action does not contain \"message and data rates may apply\" disclosure" [ref=e291]
+                    - cell "The call-to-action must include the message and data rate disclosure, as mandated by U.S. carriers. Update the call-to-action and resubmit." [ref=e292]
+                  - row "CR4007 Call-to-action does not contain complete terms and conditions OR link to complete terms and conditions The call-to-action must include a link to the message program terms and conditions, or the complete message program terms and conditions language. Update the call-to-action and resubmit." [ref=e293]:
+                    - cell "CR4007" [ref=e294]
+                    - cell "Call-to-action does not contain complete terms and conditions OR link to complete terms and conditions" [ref=e295]
+                    - cell "The call-to-action must include a link to the message program terms and conditions, or the complete message program terms and conditions language. Update the call-to-action and resubmit." [ref=e296]
+                  - row "CR4008 Call-to-action does not contain link to privacy policy OR state that mobile opt-in data will not be shared with third parties Mobile opt in data (i.e. the end user's phone number) cannot be shared with third parties. The call-to-action must include a link to the message program privacy policy, or language referring to the privacy policy, that indicates that mobile opt-in data will not be shared. Update the call-to-action and resubmit." [ref=e297]:
+                    - cell "CR4008" [ref=e298]
+                    - cell "Call-to-action does not contain link to privacy policy OR state that mobile opt-in data will not be shared with third parties" [ref=e299]
+                    - cell "Mobile opt in data (i.e. the end user's phone number) cannot be shared with third parties. The call-to-action must include a link to the message program privacy policy, or language referring to the privacy policy, that indicates that mobile opt-in data will not be shared. Update the call-to-action and resubmit." [ref=e300]
+                  - row "CR4009 Call-to-action does not obtain express written consent for promotional message content For promotional message programs, the call-to-action must show that express written consent was obtained from the end user before sending promotional message content. Update the call-to-action and resubmit. Refer to CTIA Messaging Principles and Best Practices for more info." [ref=e301]:
+                    - cell "CR4009" [ref=e302]
+                    - cell "Call-to-action does not obtain express written consent for promotional message content" [ref=e303]
+                    - cell "For promotional message programs, the call-to-action must show that express written consent was obtained from the end user before sending promotional message content. Update the call-to-action and resubmit. Refer to CTIA Messaging Principles and Best Practices for more info." [ref=e304]:
+                      - text: For promotional message programs, the call-to-action must show that express written consent was obtained from the end user before sending promotional message content. Update the call-to-action and resubmit. Refer to
+                      - link "CTIA Messaging Principles and Best Practices" [ref=e305] [cursor=pointer]:
+                        - /url: https://community.sinch.com/t5/SMS/CTIA-Messaging-Principles-and-Best-Practices/ta-p/7087
+                      - text: for more info.
+                  - row "CR4014 Call-to-action does not contain robust age gate for age-restricted message program (alcohol/firearms/tobacco) Message content related to age restricted goods, such as alcohol or tobacco, is not permitted without an age gate mechanism. An acceptable age gate would consist of, at minimum, a recipient entering a day, month, and year confirming their age at messaging opt-in prior to receiving messaging. If the call-to-action indicates that the message program will be sending this type of content, and no age gate is in place, the campaign will be rejected. Implement age gate and resubmit." [ref=e306]:
+                    - cell "CR4014" [ref=e307]
+                    - cell "Call-to-action does not contain robust age gate for age-restricted message program (alcohol/firearms/tobacco)" [ref=e308]
+                    - cell "Message content related to age restricted goods, such as alcohol or tobacco, is not permitted without an age gate mechanism. An acceptable age gate would consist of, at minimum, a recipient entering a day, month, and year confirming their age at messaging opt-in prior to receiving messaging. If the call-to-action indicates that the message program will be sending this type of content, and no age gate is in place, the campaign will be rejected. Implement age gate and resubmit." [ref=e309]
+                  - row "CR4015 Call-to-action is missing/inaccessible There is no call-to-action URL provided in the campaign description, or the URL provided is inaccessible. You must provide evidence of a compliant opt-in process via either a live opt-in URL, or a URL to a hosted opt-in image (screenshot or mock-up). Update the call-to-action description to include the call-to-action URL and resubmit." [ref=e310]:
+                    - cell "CR4015" [ref=e311]
+                    - cell "Call-to-action is missing/inaccessible" [ref=e312]
+                    - cell "There is no call-to-action URL provided in the campaign description, or the URL provided is inaccessible. You must provide evidence of a compliant opt-in process via either a live opt-in URL, or a URL to a hosted opt-in image (screenshot or mock-up). Update the call-to-action description to include the call-to-action URL and resubmit." [ref=e313]:
+                      - text: There is no call-to-action URL provided in the campaign description, or the URL provided is inaccessible. You must provide evidence of a compliant opt-in process via
+                      - generic [ref=e314]: either a live opt-in URL, or
+                      - text: a URL to a hosted opt-in image (screenshot or mock-up). Update the call-to-action description to include the call-to-action URL and resubmit.
+              - paragraph [ref=e315]
+              - table [ref=e316]:
+                - rowgroup [ref=e317]:
+                  - row "Terms and Conditions" [ref=e318]:
+                    - cell "Terms and Conditions" [ref=e319]:
+                      - heading "Terms and Conditions" [level=2] [ref=e320]:
+                        - strong [ref=e321]: Terms and Conditions
+                  - row "Rejection Code Description Action" [ref=e322]:
+                    - cell "Rejection Code" [ref=e323]:
+                      - strong [ref=e324]: Rejection Code
+                    - cell "Description" [ref=e325]:
+                      - strong [ref=e326]: Description
+                    - cell "Action" [ref=e327]:
+                      - strong [ref=e328]: Action
+                  - row "CR5001 Terms and conditions are missing/inaccessible There is no terms and conditions URL available to review, or the URL provided is inaccessible. Update the link and resubmit." [ref=e329]:
+                    - cell "CR5001" [ref=e330]
+                    - cell "Terms and conditions are missing/inaccessible" [ref=e331]
+                    - cell "There is no terms and conditions URL available to review, or the URL provided is inaccessible. Update the link and resubmit." [ref=e332]
+                  - row "CR5002 Terms and conditions do not contain registered/DBA brand name The company name referenced in the terms and conditions must match the registered brand name or DBA name shown in TCR. You can use a shortened brand name in your messages, but it can't be so different that it's not clear who the sender is. Update the terms and conditions and resubmit." [ref=e333]:
+                    - cell "CR5002" [ref=e334]
+                    - cell "Terms and conditions do not contain registered/DBA brand name" [ref=e335]
+                    - cell "The company name referenced in the terms and conditions must match the registered brand name or DBA name shown in TCR. You can use a shortened brand name in your messages, but it can't be so different that it's not clear who the sender is. Update the terms and conditions and resubmit." [ref=e336]:
+                      - text: The company name referenced in the terms and conditions must match the registered brand name or DBA name shown in
+                      - link "TCR" [ref=e337] [cursor=pointer]:
+                        - /url: https://community.sinch.com/t5/10DLC/What-is-The-Campaign-Registry-TCR/ta-p/7024
+                      - text: . You can use a shortened brand name in your messages, but it can't be so different that it's not clear who the sender is. Update the terms and conditions and resubmit.
+                  - row "CR5003 Terms and conditions do not contain message frequency disclosure for recurring message program For recurring message programs, the terms and conditions must include the frequency at which messages will be sent to end users (e.g.,#msgs/mo, msg frequency varies, recurring messages, etc.). Update the terms and conditions and resubmit." [ref=e338]:
+                    - cell "CR5003" [ref=e339]
+                    - cell "Terms and conditions do not contain message frequency disclosure for recurring message program" [ref=e340]
+                    - cell "For recurring message programs, the terms and conditions must include the frequency at which messages will be sent to end users (e.g.,#msgs/mo, msg frequency varies, recurring messages, etc.). Update the terms and conditions and resubmit." [ref=e341]
+                  - row "CR5004 Terms and conditions do not contain program description The terms and conditions must include a description of the purpose of the message program. Update the terms and conditions and resubmit." [ref=e342]:
+                    - cell "CR5004" [ref=e343]
+                    - cell "Terms and conditions do not contain program description" [ref=e344]
+                    - cell "The terms and conditions must include a description of the purpose of the message program. Update the terms and conditions and resubmit." [ref=e345]
+                  - row "CR5005 Terms and conditions do not contain customer care contact information The terms and conditions must include information on how the end user can contact the brand to receive further support regarding the message program. Update the terms and conditions and resubmit." [ref=e346]:
+                    - cell "CR5005" [ref=e347]
+                    - cell "Terms and conditions do not contain customer care contact information" [ref=e348]
+                    - cell "The terms and conditions must include information on how the end user can contact the brand to receive further support regarding the message program. Update the terms and conditions and resubmit." [ref=e349]
+                  - row "CR5007 Terms and conditions do not contain opt out instructions The terms and conditions must include information on how the end user can opt-out of the message program (e.g., Reply STOP to opt-out). Update the terms and conditions and resubmit." [ref=e350]:
+                    - cell "CR5007" [ref=e351]
+                    - cell "Terms and conditions do not contain opt out instructions" [ref=e352]
+                    - cell "The terms and conditions must include information on how the end user can opt-out of the message program (e.g., Reply STOP to opt-out). Update the terms and conditions and resubmit." [ref=e353]
+                  - row "CR5010 Terms and conditions do not contain link to privacy policy The terms and conditions must a link to the privacy policy. Update the terms and conditions and resubmit." [ref=e354]:
+                    - cell "CR5010" [ref=e355]
+                    - cell "Terms and conditions do not contain link to privacy policy" [ref=e356]
+                    - cell "The terms and conditions must a link to the privacy policy. Update the terms and conditions and resubmit." [ref=e357]
+                  - row "CR5011 Terms and conditions do not contain sweepstakes terms and declared use case is sweepstakes If the campaign use case is Sweepstakes, then the terms and conditions should contain the sweepstakes terms or a link to the sweepstakes terms. Update the terms and conditions and resubmit." [ref=e358]:
+                    - cell "CR5011" [ref=e359]
+                    - cell "Terms and conditions do not contain sweepstakes terms and declared use case is sweepstakes" [ref=e360]
+                    - cell "If the campaign use case is Sweepstakes, then the terms and conditions should contain the sweepstakes terms or a link to the sweepstakes terms. Update the terms and conditions and resubmit." [ref=e361]
+              - paragraph [ref=e362]
+              - table [ref=e363]:
+                - rowgroup [ref=e364]:
+                  - row "Privacy Policy" [ref=e365]:
+                    - cell "Privacy Policy" [ref=e366]:
+                      - heading "Privacy Policy" [level=2] [ref=e367]:
+                        - strong [ref=e368]: Privacy Policy
+                  - row "Rejection Code Description Action" [ref=e369]:
+                    - cell "Rejection Code" [ref=e370]:
+                      - strong [ref=e371]: Rejection Code
+                    - cell "Description" [ref=e372]:
+                      - strong [ref=e373]: Description
+                    - cell "Action" [ref=e374]:
+                      - strong [ref=e375]: Action
+                  - row "CR6001 Privacy policy is missing/inaccessible There is no privacy policy URL available to review, or the provided URL is inaccessible. Update the link and resubmit." [ref=e376]:
+                    - cell "CR6001" [ref=e377]
+                    - cell "Privacy policy is missing/inaccessible" [ref=e378]
+                    - cell "There is no privacy policy URL available to review, or the provided URL is inaccessible. Update the link and resubmit." [ref=e379]
+                  - row "CR6002 Privacy policy does not state that no mobile opt-in data will be shared with third parties or affiliate Mobile opt in data (i.e. the end user's phone number) cannot be shared with third parties. The privacy policy must indicate that mobile opt-in data will not be shared with third parties. Update the privacy policy and resubmit." [ref=e380]:
+                    - cell "CR6002" [ref=e381]
+                    - cell "Privacy policy does not state that no mobile opt-in data will be shared with third parties or affiliate" [ref=e382]
+                    - cell "Mobile opt in data (i.e. the end user's phone number) cannot be shared with third parties. The privacy policy must indicate that mobile opt-in data will not be shared with third parties. Update the privacy policy and resubmit." [ref=e383]
+                  - row "CR6003 Privacy policy references mobile opt-in data sharing with third parties Mobile opt in data (i.e. the end user's phone number) cannot be shared with third parties. If the privacy policy indicates this, the campaign will be rejected. Update the privacy policy and resubmit." [ref=e384]:
+                    - cell "CR6003" [ref=e385]
+                    - cell "Privacy policy references mobile opt-in data sharing with third parties" [ref=e386]
+                    - cell "Mobile opt in data (i.e. the end user's phone number) cannot be shared with third parties. If the privacy policy indicates this, the campaign will be rejected. Update the privacy policy and resubmit." [ref=e387]
+                  - row "CR6004 Mismatch of brand name in Privacy Policy. If the privacy policy references a different brand name, then what the brand name is in the filing, you'll get this response. Ensure the brand name matches between the filing and the privacy policy." [ref=e388]:
+                    - cell "CR6004" [ref=e389]
+                    - cell "Mismatch of brand name in Privacy Policy." [ref=e390]
+                    - cell "If the privacy policy references a different brand name, then what the brand name is in the filing, you'll get this response. Ensure the brand name matches between the filing and the privacy policy." [ref=e391]
+              - paragraph [ref=e392]
+              - table [ref=e393]:
+                - rowgroup [ref=e394]:
+                  - row "Mandatory Messages" [ref=e395]:
+                    - cell "Mandatory Messages" [ref=e396]:
+                      - heading "Mandatory Messages" [level=2] [ref=e397]:
+                        - strong [ref=e398]: Mandatory Messages
+                  - row "Rejection Code Description Action" [ref=e399]:
+                    - cell "Rejection Code" [ref=e400]:
+                      - strong [ref=e401]: Rejection Code
+                    - cell "Description" [ref=e402]:
+                      - strong [ref=e403]: Description
+                    - cell "Action" [ref=e404]:
+                      - strong [ref=e405]: Action
+                  - row "CR7001 Opt-in message does not contain registered/DBA brand name The company name in the opt-in message must match the registered brand name or DBA name shown in TCR. You can use a shortened brand name in your messages, but it can't be so different that it's not clear who the sender is. Update the opt-in message and resubmit." [ref=e406]:
+                    - cell "CR7001" [ref=e407]
+                    - cell "Opt-in message does not contain registered/DBA brand name" [ref=e408]
+                    - cell "The company name in the opt-in message must match the registered brand name or DBA name shown in TCR. You can use a shortened brand name in your messages, but it can't be so different that it's not clear who the sender is. Update the opt-in message and resubmit." [ref=e409]:
+                      - text: The company name in the opt-in message must match the registered brand name or DBA name shown in
+                      - link "TCR" [ref=e410] [cursor=pointer]:
+                        - /url: https://community.sinch.com/t5/10DLC/What-is-The-Campaign-Registry-TCR/ta-p/7024
+                      - text: . You can use a shortened brand name in your messages, but it can't be so different that it's not clear who the sender is. Update the opt-in message and resubmit.
+                  - row "CR7002 Opt-in message does not contain HELP instructions (e.g. Reply HELP for help) The opt-in message must include instructions on how the end user can receive further support from the brand regarding the message program (e.g. reply HELP for help). Update the opt-in message and resubmit." [ref=e411]:
+                    - cell "CR7002" [ref=e412]
+                    - cell "Opt-in message does not contain HELP instructions (e.g. Reply HELP for help)" [ref=e413]
+                    - cell "The opt-in message must include instructions on how the end user can receive further support from the brand regarding the message program (e.g. reply HELP for help). Update the opt-in message and resubmit." [ref=e414]
+                  - row "CR7003 Opt-in message does not contain opt-out instructions (e.g. Reply STOP to stop) The opt-in message must include instructions on how the end user can opt-out of the message program (e.g., Reply STOP to opt-out). Update the opt-in message and resubmit." [ref=e415]:
+                    - cell "CR7003" [ref=e416]
+                    - cell "Opt-in message does not contain opt-out instructions (e.g. Reply STOP to stop)" [ref=e417]
+                    - cell "The opt-in message must include instructions on how the end user can opt-out of the message program (e.g., Reply STOP to opt-out). Update the opt-in message and resubmit." [ref=e418]
+                  - row "CR7004 Opt-in message does not contain message frequency disclosure (#msgs/mo, msg frequency varies, recurring messages, etc.) The opt-in message must include the frequency at which messages will be sent to end users (e.g.,#msgs/mo, msg frequency varies, recurring messages, etc.). Update the opt-in message and resubmit." [ref=e419]:
+                    - cell "CR7004" [ref=e420]
+                    - cell "Opt-in message does not contain message frequency disclosure (#msgs/mo, msg frequency varies, recurring messages, etc.)" [ref=e421]
+                    - cell "The opt-in message must include the frequency at which messages will be sent to end users (e.g.,#msgs/mo, msg frequency varies, recurring messages, etc.). Update the opt-in message and resubmit." [ref=e422]
+                  - row "CR7005 Opt-in message does not contain \"message and data rates may apply\" disclosure The opt-in message must include the message and data rate disclosure, as mandated by U.S. carriers. Update the opt-in message and resubmit." [ref=e423]:
+                    - cell "CR7005" [ref=e424]
+                    - cell "Opt-in message does not contain \"message and data rates may apply\" disclosure" [ref=e425]
+                    - cell "The opt-in message must include the message and data rate disclosure, as mandated by U.S. carriers. Update the opt-in message and resubmit." [ref=e426]
+                  - row "CR7006 Opt-in message not provided Recurring message programs must send the end-user an opt-in message with HELP and STOP instructions, as well as the message frequency and \"message and data rates may apply\" disclosure. Update the campaign and resubmit." [ref=e427]:
+                    - cell "CR7006" [ref=e428]
+                    - cell "Opt-in message not provided" [ref=e429]
+                    - cell "Recurring message programs must send the end-user an opt-in message with HELP and STOP instructions, as well as the message frequency and \"message and data rates may apply\" disclosure. Update the campaign and resubmit." [ref=e430]
+                  - row "CR8001 HELP message does not contain registered/DBA brand name The company name in the HELP message must match the registered brand name or DBA name shown in TCR. You can use a shortened brand name in your messages, but it can't be so different that it's not clear who the sender is. Update the HELP message and resubmit." [ref=e431]:
+                    - cell "CR8001" [ref=e432]
+                    - cell "HELP message does not contain registered/DBA brand name" [ref=e433]
+                    - cell "The company name in the HELP message must match the registered brand name or DBA name shown in TCR. You can use a shortened brand name in your messages, but it can't be so different that it's not clear who the sender is. Update the HELP message and resubmit." [ref=e434]:
+                      - text: The company name in the HELP message must match the registered brand name or DBA name shown in
+                      - link "TCR" [ref=e435] [cursor=pointer]:
+                        - /url: https://community.sinch.com/t5/10DLC/What-is-The-Campaign-Registry-TCR/ta-p/7024
+                      - text: . You can use a shortened brand name in your messages, but it can't be so different that it's not clear who the sender is. Update the HELP message and resubmit.
+                  - row "CR8002 HELP message does not contain support contact (email, phone number or support website) The HELP message must include customer care contact info (such as a email address, phone number or link to a support website) informing the end user how they can receive further support from the brand regarding the message program. If a link is provided, the support website must be directly related to the message program. Update the HELP message and resubmit." [ref=e436]:
+                    - cell "CR8002" [ref=e437]
+                    - cell "HELP message does not contain support contact (email, phone number or support website)" [ref=e438]
+                    - cell "The HELP message must include customer care contact info (such as a email address, phone number or link to a support website) informing the end user how they can receive further support from the brand regarding the message program. If a link is provided, the support website must be directly related to the message program. Update the HELP message and resubmit." [ref=e439]
+                  - row "CR8003 HELP message support contact email address does not match registered brand support email address If an email address is provided in the HELP message as the customer care contact info, it should match the email address that was registered as the support contact email shown in TCR. Update the HELP message and resubmit." [ref=e440]:
+                    - cell "CR8003" [ref=e441]
+                    - cell "HELP message support contact email address does not match registered brand support email address" [ref=e442]
+                    - cell "If an email address is provided in the HELP message as the customer care contact info, it should match the email address that was registered as the support contact email shown in TCR. Update the HELP message and resubmit." [ref=e443]:
+                      - text: If an email address is provided in the HELP message as the customer care contact info, it should match the email address that was registered as the support contact email shown in
+                      - link "TCR" [ref=e444] [cursor=pointer]:
+                        - /url: https://community.sinch.com/t5/10DLC/What-is-The-Campaign-Registry-TCR/ta-p/7024
+                      - text: . Update the HELP message and resubmit.
+                  - row "CR9001 Opt-out message does not contain registered/DBA brand name The company name in the opt-out message must match the registered brand name or DBA name shown in TCR. You can use a shortened brand name in your messages, but it can't be so different that it's not clear who the sender is. Update the opt-out message and resubmit." [ref=e445]:
+                    - cell "CR9001" [ref=e446]
+                    - cell "Opt-out message does not contain registered/DBA brand name" [ref=e447]
+                    - cell "The company name in the opt-out message must match the registered brand name or DBA name shown in TCR. You can use a shortened brand name in your messages, but it can't be so different that it's not clear who the sender is. Update the opt-out message and resubmit." [ref=e448]:
+                      - text: The company name in the opt-out message must match the registered brand name or DBA name shown in
+                      - link "TCR" [ref=e449] [cursor=pointer]:
+                        - /url: https://community.sinch.com/t5/10DLC/What-is-The-Campaign-Registry-TCR/ta-p/7024
+                      - generic [ref=e450]: .
+                      - text: You can use a shortened brand name in your messages, but it can't be so different that it's not clear who the sender is. Update the opt-out message and resubmit.
+                  - row "CR9002 Opt-out message does not indicate that no further messages will be sent The opt-out message must clearly indicate that the end user will no longer receive further messages from the brand/message program. Update the opt-out message and resubmit." [ref=e451]:
+                    - cell "CR9002" [ref=e452]
+                    - cell "Opt-out message does not indicate that no further messages will be sent" [ref=e453]
+                    - cell "The opt-out message must clearly indicate that the end user will no longer receive further messages from the brand/message program. Update the opt-out message and resubmit." [ref=e454]
+              - paragraph [ref=e455]
+              - table [ref=e456]:
+                - rowgroup [ref=e457]:
+                  - row "Sample Messages" [ref=e458]:
+                    - cell "Sample Messages" [ref=e459]:
+                      - heading "Sample Messages" [level=2] [ref=e460]:
+                        - strong [ref=e461]: Sample Messages
+                  - row "Rejection Code Description Action" [ref=e462]:
+                    - cell "Rejection Code" [ref=e463]:
+                      - strong [ref=e464]: Rejection Code
+                    - cell "Description" [ref=e465]:
+                      - strong [ref=e466]: Description
+                    - cell "Action" [ref=e467]:
+                      - strong [ref=e468]: Action
+                  - row "CR1101 Sample message(s) do not contain registered/DBA brand name The company name in the sample messages must match the registered brand name or DBA name shown in TCR. You can use a shortened brand name in your messages, but it can't be so different that it's not clear who the sender is. Update the sample messages and resubmit." [ref=e469]:
+                    - cell "CR1101" [ref=e470]
+                    - cell "Sample message(s) do not contain registered/DBA brand name" [ref=e471]
+                    - cell "The company name in the sample messages must match the registered brand name or DBA name shown in TCR. You can use a shortened brand name in your messages, but it can't be so different that it's not clear who the sender is. Update the sample messages and resubmit." [ref=e472]:
+                      - text: The company name in the sample messages must match the registered brand name or DBA name shown in
+                      - link "TCR" [ref=e473] [cursor=pointer]:
+                        - /url: https://community.sinch.com/t5/10DLC/What-is-The-Campaign-Registry-TCR/ta-p/7024
+                      - text: . You can use a shortened brand name in your messages, but it can't be so different that it's not clear who the sender is. Update the sample messages and resubmit.
+                  - row "CR1103 Sample message(s) contain public URL shortener Public URL shorteners such as bit.ly or tinyURL are not permitted to be sent in 10DLC message content. Update sample messages to use a branded URL shortener and resubmit." [ref=e474]:
+                    - cell "CR1103" [ref=e475]
+                    - cell "Sample message(s) contain public URL shortener" [ref=e476]
+                    - cell "Public URL shorteners such as bit.ly or tinyURL are not permitted to be sent in 10DLC message content. Update sample messages to use a branded URL shortener and resubmit." [ref=e477]
+                  - row "CR1104 Sample message(s) use case does not match declared use case(s) The use case indicated in the sample messages must match the registered use case. Update the sample messages or register the campaign again with the correct use case and resubmit." [ref=e478]:
+                    - cell "CR1104" [ref=e479]
+                    - cell "Sample message(s) use case does not match declared use case(s)" [ref=e480]
+                    - cell "The use case indicated in the sample messages must match the registered use case. Update the sample messages or register the campaign again with the correct use case and resubmit." [ref=e481]
+                  - row "CR1105 Sample message(s) reference sweepstakes and declared use case is not sweepstakes If the sample messages indicates that the brand is sending sweepstakes related messaging, then the campaign use case should be Sweepstakes. Update the sample messages or register the campaign again with the correct use case and resubmit." [ref=e482]:
+                    - cell "CR1105" [ref=e483]
+                    - cell "Sample message(s) reference sweepstakes and declared use case is not sweepstakes" [ref=e484]
+                    - cell "If the sample messages indicates that the brand is sending sweepstakes related messaging, then the campaign use case should be Sweepstakes. Update the sample messages or register the campaign again with the correct use case and resubmit." [ref=e485]
+                  - row "CR1106 Sample message(s) reference charitable donations and declared use case is not charity If the sample messages indicates that the brand is soliciting charitable donations through their message program, then the campaign use case should be Charity. Update the sample messages or register the campaign again with the correct use case and resubmit." [ref=e486]:
+                    - cell "CR1106" [ref=e487]
+                    - cell "Sample message(s) reference charitable donations and declared use case is not charity" [ref=e488]
+                    - cell "If the sample messages indicates that the brand is soliciting charitable donations through their message program, then the campaign use case should be Charity. Update the sample messages or register the campaign again with the correct use case and resubmit." [ref=e489]
+                  - row "CR1107 Sample message(s) reference political subject matter and declared use case is not political If the sample messages indicates that the brand is sending political content through their message program, then the campaign use case should be Political. Update the sample messages or register the campaign again with the correct use case and resubmit." [ref=e490]:
+                    - cell "CR1107" [ref=e491]
+                    - cell "Sample message(s) reference political subject matter and declared use case is not political" [ref=e492]
+                    - cell "If the sample messages indicates that the brand is sending political content through their message program, then the campaign use case should be Political. Update the sample messages or register the campaign again with the correct use case and resubmit." [ref=e493]
+                  - row "CR1110 Sample message(s) reference third-party job boards Messaging content related to third party job boards is not permitted. If the sample messages indicate that the message program will be sending this type of content, the campaign will be rejected.*" [ref=e494]:
+                    - cell "CR1110" [ref=e495]
+                    - cell "Sample message(s) reference third-party job boards" [ref=e496]
+                    - cell "Messaging content related to third party job boards is not permitted. If the sample messages indicate that the message program will be sending this type of content, the campaign will be rejected.*" [ref=e497]
+              - paragraph [ref=e498]
+              - table [ref=e499]:
+                - rowgroup [ref=e500]:
+                  - row "Disallowed Content" [ref=e501]:
+                    - cell "Disallowed Content" [ref=e502]:
+                      - heading "Disallowed Content" [level=2] [ref=e503]:
+                        - strong [ref=e504]: Disallowed Content
+                  - row "Rejection Code Description Action" [ref=e505]:
+                    - cell "Rejection Code" [ref=e506]:
+                      - strong [ref=e507]: Rejection Code
+                    - cell "Description" [ref=e508]:
+                      - strong [ref=e509]: Description
+                    - cell "Action" [ref=e510]:
+                      - strong [ref=e511]: Action
+                  - row "CR1111 Sample message(s) contain disallowed content - gambling Message content related to gambling is not permitted. If the sample messages indicates that the message program will be sending this type of content, the campaign will be rejected.*" [ref=e512]:
+                    - cell "CR1111" [ref=e513]
+                    - cell "Sample message(s) contain disallowed content - gambling" [ref=e514]
+                    - cell "Message content related to gambling is not permitted. If the sample messages indicates that the message program will be sending this type of content, the campaign will be rejected.*" [ref=e515]
+                  - row "CR1112 Sample message(s) contain disallowed content - high risk financial services Message content related to high risk financial services, such as loans or cryptocurrency, is not permitted. If the sample messages indicates that the message program will be sending this type of content, the campaign will be rejected.*" [ref=e516]:
+                    - cell "CR1112" [ref=e517]
+                    - cell "Sample message(s) contain disallowed content - high risk financial services" [ref=e518]
+                    - cell "Message content related to high risk financial services, such as loans or cryptocurrency, is not permitted. If the sample messages indicates that the message program will be sending this type of content, the campaign will be rejected.*" [ref=e519]
+                  - row "CR1113 Sample message(s) contain disallowed content - illegal substances Message content related to federally illegal drugs, such as cannabis, is not permitted. If the sample messages indicates that the message program will be sending this type of content, the campaign will be rejected.*" [ref=e520]:
+                    - cell "CR1113" [ref=e521]
+                    - cell "Sample message(s) contain disallowed content - illegal substances" [ref=e522]
+                    - cell "Message content related to federally illegal drugs, such as cannabis, is not permitted. If the sample messages indicates that the message program will be sending this type of content, the campaign will be rejected.*" [ref=e523]
+                  - row "CR1114 Sample message(s) contain disallowed content - SHAFT (sex/hate) Message content related to sexually explicit or hateful content is not permitted. If the sample messages indicates that the message program will be sending this type of content, the campaign will be rejected*" [ref=e524]:
+                    - cell "CR1114" [ref=e525]
+                    - cell "Sample message(s) contain disallowed content - SHAFT (sex/hate)" [ref=e526]
+                    - cell "Message content related to sexually explicit or hateful content is not permitted. If the sample messages indicates that the message program will be sending this type of content, the campaign will be rejected*" [ref=e527]
+                  - row "CR1115 Sample message(s) contain disallowed content - SHAFT (alcohol/firearms/tobacco/vape) with no robust age gate Message content related to age restricted goods, such as alcohol or tobacco, is not permitted without an age gate mechanism. An acceptable age gate would consist of, at minimum, a recipient entering a day, month, and year confirming their age at messaging opt-in prior to receiving messaging. If the sample messages indicates that the message program will be sending this type of content, and no age gate is in place, the campaign will be rejected. Implement age gate and resubmit." [ref=e528]:
+                    - cell "CR1115" [ref=e529]
+                    - cell "Sample message(s) contain disallowed content - SHAFT (alcohol/firearms/tobacco/vape) with no robust age gate" [ref=e530]
+                    - cell "Message content related to age restricted goods, such as alcohol or tobacco, is not permitted without an age gate mechanism. An acceptable age gate would consist of, at minimum, a recipient entering a day, month, and year confirming their age at messaging opt-in prior to receiving messaging. If the sample messages indicates that the message program will be sending this type of content, and no age gate is in place, the campaign will be rejected. Implement age gate and resubmit." [ref=e531]
+                  - row "CR2013 Brand associated with or website contains disallowed content - gambling Message content related to gambling is not permitted. If the brand's website indicates that their message program will be sending this type of content, the campaign will be rejected.*" [ref=e532]:
+                    - cell "CR2013" [ref=e533]
+                    - cell "Brand associated with or website contains disallowed content - gambling" [ref=e534]
+                    - cell "Message content related to gambling is not permitted. If the brand's website indicates that their message program will be sending this type of content, the campaign will be rejected.*" [ref=e535]
+                  - row "CR2014 Brand associated with or website contains disallowed content - high risk financial services Message content related to high risk financial services, such as short-term loans or cryptocurrency, is not permitted. If the brand's website indicates that their message program will be sending this type of content, the campaign will be rejected.*" [ref=e536]:
+                    - cell "CR2014" [ref=e537]
+                    - cell "Brand associated with or website contains disallowed content - high risk financial services" [ref=e538]
+                    - cell "Message content related to high risk financial services, such as short-term loans or cryptocurrency, is not permitted. If the brand's website indicates that their message program will be sending this type of content, the campaign will be rejected.*" [ref=e539]
+                  - row "CR2015 Brand associated with or website contains disallowed content - illegal substances Message content related to federally illegal drugs, such as cannabis, is not permitted. If the brand's website indicates that their message program will be sending this type of content, the campaign will be rejected.*" [ref=e540]:
+                    - cell "CR2015" [ref=e541]
+                    - cell "Brand associated with or website contains disallowed content - illegal substances" [ref=e542]
+                    - cell "Message content related to federally illegal drugs, such as cannabis, is not permitted. If the brand's website indicates that their message program will be sending this type of content, the campaign will be rejected.*" [ref=e543]
+                  - row "CR2016 Brand associated with or website contains disallowed content - SHAFT (sex/hate) Message content related to sexually explicit or hateful content is not permitted. If the brand's website indicates that their message program will be sending this type of content, the campaign will be rejected.*" [ref=e544]:
+                    - cell "CR2016" [ref=e545]
+                    - cell "Brand associated with or website contains disallowed content - SHAFT (sex/hate)" [ref=e546]
+                    - cell "Message content related to sexually explicit or hateful content is not permitted. If the brand's website indicates that their message program will be sending this type of content, the campaign will be rejected.*" [ref=e547]
+                  - row "CR2017 Brand website contains disallowed content - SHAFT (alcohol/firearms/tobacco/vape) with no robust age gate Message content related to age restricted goods, such as alcohol or tobacco, is not permitted without an age gate mechanism. An acceptable age gate would consist of, at minimum, a recipient entering a day, month, and year confirming their age at messaging opt-in prior to receiving messaging. If the brand's website indicates that their message program will be sending this type of content, and no age gate is in place, the campaign will be rejected. Implement age gate and a resubmit." [ref=e548]:
+                    - cell "CR2017" [ref=e549]
+                    - cell "Brand website contains disallowed content - SHAFT (alcohol/firearms/tobacco/vape) with no robust age gate" [ref=e550]
+                    - cell "Message content related to age restricted goods, such as alcohol or tobacco, is not permitted without an age gate mechanism. An acceptable age gate would consist of, at minimum, a recipient entering a day, month, and year confirming their age at messaging opt-in prior to receiving messaging. If the brand's website indicates that their message program will be sending this type of content, and no age gate is in place, the campaign will be rejected. Implement age gate and a resubmit." [ref=e551]
+                  - row "CR3012 Campaign description contains disallowed content - gambling Message content related to gambling is not permitted. If the campaign description indicates that the message program will be sending this type of content, the campaign will be rejected.*" [ref=e552]:
+                    - cell "CR3012" [ref=e553]
+                    - cell "Campaign description contains disallowed content - gambling" [ref=e554]
+                    - cell "Message content related to gambling is not permitted. If the campaign description indicates that the message program will be sending this type of content, the campaign will be rejected.*" [ref=e555]
+                  - row "CR3013 Campaign description contains disallowed content - high risk financial services Message content related to high risk financial services, such as short-term loans or cryptocurrency, is not permitted. If the campaign description indicates that the message program will be sending this type of content, the campaign will be rejected.*" [ref=e556]:
+                    - cell "CR3013" [ref=e557]
+                    - cell "Campaign description contains disallowed content - high risk financial services" [ref=e558]
+                    - cell "Message content related to high risk financial services, such as short-term loans or cryptocurrency, is not permitted. If the campaign description indicates that the message program will be sending this type of content, the campaign will be rejected.*" [ref=e559]
+                  - row "CR3014 Campaign description contains disallowed content - illegal substances Message content related to federally illegal drugs, such as cannabis, is not permitted. If the campaign description indicates that the message program will be sending this type of content, the campaign will be rejected.*" [ref=e560]:
+                    - cell "CR3014" [ref=e561]
+                    - cell "Campaign description contains disallowed content - illegal substances" [ref=e562]
+                    - cell "Message content related to federally illegal drugs, such as cannabis, is not permitted. If the campaign description indicates that the message program will be sending this type of content, the campaign will be rejected.*" [ref=e563]
+                  - row "CR3015 Campaign description contains disallowed content - SHAFT (sex/hate) Message content related to sexually explicit or hateful content is not permitted. If the campaign description indicates that the message program will be sending this type of content, the campaign will be rejected.*" [ref=e564]:
+                    - cell "CR3015" [ref=e565]
+                    - cell "Campaign description contains disallowed content - SHAFT (sex/hate)" [ref=e566]
+                    - cell "Message content related to sexually explicit or hateful content is not permitted. If the campaign description indicates that the message program will be sending this type of content, the campaign will be rejected.*" [ref=e567]
+                  - row "CR3016 Campaign description contains disallowed content - SHAFT (alcohol/firearms/tobacco/vape) with no robust age gate Message content related to age restricted goods, such as alcohol or tobacco, is not permitted without an age gate mechanism. An acceptable age gate would consist of, at minimum, a recipient entering a day, month, and year confirming their age at messaging opt-in prior to receiving messaging. If the campaign description indicates that the message program will be sending this type of content, and no age gate is in place, the campaign will be rejected. Implement age gate and resubmit." [ref=e568]:
+                    - cell "CR3016" [ref=e569]
+                    - cell "Campaign description contains disallowed content - SHAFT (alcohol/firearms/tobacco/vape) with no robust age gate" [ref=e570]
+                    - cell "Message content related to age restricted goods, such as alcohol or tobacco, is not permitted without an age gate mechanism. An acceptable age gate would consist of, at minimum, a recipient entering a day, month, and year confirming their age at messaging opt-in prior to receiving messaging. If the campaign description indicates that the message program will be sending this type of content, and no age gate is in place, the campaign will be rejected. Implement age gate and resubmit." [ref=e571]
+                  - row "CR4010 Call-to-action contains disallowed content - gambling Message content related to gambling is not permitted. If the call-to-action indicates that the message program will be sending this type of content, the campaign will be rejected.*" [ref=e572]:
+                    - cell "CR4010" [ref=e573]
+                    - cell "Call-to-action contains disallowed content - gambling" [ref=e574]
+                    - cell "Message content related to gambling is not permitted. If the call-to-action indicates that the message program will be sending this type of content, the campaign will be rejected.*" [ref=e575]
+                  - row "CR4011 Call-to-action contains disallowed content - high risk financial services Message content related to high risk financial services, such as short-term loans or cryptocurrency, is not permitted. If the call-to-action indicates that the message program will be sending this type of content, the campaign will be rejected.*" [ref=e576]:
+                    - cell "CR4011" [ref=e577]
+                    - cell "Call-to-action contains disallowed content - high risk financial services" [ref=e578]
+                    - cell "Message content related to high risk financial services, such as short-term loans or cryptocurrency, is not permitted. If the call-to-action indicates that the message program will be sending this type of content, the campaign will be rejected.*" [ref=e579]
+                  - row "CR4012 Call-to-action contains disallowed content - illegal substances Message content related to federally illegal drugs, such as cannabis, is not permitted. If the call-to-action indicates that the message program will be sending this type of content, the campaign will be rejected.*" [ref=e580]:
+                    - cell "CR4012" [ref=e581]
+                    - cell "Call-to-action contains disallowed content - illegal substances" [ref=e582]
+                    - cell "Message content related to federally illegal drugs, such as cannabis, is not permitted. If the call-to-action indicates that the message program will be sending this type of content, the campaign will be rejected.*" [ref=e583]
+                  - row "CR4013 Call-to-action contains disallowed content - SHAFT (sex/hate) Message content related to sexually explicit or hateful content is not permitted. If the call-to-action indicates that the message program will be sending this type of content, the campaign will be rejected.*" [ref=e584]:
+                    - cell "CR4013" [ref=e585]
+                    - cell "Call-to-action contains disallowed content - SHAFT (sex/hate)" [ref=e586]
+                    - cell "Message content related to sexually explicit or hateful content is not permitted. If the call-to-action indicates that the message program will be sending this type of content, the campaign will be rejected.*" [ref=e587]
+              - paragraph [ref=e588]
+              - paragraph [ref=e589]:
+                - text: "*Campaigns rejected for disallowed content should not be resubmitted. Refer to"
+                - link "Sinch's Disallowed Content Policy" [ref=e590] [cursor=pointer]:
+                  - /url: https://community.sinch.com/t5/SMS/A2P-Messaging-in-the-United-States-Disallowed-Content/ta-p/7091
+                - text: for a complete list of prohibited message content.
+              - paragraph [ref=e591]
+              - paragraph [ref=e592]:
+                - emphasis [ref=e593]:
+                  - text: Visit the
+                  - link "Sinch 10DLC Product Page" [ref=e594] [cursor=pointer]:
+                    - /url: https://sinch.com/products/10dlc/
+                  - text: to learn more about Sinch 10DLC or if you need more help with 10DLC or have any questions,
+                  - link "contact Sinch" [ref=e595] [cursor=pointer]:
+                    - /url: https://www.sinch.com/contact-us/
+                  - text: ", who will be happy help!"
+            - list [ref=e598]:
+              - listitem [ref=e599]:
+                - link "Best Practices" [ref=e600] [cursor=pointer]:
+                  - /url: /t5/10DLC/tkb-p/10DLC/label-name/best%20practices?labels=best+practices
+                  - text: Best Practices
+              - listitem [ref=e601]:
+                - link "Campaigns" [ref=e602] [cursor=pointer]:
+                  - /url: /t5/10DLC/tkb-p/10DLC/label-name/campaigns?labels=campaigns
+                  - text: Campaigns
+              - listitem [ref=e603]:
+                - link "Disallowed Content" [ref=e604] [cursor=pointer]:
+                  - /url: /t5/10DLC/tkb-p/10DLC/label-name/disallowed%20content?labels=disallowed+content
+                  - text: Disallowed Content
+          - generic [ref=e605]:
+            - generic [ref=e609]:
+              - link "1 Kudo" [ref=e611] [cursor=pointer]:
+                - /url: /t5/kudos/messagepage/board-id/10DLC/message-id/51/tab/all-users
+              - button "Click here to give kudos to this post." [ref=e613] [cursor=pointer]: 
+            - generic [ref=e615]:
+              - link "View Profile of Meredith_W" [ref=e618] [cursor=pointer]:
+                - /url: https://community.sinch.com/t5/user/viewprofilepage/user-id/2468
+                - text: Meredith_W
+              - button "Show 10DLC Campaign Rejection Codes post option menu" [ref=e622] [cursor=pointer]: Options 
+          - generic [ref=e626]:
+            - generic [ref=e628]:
+              - generic [ref=e629]: Was this article helpful?
+              - button "Yes" [ref=e631] [cursor=pointer]
+              - button "No" [ref=e633] [cursor=pointer]
+            - generic [ref=e635]: No ratings
+        - text: 
+      - generic [ref=e639]:
+        - generic [ref=e640]: 
+        - link "Ask a question" [ref=e642] [cursor=pointer]:
+          - /url: /t5/forums/postpage/board-id/Feedback
+        - generic [ref=e646]:
+          - heading "Version history" [level=3] [ref=e649]
+          - generic [ref=e653]:
+            - generic [ref=e654]:
+              - generic [ref=e655]: "Last update:"
+              - generic [ref=e657]: ‎10-15-2025 02:46 PM
+            - generic [ref=e658]:
+              - generic [ref=e659]: "Updated by:"
+              - generic [ref=e661]:
+                - img "Employee" [ref=e662]
+                - link "View Profile of Alex_Sberna" [ref=e663] [cursor=pointer]:
+                  - /url: https://community.sinch.com/t5/user/viewprofilepage/user-id/2339
+                  - text: Alex_Sberna
+    - contentinfo [ref=e674]:
+      - generic [ref=e675]:
+        - link "Sinch" [ref=e676] [cursor=pointer]:
+          - /url: /
+        - generic [ref=e677]:
+          - generic [ref=e678]:
+            - heading "Follow us" [level=2] [ref=e679]
+            - list [ref=e680]:
+              - listitem [ref=e681]:
+                - link "LinkedIn" [ref=e682] [cursor=pointer]:
+                  - /url: http://www.linkedin.com/company/sinch
+              - listitem [ref=e683]:
+                - link "Facebook" [ref=e684] [cursor=pointer]:
+                  - /url: https://www.facebook.com/wearesinch
+              - listitem [ref=e685]:
+                - link "Instagram" [ref=e686] [cursor=pointer]:
+                  - /url: https://instagram.com/wearesinch
+          - generic [ref=e687]:
+            - heading "Pages" [level=2] [ref=e688]
+            - list [ref=e689]:
+              - listitem [ref=e690]:
+                - link "About" [ref=e691] [cursor=pointer]:
+                  - /url: /t5/Guidelines/About-the-Sinch-Support-Community/m-p/7381
+              - listitem [ref=e692]:
+                - link "Community guidelines" [ref=e693] [cursor=pointer]:
+                  - /url: /t5/Guidelines/Sinch-Support-Community-Guidelines/m-p/7375
+          - generic [ref=e694]:
+            - heading "Legal" [level=2] [ref=e695]
+            - list [ref=e696]:
+              - listitem [ref=e697]:
+                - link "Privacy policy" [ref=e698] [cursor=pointer]:
+                  - /url: https://www.sinch.com/privacy-policy/
+      - generic [ref=e699]:
+        - paragraph [ref=e700]:
+          - text: Visit our
+          - link "Global Site" [ref=e701] [cursor=pointer]:
+            - /url: https://www.sinch.com/
+        - generic [ref=e702]: © Copyright 2026 Sinch. All Rights Reserved.
+  - iframe [ref=e705]:
+    

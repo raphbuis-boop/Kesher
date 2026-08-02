@@ -1,0 +1,339 @@
+- generic [active] [ref=f16e1]:
+  - generic [ref=f16e8]:
+    - generic [ref=f16e12]:
+      - generic [ref=f16e15]:
+        - generic [ref=f16e16]:
+          - text: 
+          - heading "Sinch Community" [level=1] [ref=f16e18]:
+            - link "Sinch Community" [ref=f16e19] [cursor=pointer]:
+              - /url: /
+          - navigation [ref=f16e21]:
+            - list [ref=f16e22]:
+              - listitem [ref=f16e23]:
+                - link "Developers" [ref=f16e24] [cursor=pointer]:
+                  - /url: /t5/Developer-Community/ct-p/DeveloperCommunity
+              - listitem [ref=f16e25]:
+                - link "Partners" [ref=f16e26] [cursor=pointer]:
+                  - /url: https://community.sinch.com/t5/Partner-Hub/ct-p/SinchPartnerHub
+              - listitem [ref=f16e27]:
+                - link "Operators" [ref=f16e28] [cursor=pointer]:
+                  - /url: /t5/Operator-Support/tkb-p/OperatorSupport
+              - listitem [ref=f16e29]:
+                - link "Service Status" [ref=f16e30] [cursor=pointer]:
+                  - /url: https://status.sinch.com/
+              - listitem [ref=f16e31]:
+                - link "Contact Support" [ref=f16e32] [cursor=pointer]:
+                  - /url: javascript:;
+              - listitem [ref=f16e33]:
+                - link "sinch.com" [ref=f16e34] [cursor=pointer]:
+                  - /url: https://www.sinch.com
+        - link "Community sign in" [ref=f16e37] [cursor=pointer]:
+          - /url: https://community.sinch.com/t5/user/userloginpage?dest_url=https%3A%2F%2Fcommunity.sinch.com%2Ft5%2F10DLC%2F10DLC-Campaign-Registration-Required-Fields-and-Explanations%2Fta-p%2F15456
+      - generic [ref=f16e43]:
+        - generic [ref=f16e44]:
+          - generic [ref=f16e45]:
+            - text: 
+            - combobox "Search Granularity" [ref=f16e46] [cursor=pointer]:
+              - option "All community"
+              - option "This category"
+              - option "Knowledge base" [selected]
+              - option "Users"
+              - option "Products"
+          - generic [ref=f16e48]:
+            - button "Search" [ref=f16e49] [cursor=pointer]
+            - combobox "Search" [ref=f16e51]
+        - text: 
+      - generic [ref=f16e58]:
+        - navigation "breadcrumbs" [ref=f16e59]:
+          - list [ref=f16e60]:
+            - listitem [ref=f16e61]:
+              - link "Sinch Community" [ref=f16e62] [cursor=pointer]:
+                - /url: /
+            - text:  
+            - listitem [ref=f16e63]:
+              - text: 
+              - link "Numbers" [ref=f16e64] [cursor=pointer]:
+                - /url: /t5/Numbers/ct-p/Numbers
+            - text:  
+            - listitem [ref=f16e65]:
+              - text: 
+              - link "10DLC" [ref=f16e66] [cursor=pointer]:
+                - /url: /t5/10DLC/tkb-p/10DLC
+            - text:  
+            - listitem [ref=f16e67]:
+              - text: 
+              - 'link "10DLC Campaign Registration: Required Fields and Explanations" [disabled] [ref=f16e68]'
+        - button "Options" [ref=f16e72] [cursor=pointer]: Options 
+    - generic [ref=f16e73]:
+      - generic [ref=f16e77]:
+        - generic [ref=f16e78]:
+          - generic [ref=f16e84]:
+            - 'heading "10DLC Campaign Registration: Required Fields and Explanations" [level=2] [ref=f16e85]':
+              - 'link "10DLC Campaign Registration: Required Fields and Explanations" [ref=f16e87] [cursor=pointer]':
+                - /url: /t5/10DLC/10DLC-Campaign-Registration-Required-Fields-and-Explanations/ta-p/15456
+            - text: 
+          - generic [ref=f16e90]:
+            - generic [ref=f16e94]:
+              - generic [ref=f16e95]:
+                - text: Before you launch your 10DLC message program, Sinch must review your campaign. We make sure your message program aligns with carrier and industry requirements. Principally we look for alignment with the
+                - link "CTIA Messaging Principals & Best Practices" [ref=f16e96] [cursor=pointer]:
+                  - /url: https://community.sinch.com/t5/SMS/CTIA-Messaging-Principles-and-Best-Practices/ta-p/7087/highlight/true
+                - text: .
+              - generic [ref=f16e98]: "Here are the top reasons Sinch may reject your campaign, and what you should do to avoid them:"
+              - list [ref=f16e99]:
+                - listitem [ref=f16e100]: "Insufficient opt-in: This means that you failed to convey how you get consent from the end user to send messages. Make sure you show the opt-in from the end-user's perspective. For example, if your opt-in happens online, you must specify where on the website the opt-in occurs."
+                - listitem [ref=f16e101]: "Brand name mismatch: This means the registered brand name or DBA doesn't match the name on the brand website or in the messages. You can use a shortened brand name in your messages, but it can't be so different that it's not clear who the sender is. If the brand names are different, make sure you explain why in the campaign description."
+                - listitem [ref=f16e102]: "Insufficient privacy policy: This means it's not clear in your privacy policy that you won't share or sell the end user’s personal info to a third party for marketing purposes. If you don't have a privacy policy, then you need to create one."
+              - generic [ref=f16e103]: "In order to submit the most compliant campaign possible, Sinch has outlined below all of the fields needed to register a 10DLC Campaign. We want to give you guidance on how to submit the best 10DLC campaign possible, so that you don't encounter rejections from Sinch. All fields are required unless otherwise noted:"
+              - generic [ref=f16e104]:
+                - table [ref=f16e105]:
+                  - rowgroup [ref=f16e106]:
+                    - row "Field Name Description" [ref=f16e107]:
+                      - cell "Field Name" [ref=f16e108]:
+                        - strong [ref=f16e109]: Field Name
+                      - cell "Description" [ref=f16e110]:
+                        - strong [ref=f16e111]: Description
+                    - row "projectId Sinch uses projects to group contacts and apps together to manage and connect a unique set of keys and secret IDs for all your Sinch API products. To identify a project, it is given a unique alphanumeric identifier that ties it to your account. Your project ID can be found in the Sinch Build Dashboard." [ref=f16e112]:
+                      - cell "projectId" [ref=f16e113]
+                      - cell "Sinch uses projects to group contacts and apps together to manage and connect a unique set of keys and secret IDs for all your Sinch API products. To identify a project, it is given a unique alphanumeric identifier that ties it to your account. Your project ID can be found in the Sinch Build Dashboard." [ref=f16e114]:
+                        - text: Sinch uses projects to group contacts and apps together to manage and connect a unique set of keys and secret IDs for all your Sinch API products. To identify a project, it is given a unique alphanumeric identifier that ties it to your account. Your project ID can be found in the
+                        - link "Sinch Build Dashboard" [ref=f16e115] [cursor=pointer]:
+                          - /url: https://dashboard.sinch.com/settings/project-management
+                        - text: .
+                    - 'row "brandId The brand is the company or entity represented in the campaign. The brand ID is an alphanumeric identifier that always begins with a \"B\". When registering a brand in The Campaign Registry (TCR), TCR returns a brand ID value, example: BESINCH. For more info, see Creating a new 10DLC Brand." [ref=f16e116]':
+                      - cell "brandId" [ref=f16e117]
+                      - 'cell "The brand is the company or entity represented in the campaign. The brand ID is an alphanumeric identifier that always begins with a \"B\". When registering a brand in The Campaign Registry (TCR), TCR returns a brand ID value, example: BESINCH. For more info, see Creating a new 10DLC Brand." [ref=f16e118]':
+                        - text: "The brand is the company or entity represented in the campaign. The brand ID is an alphanumeric identifier that always begins with a \"B\". When registering a brand in The Campaign Registry (TCR), TCR returns a brand ID value, example: BESINCH. For more info, see"
+                        - link "Creating a new 10DLC Brand." [ref=f16e119] [cursor=pointer]:
+                          - /url: https://community.sinch.com/t5/10DLC/Creating-a-new-10DLC-Brand/ta-p/11713
+                    - row "useCase Select a use case that is the primary use case that is most applicable to the service that messages are providing to subscribers. Standard use cases are immediately available for all qualified registered brands, whereas special use cases require vetting or pre/post approval by mobile network operators (MNOs). For more information on standard use case versus special use case campaigns, see 10DLC Use Cases - Standard Use Cases vs Special Use Cases." [ref=f16e120]:
+                      - cell "useCase" [ref=f16e121]
+                      - cell "Select a use case that is the primary use case that is most applicable to the service that messages are providing to subscribers. Standard use cases are immediately available for all qualified registered brands, whereas special use cases require vetting or pre/post approval by mobile network operators (MNOs). For more information on standard use case versus special use case campaigns, see 10DLC Use Cases - Standard Use Cases vs Special Use Cases." [ref=f16e122]:
+                        - text: Select a use case that is the primary use case that is most applicable to the service that messages are providing to subscribers. Standard use cases are immediately available for all qualified registered brands, whereas special use cases require vetting or pre/post approval by mobile network operators (MNOs).
+                        - text: For more information on standard use case versus special use case campaigns, see
+                        - link "10DLC Use Cases - Standard Use Cases vs Special Use Cases" [ref=f16e123] [cursor=pointer]:
+                          - /url: https://community.sinch.com/t5/10DLC/10DLC-Use-Cases-Standard-Use-Cases-vs-Special-Use-Cases/ta-p/7028/highlight/true
+                        - text: .
+                    - row "campaignName This is an optional name to help track and view your campaign within Sinch's platform. Use a name that is easily recognizable, this will help you identify your campaign later within the Sinch customer dashboard. This name is not part of the campaign registration in TCR." [ref=f16e124]:
+                      - cell "campaignName" [ref=f16e125]
+                      - cell "This is an optional name to help track and view your campaign within Sinch's platform. Use a name that is easily recognizable, this will help you identify your campaign later within the Sinch customer dashboard. This name is not part of the campaign registration in TCR." [ref=f16e126]
+                    - 'row "description Describe in detail the service the message program is providing to the end user and the purpose of the brand’s messages (i.e. appointment reminders, OTP alerts, etc.). The description should match the selected use case and identify who is sending the messages, who is receiving the messages, and why messages are being sent. (min 40 characters) A standard description may look like this: This message program will be used to provide {purpose of brand’s messages}." [ref=f16e127]':
+                      - cell "description" [ref=f16e128]
+                      - 'cell "Describe in detail the service the message program is providing to the end user and the purpose of the brand’s messages (i.e. appointment reminders, OTP alerts, etc.). The description should match the selected use case and identify who is sending the messages, who is receiving the messages, and why messages are being sent. (min 40 characters) A standard description may look like this: This message program will be used to provide {purpose of brand’s messages}." [ref=f16e129]':
+                        - text: Describe in detail the service the message program is providing to the end user and the purpose of the brand’s messages (i.e. appointment reminders, OTP alerts, etc.). The description should match the selected use case and identify who is sending the messages, who is receiving the messages, and why messages are being sent. (min 40 characters)
+                        - text: "A standard description may look like this: This message program will be used to provide {purpose of brand’s messages}."
+                    - row "terms Provide a link to your message program terms and conditions or provide your terms and conditions body copy. Ensure that all applicable messaging terms and conditions (e.g., how to opt-out, customer care contact information, and any applicable privacy policy) are covered." [ref=f16e130]:
+                      - cell "terms" [ref=f16e131]
+                      - cell "Provide a link to your message program terms and conditions or provide your terms and conditions body copy. Ensure that all applicable messaging terms and conditions (e.g., how to opt-out, customer care contact information, and any applicable privacy policy) are covered." [ref=f16e132]
+                    - row "privacyPolicy Provide a link to your privacy policy, or provide your privacy policy body copy. It should be clear from your privacy policy that the end user’s personal info, including mobile phone number, will not be shared or sold to third parties for marketing purposes." [ref=f16e133]:
+                      - cell "privacyPolicy" [ref=f16e134]
+                      - cell "Provide a link to your privacy policy, or provide your privacy policy body copy. It should be clear from your privacy policy that the end user’s personal info, including mobile phone number, will not be shared or sold to third parties for marketing purposes." [ref=f16e135]
+                    - row "optInDocumentation Provide a URL to the online opt-in process. If opt-in is not online or not publicly accessible, provide a URL with hosted screenshots or images of the opt-in process. If you cannot provide a URL, provide your opt-in body copy." [ref=f16e136]:
+                      - cell "optInDocumentation" [ref=f16e137]
+                      - cell "Provide a URL to the online opt-in process. If opt-in is not online or not publicly accessible, provide a URL with hosted screenshots or images of the opt-in process. If you cannot provide a URL, provide your opt-in body copy." [ref=f16e138]
+                    - 'row "sample1 Provide sample production message content. Include the Brand name and opt out instructions (e.g. Reply STOP to stop) in every message. If you have selected Mixed use case, please provide examples of each sub use case selected (min 20 characters, max 1024 characters) A standard sample message may look like: {Brand name}: We are contacting you today to let you know your order is ready for pickup. Reply STOP to stop." [ref=f16e139]':
+                      - cell "sample1" [ref=f16e140]
+                      - 'cell "Provide sample production message content. Include the Brand name and opt out instructions (e.g. Reply STOP to stop) in every message. If you have selected Mixed use case, please provide examples of each sub use case selected (min 20 characters, max 1024 characters) A standard sample message may look like: {Brand name}: We are contacting you today to let you know your order is ready for pickup. Reply STOP to stop." [ref=f16e141]':
+                        - text: Provide sample production message content. Include the Brand name and opt out instructions (e.g. Reply STOP to stop) in every message. If you have selected Mixed use case, please provide examples of each sub use case selected (min 20 characters, max 1024 characters)
+                        - text: "A standard sample message may look like: {Brand name}: We are contacting you today to let you know your order is ready for pickup. Reply STOP to stop."
+                    - 'row "sample2 A standard sample message may look like: {Brand name}: Your confirmation code is SINCH1234. Please enter it on the authentication website. Reply STOP to stop." [ref=f16e142]':
+                      - cell "sample2" [ref=f16e143]
+                      - 'cell "A standard sample message may look like: {Brand name}: Your confirmation code is SINCH1234. Please enter it on the authentication website. Reply STOP to stop." [ref=f16e144]'
+                    - 'row "sample3 A standard sample message may look like: {Brand name}: Shop at www.example.com for all your retail needs! From clothing to home goods, we''ve got you covered. Visit us today and save! Reply STOP to stop." [ref=f16e145]':
+                      - cell "sample3" [ref=f16e146]
+                      - 'cell "A standard sample message may look like: {Brand name}: Shop at www.example.com for all your retail needs! From clothing to home goods, we''ve got you covered. Visit us today and save! Reply STOP to stop." [ref=f16e147]':
+                        - text: "A standard sample message may look like: {Brand name}: Shop at"
+                        - link "www.example.com" [ref=f16e148] [cursor=pointer]:
+                          - /url: http://www.example.com
+                        - text: for all your retail needs! From clothing to home goods, we've got you covered. Visit us today and save! Reply STOP to stop.
+                    - row "sample4 If needed, add another sample message." [ref=f16e149]:
+                      - cell "sample4" [ref=f16e150]
+                      - cell "If needed, add another sample message." [ref=f16e151]
+                    - 'row "stopMessage Message sent in response to a STOP keyword. It must confirm that the end user has unsubscribed from the message program and will not receive any further messages. Include the brand name. You can also include customer care contact information (e.g. support email or phone number). (min 20 characters, max 255 characters) A standard sample Stop message may look like: You have been unsubscribed and will not receive any more messages from {Brand name}. For more information call {phone number} or email {email address}.\"" [ref=f16e152]':
+                      - cell "stopMessage" [ref=f16e153]
+                      - 'cell "Message sent in response to a STOP keyword. It must confirm that the end user has unsubscribed from the message program and will not receive any further messages. Include the brand name. You can also include customer care contact information (e.g. support email or phone number). (min 20 characters, max 255 characters) A standard sample Stop message may look like: You have been unsubscribed and will not receive any more messages from {Brand name}. For more information call {phone number} or email {email address}.\"" [ref=f16e154]':
+                        - text: Message sent in response to a STOP keyword. It must confirm that the end user has unsubscribed from the message program and will not receive any further messages. Include the brand name. You can also include customer care contact information (e.g. support email or phone number). (min 20 characters, max 255 characters)
+                        - text: "A standard sample Stop message may look like: You have been unsubscribed and will not receive any more messages from {Brand name}. For more information call {phone number} or email {email address}.\""
+                    - 'row "optInMessage Initial message that is sent confirming the end user''s subscription. Include the brand name, opt-out instructions (reply STOP to stop), customer care instructions (reply HELP for help), message frequency (#msgs/mo, msg frequency varies, recurring messages, etc.) and the \"message and data rates may apply\" disclosure (Msg & Data rates may apply). (min 20 characters, max 255 characters) A standard opt-in message may look like: You have opted in to receive messages from {Brand name}! Msg freq varies. Msg & data rates may apply. Reply HELP for help. Reply STOP to stop." [ref=f16e155]':
+                      - cell "optInMessage" [ref=f16e156]
+                      - 'cell "Initial message that is sent confirming the end user''s subscription. Include the brand name, opt-out instructions (reply STOP to stop), customer care instructions (reply HELP for help), message frequency (#msgs/mo, msg frequency varies, recurring messages, etc.) and the \"message and data rates may apply\" disclosure (Msg & Data rates may apply). (min 20 characters, max 255 characters) A standard opt-in message may look like: You have opted in to receive messages from {Brand name}! Msg freq varies. Msg & data rates may apply. Reply HELP for help. Reply STOP to stop." [ref=f16e157]':
+                        - text: Initial message that is sent confirming the end user's subscription. Include the brand name, opt-out instructions (reply STOP to stop), customer care instructions (reply HELP for help), message frequency (#msgs/mo, msg frequency varies, recurring messages, etc.) and the "message and data rates may apply" disclosure (Msg & Data rates may apply). (min 20 characters, max 255 characters)
+                        - text: "A standard opt-in message may look like: You have opted in to receive messages from {Brand name}! Msg freq varies. Msg & data rates may apply. Reply HELP for help. Reply STOP to stop."
+                    - 'row "helpMessage Message sent in response to HELP. Include the brand name and additional customer care contact information (e.g. support email or phone number) (min 20 characters, max 255 characters) A standard Help message may look like: {Brand name}: For help call {phone number} or email {email address} Reply STOP to stop." [ref=f16e158]':
+                      - cell "helpMessage" [ref=f16e159]
+                      - 'cell "Message sent in response to HELP. Include the brand name and additional customer care contact information (e.g. support email or phone number) (min 20 characters, max 255 characters) A standard Help message may look like: {Brand name}: For help call {phone number} or email {email address} Reply STOP to stop." [ref=f16e160]':
+                        - text: Message sent in response to HELP. Include the brand name and additional customer care contact information (e.g. support email or phone number) (min 20 characters, max 255 characters)
+                        - text: "A standard Help message may look like: {Brand name}: For help call {phone number} or email {email address} Reply STOP to stop."
+                    - 'row "subUseCases If you have selected a Mixed use case, select all sub use cases that apply to your message program. Choose between 2 and 5 sub use cases for this campaign. This field is not required. The input(s) should be one of the accepted values below: 2FA ACCOUNT_NOTIFICATION CUSTOMER_CARE DELIVERY_NOTIFICATION FRAUD_ALERT HIGHER_EDUCATION MARKETING POLLING_VOTING PUBLIC_SERVICE_ANNOUNCEMENT SECURITY_ALERT" [ref=f16e161]':
+                      - cell "subUseCases" [ref=f16e162]
+                      - 'cell "If you have selected a Mixed use case, select all sub use cases that apply to your message program. Choose between 2 and 5 sub use cases for this campaign. This field is not required. The input(s) should be one of the accepted values below: 2FA ACCOUNT_NOTIFICATION CUSTOMER_CARE DELIVERY_NOTIFICATION FRAUD_ALERT HIGHER_EDUCATION MARKETING POLLING_VOTING PUBLIC_SERVICE_ANNOUNCEMENT SECURITY_ALERT" [ref=f16e163]':
+                        - paragraph [ref=f16e164]:
+                          - text: "If you have selected a Mixed use case, select all sub use cases that apply to your message program. Choose between 2 and 5 sub use cases for this campaign. This field is not required. The input(s) should be one of the accepted values below:"
+                          - text: 2FA
+                          - text: ACCOUNT_NOTIFICATION
+                          - text: CUSTOMER_CARE
+                          - text: DELIVERY_NOTIFICATION
+                          - text: FRAUD_ALERT
+                          - text: HIGHER_EDUCATION
+                          - text: MARKETING
+                          - text: POLLING_VOTING
+                          - text: PUBLIC_SERVICE_ANNOUNCEMENT
+                        - paragraph [ref=f16e165]: SECURITY_ALERT
+                    - row "autoRenewal Will your campaign automatically renew? If yes, a monthly recurring fee will be charged to the account. If no, only the initial setup fee will be charged, and the campaign will expire after three months unless it is reviewed manually. The default setting is true, campaigns will be auto-renewed." [ref=f16e166]:
+                      - cell "autoRenewal" [ref=f16e167]
+                      - cell "Will your campaign automatically renew? If yes, a monthly recurring fee will be charged to the account. If no, only the initial setup fee will be charged, and the campaign will expire after three months unless it is reviewed manually. The default setting is true, campaigns will be auto-renewed." [ref=f16e168]
+                    - row "embeddedLink Will your message content include a URL? Note that public URL shorteners are not allowed." [ref=f16e169]:
+                      - cell "embeddedLink" [ref=f16e170]
+                      - cell "Will your message content include a URL? Note that public URL shorteners are not allowed." [ref=f16e171]
+                    - row "embeddedPhone Will your message content include embedded phone numbers?" [ref=f16e172]:
+                      - cell "embeddedPhone" [ref=f16e173]
+                      - cell "Will your message content include embedded phone numbers?" [ref=f16e174]
+                    - row "affiliateMarketing Will your campaign follow CTIA messaging principles and best practices and will not be used for Affiliate Marketing? This should default to true." [ref=f16e175]:
+                      - cell "affiliateMarketing" [ref=f16e176]
+                      - cell "Will your campaign follow CTIA messaging principles and best practices and will not be used for Affiliate Marketing? This should default to true." [ref=f16e177]
+                    - 'row "numberPool Will your campaign support a number pool (more than 50 numbers)? If yes, your use case should clearly support the need for a number pool. For more info see: When should I use a number pool for my 10DLC campaign." [ref=f16e178]':
+                      - cell "numberPool" [ref=f16e179]
+                      - 'cell "Will your campaign support a number pool (more than 50 numbers)? If yes, your use case should clearly support the need for a number pool. For more info see: When should I use a number pool for my 10DLC campaign." [ref=f16e180]':
+                        - text: "Will your campaign support a number pool (more than 50 numbers)? If yes, your use case should clearly support the need for a number pool. For more info see:"
+                        - link "When should I use a number pool for my 10DLC campaign" [ref=f16e181] [cursor=pointer]:
+                          - /url: https://community.sinch.com/t5/10DLC/When-should-I-use-a-number-pool-for-my-10DLC-campaign/ta-p/12432
+                        - text: .
+                    - row "ageGated Will your traffic include any content related to age-restricted goods or services? If yes, you must implement an age gate verification process." [ref=f16e182]:
+                      - cell "ageGated" [ref=f16e183]
+                      - cell "Will your traffic include any content related to age-restricted goods or services? If yes, you must implement an age gate verification process." [ref=f16e184]
+                    - row "directLending Are you a financial institution engaged in direct, first-party lending to your customers? If yes, note that your campaign description should clearly indicate direct lending, even if your use case is not related to your lending services (e.g. OTP)." [ref=f16e185]:
+                      - cell "directLending" [ref=f16e186]
+                      - cell "Are you a financial institution engaged in direct, first-party lending to your customers? If yes, note that your campaign description should clearly indicate direct lending, even if your use case is not related to your lending services (e.g. OTP)." [ref=f16e187]
+                    - row "subscriberOptIn Will your campaign collect and process end user opt-ins? This is mandatory for all use cases, except for Machine-to-Machine." [ref=f16e188]:
+                      - cell "subscriberOptIn" [ref=f16e189]
+                      - cell "Will your campaign collect and process end user opt-ins? This is mandatory for all use cases, except for Machine-to-Machine." [ref=f16e190]
+                    - 'row "subscriberOptOut Message sent in response to a STOP keyword. It must confirm that the end user has unsubscribed from the message program and will not receive any further messages. Include the brand name. You can also include customer care contact information (e.g. support email or phone number). (min 20 characters, max 255 characters) Sample opt-out message: You have been unsubscribed and will not receive any more messages from {Brand name}. For more information call {phone number} or email {email address}." [ref=f16e191]':
+                      - cell "subscriberOptOut" [ref=f16e192]
+                      - 'cell "Message sent in response to a STOP keyword. It must confirm that the end user has unsubscribed from the message program and will not receive any further messages. Include the brand name. You can also include customer care contact information (e.g. support email or phone number). (min 20 characters, max 255 characters) Sample opt-out message: You have been unsubscribed and will not receive any more messages from {Brand name}. For more information call {phone number} or email {email address}." [ref=f16e193]':
+                        - text: Message sent in response to a STOP keyword. It must confirm that the end user has unsubscribed from the message program and will not receive any further messages. Include the brand name. You can also include customer care contact information (e.g. support email or phone number). (min 20 characters, max 255 characters)
+                        - text: "Sample opt-out message: You have been unsubscribed and will not receive any more messages from {Brand name}. For more information call {phone number} or email {email address}."
+                    - 'row "subscriberHelp Message sent in response to HELP. Include the brand name and additional customer care contact information (e.g. support email, phone number or support website) (min 20 characters, max 255 characters) Sample Help message: {Brand name}: For help call {phone number} or email {email address}" [ref=f16e194]':
+                      - cell "subscriberHelp" [ref=f16e195]
+                      - 'cell "Message sent in response to HELP. Include the brand name and additional customer care contact information (e.g. support email, phone number or support website) (min 20 characters, max 255 characters) Sample Help message: {Brand name}: For help call {phone number} or email {email address}" [ref=f16e196]':
+                        - text: Message sent in response to HELP. Include the brand name and additional customer care contact information (e.g. support email, phone number or support website) (min 20 characters, max 255 characters)
+                        - text: "Sample Help message: {Brand name}: For help call {phone number} or email {email address}"
+                    - row "optinKeywords If subscribers can opt-in via a keyword, enter keyword(s) here. (alphanumeric comma separated values, no blank spaces)" [ref=f16e197]:
+                      - cell "optinKeywords" [ref=f16e198]
+                      - cell "If subscribers can opt-in via a keyword, enter keyword(s) here. (alphanumeric comma separated values, no blank spaces)" [ref=f16e199]
+                    - row "optoutKeywords Subscriber opt-out keywords. Default values are STOP, QUIT, END, CANCEL and UNSUBSCRIBE. If you accept additional opt-out keywords, you can enter them here. (alphanumeric comma separated values, no blank spaces)" [ref=f16e200]:
+                      - cell "optoutKeywords" [ref=f16e201]
+                      - cell "Subscriber opt-out keywords. Default values are STOP, QUIT, END, CANCEL and UNSUBSCRIBE. If you accept additional opt-out keywords, you can enter them here. (alphanumeric comma separated values, no blank spaces)" [ref=f16e202]
+                    - row "helpKeywords Subscriber help keywords. Default value is HELP. If you accept additional help keywords, you can enter them here. (alphanumeric comma separated values, no blank spaces)" [ref=f16e203]:
+                      - cell "helpKeywords" [ref=f16e204]
+                      - cell "Subscriber help keywords. Default value is HELP. If you accept additional help keywords, you can enter them here. (alphanumeric comma separated values, no blank spaces)" [ref=f16e205]
+                    - 'row "messageFlow Instructions: Describe how end users opt-in to receive messages. A compliant opt-in is critical to the approval of your campaign. Include all opt-in mechanisms (e.g. keyword/text-to-join, online form, point-of-sale (POS) system, verbal consent, interactive voice response (IVR) system, paper form) and a clear program description. The Call-to-Action should include opt-out instructions (reply STOP to stop), customer care instructions (reply HELP for help), message frequency (#msgs/mo, msg frequency varies, recurring messages, etc.) and message and data rates disclosure (Msg & Data rates may apply). (min 40 characters, max 2048 characters) Sample message flow: Users will opt-in to receive messages from {Brand name} via {opt-in mechanism}" [ref=f16e206]':
+                      - cell "messageFlow" [ref=f16e207]
+                      - 'cell "Instructions: Describe how end users opt-in to receive messages. A compliant opt-in is critical to the approval of your campaign. Include all opt-in mechanisms (e.g. keyword/text-to-join, online form, point-of-sale (POS) system, verbal consent, interactive voice response (IVR) system, paper form) and a clear program description. The Call-to-Action should include opt-out instructions (reply STOP to stop), customer care instructions (reply HELP for help), message frequency (#msgs/mo, msg frequency varies, recurring messages, etc.) and message and data rates disclosure (Msg & Data rates may apply). (min 40 characters, max 2048 characters) Sample message flow: Users will opt-in to receive messages from {Brand name} via {opt-in mechanism}" [ref=f16e208]':
+                        - text: "Instructions: Describe how end users opt-in to receive messages. A compliant opt-in is critical to the approval of your campaign. Include all opt-in mechanisms (e.g. keyword/text-to-join, online form, point-of-sale (POS) system, verbal consent, interactive voice response (IVR) system, paper form) and a clear program description. The Call-to-Action should include opt-out instructions (reply STOP to stop), customer care instructions (reply HELP for help), message frequency (#msgs/mo, msg frequency varies, recurring messages, etc.) and message and data rates disclosure (Msg & Data rates may apply). (min 40 characters, max 2048 characters)"
+                        - text: "Sample message flow: Users will opt-in to receive messages from {Brand name} via {opt-in mechanism}"
+                - text: For even more details on 10DLC brand and campaign registration requirements, please view the
+                - link "10DLC Compliance Requirements and Guidance" [ref=f16e209] [cursor=pointer]:
+                  - /url: https://community.sinch.com/t5/10DLC/10DLC-Compliance-Requirements-and-Guidance/ta-p/10706
+                - text: and the
+                - link "Sinch Disallowed Content Policy" [ref=f16e210] [cursor=pointer]:
+                  - /url: https://community.sinch.com/t5/SMS/A2P-Messaging-in-the-United-States-Disallowed-Content/ta-p/7091/highlight/true
+                - text: articles.
+              - emphasis [ref=f16e213]:
+                - text: Visit the
+                - link "Sinch 10DLC Product Page" [ref=f16e214] [cursor=pointer]:
+                  - /url: https://sinch.com/products/10dlc/
+                - text: to learn more about Sinch 10DLC or if you need more help with 10DLC or have any questions,
+                - link "contact Sinch" [ref=f16e215] [cursor=pointer]:
+                  - /url: https://www.sinch.com/contact-us/
+                - text: ", who will be happy help!"
+            - list [ref=f16e218]:
+              - listitem [ref=f16e219]:
+                - link "10DLC" [ref=f16e220] [cursor=pointer]:
+                  - /url: /t5/10DLC/tkb-p/10DLC/label-name/10dlc?labels=10dlc
+                  - text: 10DLC
+              - listitem [ref=f16e221]:
+                - link "10DLC Campaigns" [ref=f16e222] [cursor=pointer]:
+                  - /url: /t5/10DLC/tkb-p/10DLC/label-name/10dlc%20campaigns?labels=10dlc+campaigns
+                  - text: 10DLC Campaigns
+              - listitem [ref=f16e223]:
+                - link "Compliance" [ref=f16e224] [cursor=pointer]:
+                  - /url: /t5/10DLC/tkb-p/10DLC/label-name/compliance?labels=compliance
+                  - text: Compliance
+          - generic [ref=f16e225]:
+            - generic [ref=f16e229]:
+              - link "1 Kudo" [ref=f16e231] [cursor=pointer]:
+                - /url: /t5/kudos/messagepage/board-id/10DLC/message-id/50/tab/all-users
+              - button "Click here to give kudos to this post." [ref=f16e233] [cursor=pointer]: 
+            - generic [ref=f16e235]:
+              - generic [ref=f16e237]:
+                - img "Employee" [ref=f16e238]
+                - link "View Profile of David_Schwind" [ref=f16e239] [cursor=pointer]:
+                  - /url: https://community.sinch.com/t5/user/viewprofilepage/user-id/2344
+                  - text: David_Schwind
+              - 'button "Show 10DLC Campaign Registration: Required Fields and Explanations post option menu" [ref=f16e243] [cursor=pointer]': Options 
+          - generic [ref=f16e247]:
+            - generic [ref=f16e249]:
+              - generic [ref=f16e250]: Was this article helpful?
+              - button "Yes" [ref=f16e252] [cursor=pointer]
+              - button "No" [ref=f16e254] [cursor=pointer]
+            - generic [ref=f16e256]: No ratings
+        - text: 
+      - generic [ref=f16e260]:
+        - generic [ref=f16e261]: 
+        - link "Ask a question" [ref=f16e263] [cursor=pointer]:
+          - /url: /t5/forums/postpage/board-id/Feedback
+        - generic [ref=f16e267]:
+          - heading "Version history" [level=3] [ref=f16e270]
+          - generic [ref=f16e274]:
+            - generic [ref=f16e275]:
+              - generic [ref=f16e276]: "Last update:"
+              - generic [ref=f16e278]: ‎08-05-2025 03:44 AM
+            - generic [ref=f16e279]:
+              - generic [ref=f16e280]: "Updated by:"
+              - generic [ref=f16e282]:
+                - img "Community Manager" [ref=f16e283]
+                - link "View Profile of Shahzad_Ismail" [ref=f16e284] [cursor=pointer]:
+                  - /url: https://community.sinch.com/t5/user/viewprofilepage/user-id/4
+                  - text: Shahzad_Ismail
+    - generic [ref=f16e288]:
+      - button " Top" [ref=f16e292] [cursor=pointer]
+      - contentinfo [ref=f16e297]:
+        - generic [ref=f16e298]:
+          - link "Sinch" [ref=f16e299] [cursor=pointer]:
+            - /url: /
+          - generic [ref=f16e300]:
+            - generic [ref=f16e301]:
+              - heading "Follow us" [level=2] [ref=f16e302]
+              - list [ref=f16e303]:
+                - listitem [ref=f16e304]:
+                  - link "LinkedIn" [ref=f16e305] [cursor=pointer]:
+                    - /url: http://www.linkedin.com/company/sinch
+                - listitem [ref=f16e306]:
+                  - link "Facebook" [ref=f16e307] [cursor=pointer]:
+                    - /url: https://www.facebook.com/wearesinch
+                - listitem [ref=f16e308]:
+                  - link "Instagram" [ref=f16e309] [cursor=pointer]:
+                    - /url: https://instagram.com/wearesinch
+            - generic [ref=f16e310]:
+              - heading "Pages" [level=2] [ref=f16e311]
+              - list [ref=f16e312]:
+                - listitem [ref=f16e313]:
+                  - link "About" [ref=f16e314] [cursor=pointer]:
+                    - /url: /t5/Guidelines/About-the-Sinch-Support-Community/m-p/7381
+                - listitem [ref=f16e315]:
+                  - link "Community guidelines" [ref=f16e316] [cursor=pointer]:
+                    - /url: /t5/Guidelines/Sinch-Support-Community-Guidelines/m-p/7375
+            - generic [ref=f16e317]:
+              - heading "Legal" [level=2] [ref=f16e318]
+              - list [ref=f16e319]:
+                - listitem [ref=f16e320]:
+                  - link "Privacy policy" [ref=f16e321] [cursor=pointer]:
+                    - /url: https://www.sinch.com/privacy-policy/
+        - generic [ref=f16e322]:
+          - paragraph [ref=f16e323]:
+            - text: Visit our
+            - link "Global Site" [ref=f16e324] [cursor=pointer]:
+              - /url: https://www.sinch.com/
+          - generic [ref=f16e325]: © Copyright 2026 Sinch. All Rights Reserved.
+  - iframe [ref=f16e328]:
+    

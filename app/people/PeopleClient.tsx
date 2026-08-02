@@ -630,8 +630,9 @@ export function PeopleClient({
                   const isLast = i === paginated.length - 1;
                   const isSelected = selectedIds.has(person.id);
                   const cats = person.categories ?? [];
-                  const visibleTags = person.person_tags.slice(0, 2);
-                  const overflowTags = person.person_tags.length - visibleTags.length;
+                  const validTags = person.person_tags.filter((pt) => pt.tags != null);
+                  const visibleTags = validTags.slice(0, 2);
+                  const overflowTags = validTags.length - visibleTags.length;
                   const subline = [
                     person.grade ? `Grade ${person.grade}` : null,
                     cats.length > 0 ? getCategoryDef(cats[0])?.label : null,
@@ -708,7 +709,7 @@ export function PeopleClient({
 
                       {/* Tags (max 2 + overflow) */}
                       <td className="pl-3 pr-4 py-3.5">
-                        {person.person_tags.length > 0 ? (
+                        {validTags.length > 0 ? (
                           <div className="flex items-center gap-1 flex-wrap">
                             {visibleTags.map((pt) => (
                               <span

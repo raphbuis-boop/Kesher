@@ -1,0 +1,43 @@
+- generic [active] [ref=f15e1]:
+  - main [ref=f15e2]:
+    - generic [ref=f15e4]:
+      - generic [ref=f15e5]:
+        - heading "Kesher" [level=1] [ref=f15e6]
+        - paragraph [ref=f15e7]: Sign in to your account
+      - generic [ref=f15e9]:
+        - generic [ref=f15e10]:
+          - generic [ref=f15e11]: Email
+          - textbox "Email" [ref=f15e12]:
+            - /placeholder: you@school.edu
+        - generic [ref=f15e13]:
+          - generic [ref=f15e14]: Password
+          - textbox "Password" [ref=f15e15]:
+            - /placeholder: ••••••••
+        - button "Sign in" [ref=f15e16]
+    - generic [ref=f15e17]:
+      - generic [ref=f15e18]:
+        - generic [ref=f15e19]:
+          - generic [ref=f15e20]:
+            - generic [ref=f15e22]: K
+            - generic [ref=f15e23]: Kesher
+          - paragraph [ref=f15e24]: The modern communications platform for schools.
+          - paragraph [ref=f15e25]: Email · SMS · WhatsApp
+        - generic [ref=f15e26]:
+          - navigation "Legal" [ref=f15e27]:
+            - paragraph [ref=f15e28]: Legal
+            - link "Privacy Policy" [ref=f15e29] [cursor=pointer]:
+              - /url: /privacy
+            - link "SMS Terms" [ref=f15e30] [cursor=pointer]:
+              - /url: /sms-terms
+            - link "Terms of Service" [ref=f15e31] [cursor=pointer]:
+              - /url: /terms
+          - generic [ref=f15e32]:
+            - paragraph [ref=f15e33]: Contact
+            - link "Contact Us" [ref=f15e34] [cursor=pointer]:
+              - /url: /contact
+            - link "help@kesherhq.co" [ref=f15e35] [cursor=pointer]:
+              - /url: mailto:help@kesherhq.co
+            - link "privacy@kesherhq.co" [ref=f15e36] [cursor=pointer]:
+              - /url: mailto:privacy@kesherhq.co
+      - paragraph [ref=f15e38]: © 2026 Kesher. All rights reserved.
+  - alert [ref=f15e39]

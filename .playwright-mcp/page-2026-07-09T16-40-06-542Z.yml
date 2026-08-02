@@ -1,0 +1,142 @@
+- generic [active] [ref=f24e1]:
+  - main [ref=f24e2]:
+    - generic [ref=f24e3]:
+      - link "Kesher home" [ref=f24e6] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f24e8]: K
+        - generic [ref=f24e9]: Kesher
+      - main [ref=f24e10]:
+        - generic [ref=f24e11]:
+          - generic [ref=f24e12]:
+            - generic [ref=f24e14]: K
+            - generic [ref=f24e15]:
+              - paragraph [ref=f24e16]: Kesher
+              - paragraph [ref=f24e17]: The modern communications platform for schools.
+          - heading "SMS Terms & Conditions" [level=1] [ref=f24e18]
+          - generic [ref=f24e19]:
+            - paragraph [ref=f24e20]: Effective July 6, 2026
+            - paragraph [ref=f24e21]: Last Updated July 6, 2026
+        - generic [ref=f24e22]:
+          - generic [ref=f24e23]:
+            - heading "Program Description" [level=2] [ref=f24e24]
+            - paragraph [ref=f24e25]: Kesher ("Kesher") provides a school communications platform that enables educational institutions to send SMS text messages to their communities — including parents, guardians, students, staff, alumni, and other authorized school community members.
+            - paragraph [ref=f24e26]: "Messages sent through Kesher may include: school event notifications, emergency alerts, attendance reminders, administrative announcements, schedule updates, fundraising information, and general school communications. Messages are sent on behalf of your school. The school name or identifier will be included in each message."
+          - generic [ref=f24e27]:
+            - heading "Consent to Receive Messages" [level=2] [ref=f24e28]
+            - paragraph [ref=f24e29]: You are receiving SMS messages because your school has your phone number on file and has indicated that you have consented to receive communications from your school community. Your school is responsible for obtaining and maintaining appropriate consent from its community members.
+            - paragraph [ref=f24e30]: By not opting out, you confirm that you consent to receive SMS text messages from your school via the Kesher platform. Consent is not a condition of any purchase or enrollment.
+          - generic [ref=f24e31]:
+            - heading "Message Frequency" [level=2] [ref=f24e32]
+            - paragraph [ref=f24e33]: Message frequency varies based on your school's activity and communication needs. You may receive multiple messages per week during active school periods.
+          - generic [ref=f24e34]:
+            - heading "Message and Data Rates" [level=2] [ref=f24e35]
+            - paragraph [ref=f24e36]:
+              - strong [ref=f24e37]: Message and data rates may apply.
+              - text: Please check with your mobile service provider for details about your plan's SMS rates. Kesher and your school do not charge a fee for SMS messages, but your carrier may.
+            - paragraph [ref=f24e38]: Participating carriers include AT&T, T-Mobile, Verizon, and others. Carrier availability and rates may vary. Carriers are not liable for delayed or undelivered messages.
+          - generic [ref=f24e39]:
+            - heading "How to Opt Out (STOP)" [level=2] [ref=f24e40]
+            - paragraph [ref=f24e41]:
+              - text: You may opt out of SMS messages at any time by replying
+              - strong [ref=f24e42]: STOP
+              - text: to any text message. After opting out, you will receive one final confirmation message and no further messages will be sent to your number.
+            - paragraph [ref=f24e43]: Opt-out requests are processed immediately. STOP, STOPALL, UNSUBSCRIBE, CANCEL, END, and QUIT are all recognized opt-out keywords.
+            - paragraph [ref=f24e44]:
+              - text: To re-subscribe after opting out, reply
+              - strong [ref=f24e45]: UNSTOP
+              - text: or
+              - strong [ref=f24e46]: START
+              - text: .
+          - generic [ref=f24e47]:
+            - heading "How to Get Help (HELP)" [level=2] [ref=f24e48]
+            - paragraph [ref=f24e49]:
+              - text: Reply
+              - strong [ref=f24e50]: HELP
+              - text: "to any message to receive support contact information. You can also reach us at:"
+            - generic [ref=f24e51]:
+              - paragraph [ref=f24e52]:
+                - text: "Email:"
+                - link "help@kesherhq.co" [ref=f24e53] [cursor=pointer]:
+                  - /url: mailto:help@kesherhq.co
+              - paragraph [ref=f24e54]:
+                - text: "Website:"
+                - link "https://www.kesherhq.co" [ref=f24e55] [cursor=pointer]:
+                  - /url: https://www.kesherhq.co
+            - paragraph [ref=f24e56]: For issues with messages from a specific school, please contact your school's administrative office directly.
+          - generic [ref=f24e57]:
+            - heading "Your Phone Number and Privacy" [level=2] [ref=f24e58]
+            - paragraph [ref=f24e59]: No mobile information will be shared with third parties or affiliates for marketing or promotional purposes.
+            - paragraph [ref=f24e60]: All other categories of information described in our Privacy Policy exclude text messaging originator opt-in data and consent; this information will not be shared with any third parties.
+            - paragraph [ref=f24e61]:
+              - text: Please review our full
+              - link "Privacy Policy" [ref=f24e62] [cursor=pointer]:
+                - /url: /privacy
+              - text: for complete details on how we collect, use, and protect your information.
+          - generic [ref=f24e63]:
+            - heading "Limitation of Liability" [level=2] [ref=f24e64]
+            - paragraph [ref=f24e65]: Kesher is not liable for any delays or failures in the receipt of SMS messages. Delivery is subject to valid mobile service coverage and carrier network conditions. Carriers reserve the right to refuse, alter, or terminate any SMS service at any time.
+          - generic [ref=f24e66]:
+            - heading "Changes to These Terms" [level=2] [ref=f24e67]
+            - paragraph [ref=f24e68]: We may update these SMS Terms from time to time. Material changes will be communicated through the platform or by email to school administrators. Continued use of the messaging service after changes constitutes acceptance of the updated terms.
+          - generic [ref=f24e69]:
+            - heading "Contact" [level=2] [ref=f24e70]
+            - generic [ref=f24e71]:
+              - paragraph [ref=f24e72]:
+                - strong [ref=f24e73]: Kesher
+              - paragraph [ref=f24e74]:
+                - text: "Email:"
+                - link "help@kesherhq.co" [ref=f24e75] [cursor=pointer]:
+                  - /url: mailto:help@kesherhq.co
+              - paragraph [ref=f24e76]:
+                - text: "Website:"
+                - link "https://www.kesherhq.co" [ref=f24e77] [cursor=pointer]:
+                  - /url: https://www.kesherhq.co
+          - generic [ref=f24e78]:
+            - heading "Quick Reference" [level=2] [ref=f24e79]
+            - generic [ref=f24e80]:
+              - generic [ref=f24e81]:
+                - paragraph [ref=f24e82]: STOP
+                - paragraph [ref=f24e83]: Opt out of all messages
+              - generic [ref=f24e84]:
+                - paragraph [ref=f24e85]: UNSTOP / START
+                - paragraph [ref=f24e86]: Re-subscribe to messages
+              - generic [ref=f24e87]:
+                - paragraph [ref=f24e88]: HELP
+                - paragraph [ref=f24e89]: Get support information
+              - generic [ref=f24e90]:
+                - paragraph [ref=f24e91]: Msg & Data Rates May Apply
+                - paragraph [ref=f24e92]: Check with your carrier
+      - generic [ref=f24e93]:
+        - generic [ref=f24e95]:
+          - generic [ref=f24e96]:
+            - link "Kesher home" [ref=f24e97] [cursor=pointer]:
+              - /url: /
+              - generic [ref=f24e99]: K
+              - generic [ref=f24e100]: Kesher
+            - paragraph [ref=f24e101]: The modern communications platform for schools.
+            - paragraph [ref=f24e102]: Email · SMS · WhatsApp
+          - generic [ref=f24e103]:
+            - navigation "Legal" [ref=f24e104]:
+              - paragraph [ref=f24e105]: Legal
+              - link "Privacy Policy" [ref=f24e106] [cursor=pointer]:
+                - /url: /privacy
+              - link "SMS Terms" [ref=f24e107] [cursor=pointer]:
+                - /url: /sms-terms
+              - link "Terms of Service" [ref=f24e108] [cursor=pointer]:
+                - /url: /terms
+              - link "CTA Documentation" [ref=f24e109] [cursor=pointer]:
+                - /url: /cta
+              - link "Opt-In Documentation" [ref=f24e110] [cursor=pointer]:
+                - /url: /opt-in
+              - link "Sample Opt-In Form" [ref=f24e111] [cursor=pointer]:
+                - /url: /sample-form
+            - generic [ref=f24e112]:
+              - paragraph [ref=f24e113]: Contact
+              - link "Contact Us" [ref=f24e114] [cursor=pointer]:
+                - /url: /contact
+              - link "help@kesherhq.co" [ref=f24e115] [cursor=pointer]:
+                - /url: mailto:help@kesherhq.co
+              - link "privacy@kesherhq.co" [ref=f24e116] [cursor=pointer]:
+                - /url: mailto:privacy@kesherhq.co
+        - paragraph [ref=f24e119]: © 2026 Kesher. All rights reserved.
+  - alert [ref=f24e120]

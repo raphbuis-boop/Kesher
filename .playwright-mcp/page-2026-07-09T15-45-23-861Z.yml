@@ -1,0 +1,57 @@
+- generic [active] [ref=f11e1]:
+  - main [ref=f11e2]:
+    - generic [ref=f11e3]:
+      - link "Kesher home" [ref=f11e6] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f11e8]: K
+        - generic [ref=f11e9]: Kesher
+      - main [ref=f11e10]:
+        - generic [ref=f11e11]:
+          - generic [ref=f11e12]:
+            - generic [ref=f11e14]: K
+            - generic [ref=f11e15]:
+              - paragraph [ref=f11e16]: Kesher
+              - paragraph [ref=f11e17]: The modern communications platform for schools.
+          - heading "Contact" [level=1] [ref=f11e18]
+          - paragraph [ref=f11e19]: Need help? We're here.
+        - generic [ref=f11e20]:
+          - generic [ref=f11e21]:
+            - paragraph [ref=f11e22]: General Support
+            - link "help@kesherhq.co" [ref=f11e23] [cursor=pointer]:
+              - /url: mailto:help@kesherhq.co
+            - paragraph [ref=f11e24]: Questions about the platform, your account, or sending messages.
+          - generic [ref=f11e25]:
+            - paragraph [ref=f11e26]: Privacy Questions
+            - link "privacy@kesherhq.co" [ref=f11e27] [cursor=pointer]:
+              - /url: mailto:privacy@kesherhq.co
+            - paragraph [ref=f11e28]: Data requests, opt-out assistance, and privacy policy inquiries.
+        - paragraph [ref=f11e31]: "Average response time: within 1 business day"
+        - paragraph [ref=f11e32]: Kesher is a modern communications platform built for schools to communicate with parents, students, alumni, faculty, and staff through Email, SMS, and WhatsApp.
+      - generic [ref=f11e33]:
+        - generic [ref=f11e35]:
+          - generic [ref=f11e36]:
+            - link "Kesher home" [ref=f11e37] [cursor=pointer]:
+              - /url: /
+              - generic [ref=f11e39]: K
+              - generic [ref=f11e40]: Kesher
+            - paragraph [ref=f11e41]: The modern communications platform for schools.
+            - paragraph [ref=f11e42]: Email · SMS · WhatsApp
+          - generic [ref=f11e43]:
+            - navigation "Legal" [ref=f11e44]:
+              - paragraph [ref=f11e45]: Legal
+              - link "Privacy Policy" [ref=f11e46] [cursor=pointer]:
+                - /url: /privacy
+              - link "SMS Terms" [ref=f11e47] [cursor=pointer]:
+                - /url: /sms-terms
+              - link "Terms of Service" [ref=f11e48] [cursor=pointer]:
+                - /url: /terms
+            - generic [ref=f11e49]:
+              - paragraph [ref=f11e50]: Contact
+              - link "Contact Us" [ref=f11e51] [cursor=pointer]:
+                - /url: /contact
+              - link "help@kesherhq.co" [ref=f11e52] [cursor=pointer]:
+                - /url: mailto:help@kesherhq.co
+              - link "privacy@kesherhq.co" [ref=f11e53] [cursor=pointer]:
+                - /url: mailto:privacy@kesherhq.co
+        - paragraph [ref=f11e56]: © 2026 Kesher. All rights reserved.
+  - alert [ref=f11e57]

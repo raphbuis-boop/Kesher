@@ -68,6 +68,15 @@ export class SinchProvider implements SmsProvider {
       ? { media_message: { url: msg.mediaUrl } }
       : { text_message: { text: msg.body } };
 
+    // channel_properties lets us override the sender number per-request.
+    // Without this, Sinch falls back to whatever default is configured on
+    // the channel — which may be empty or wrong (shows as "100" in logs).
+    // SMS_SENDER must be E.164 (+1XXXXXXXXXX). WhatsApp uses a separate
+    // sender configured in the Sinch App; we pass it the same way.
+    const channelProperties: Record<string, string> = msg.from
+      ? { SMS_SENDER: msg.from }
+      : {};
+
     const payload = {
       app_id: this.appId,
       recipient: {
@@ -79,6 +88,7 @@ export class SinchProvider implements SmsProvider {
       },
       message,
       channel_priority_order: [sinchCh],
+      ...(Object.keys(channelProperties).length > 0 && { channel_properties: channelProperties }),
     };
 
     try {
@@ -107,7 +117,7 @@ export class SinchProvider implements SmsProvider {
         return { providerId: null, success: false, error: detail };
       }
 
-      console.log(`[sinch] sent to=${msg.to} channel=${channel} messageId=${json.message_id}`);
+      console.log(`[sinch] sent from=${msg.from} to=${msg.to} channel=${channel} messageId=${json.message_id}`);
       return { providerId: json.message_id, success: true };
     } catch (err) {
       const detail = err instanceof Error ? err.message : "Network error";

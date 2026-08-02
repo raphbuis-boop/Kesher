@@ -1,0 +1,480 @@
+- generic [active] [ref=f42e1]:
+  - main [ref=f42e2]:
+    - generic [ref=f42e3]:
+      - generic [ref=f42e5]:
+        - link "Kesher home" [ref=f42e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=f42e8]: K
+          - generic [ref=f42e9]: Kesher
+        - navigation "Main navigation" [ref=f42e10]:
+          - link "Features" [ref=f42e11] [cursor=pointer]:
+            - /url: "#features"
+          - link "How it works" [ref=f42e12] [cursor=pointer]:
+            - /url: "#how-it-works"
+          - link "Compliance" [ref=f42e13] [cursor=pointer]:
+            - /url: "#compliance"
+          - link "Contact" [ref=f42e14] [cursor=pointer]:
+            - /url: "#contact"
+        - generic [ref=f42e15]:
+          - link "Sign in" [ref=f42e16] [cursor=pointer]:
+            - /url: /login
+          - link "Request a demo" [ref=f42e17] [cursor=pointer]:
+            - /url: mailto:contact@kesherhq.co?subject=Demo%20Request%20%E2%80%94%20Kesher
+            - text: Request a demo
+            - img [ref=f42e18]
+      - main [ref=f42e20]:
+        - generic [ref=f42e21]:
+          - generic [ref=f42e22]:
+            - generic [ref=f42e25]: Purpose-built for schools
+            - heading "Reach every parent. Every student. Every time." [level=1] [ref=f42e26]:
+              - text: Reach every parent.
+              - text: Every student.
+              - text: Every time.
+            - paragraph [ref=f42e27]: Kesher gives school administrators one place to communicate with their entire community — via SMS, email, and WhatsApp — without managing multiple tools or worrying about compliance.
+            - generic [ref=f42e28]:
+              - link "Request a demo" [ref=f42e29] [cursor=pointer]:
+                - /url: mailto:contact@kesherhq.co?subject=Demo%20Request%20%E2%80%94%20Kesher
+                - text: Request a demo
+                - img [ref=f42e30]
+              - link "See how it works" [ref=f42e32] [cursor=pointer]:
+                - /url: "#how-it-works"
+            - generic [ref=f42e33]:
+              - generic [ref=f42e34]:
+                - img [ref=f42e35]
+                - text: SMS
+              - generic [ref=f42e37]:
+                - img [ref=f42e38]
+                - text: Email
+              - generic [ref=f42e41]:
+                - img [ref=f42e42]
+                - text: WhatsApp
+          - generic [ref=f42e45]:
+            - generic [ref=f42e52]: kesherhq.co/dashboard
+            - generic [ref=f42e53]:
+              - generic [ref=f42e54]:
+                - generic [ref=f42e56]:
+                  - generic [ref=f42e58]: K
+                  - generic [ref=f42e59]:
+                    - paragraph [ref=f42e60]: Kesher
+                    - paragraph [ref=f42e61]: School Comms
+                - paragraph [ref=f42e63]: Navigation
+                - generic [ref=f42e64]:
+                  - generic [ref=f42e65]:
+                    - img [ref=f42e66]
+                    - text: Overview
+                  - generic [ref=f42e71]:
+                    - img [ref=f42e72]
+                    - text: People
+                  - generic [ref=f42e77]:
+                    - img [ref=f42e78]
+                    - text: Audiences
+                  - generic [ref=f42e82]:
+                    - img [ref=f42e83]
+                    - text: Messages
+                  - generic [ref=f42e85]:
+                    - img [ref=f42e86]
+                    - text: Activity
+                  - generic [ref=f42e88]:
+                    - img [ref=f42e89]
+                    - text: Imports
+                - generic [ref=f42e93]:
+                  - img [ref=f42e94]
+                  - text: Settings
+              - generic [ref=f42e97]:
+                - generic [ref=f42e98]:
+                  - generic [ref=f42e99]:
+                    - paragraph [ref=f42e100]: Overview
+                    - paragraph [ref=f42e101]: Heichal HaTorah
+                  - generic [ref=f42e102]:
+                    - img [ref=f42e103]
+                    - generic [ref=f42e105]: Compose
+                - generic [ref=f42e106]:
+                  - generic [ref=f42e107]:
+                    - generic [ref=f42e108]:
+                      - paragraph [ref=f42e109]: Active Contacts
+                      - paragraph [ref=f42e110]: "412"
+                      - paragraph [ref=f42e111]: in directory
+                    - generic [ref=f42e112]:
+                      - paragraph [ref=f42e113]: This Week
+                      - paragraph [ref=f42e114]: "3"
+                      - paragraph [ref=f42e115]: campaigns sent
+                    - generic [ref=f42e116]:
+                      - paragraph [ref=f42e117]: Delivery Rate
+                      - paragraph [ref=f42e118]: 97.6%
+                      - paragraph [ref=f42e119]: last 30 days
+                    - generic [ref=f42e120]:
+                      - paragraph [ref=f42e121]: Open Rate
+                      - paragraph [ref=f42e122]: 64.2%
+                      - paragraph [ref=f42e123]: email, last 30d
+                  - generic [ref=f42e124]:
+                    - generic [ref=f42e125]:
+                      - generic [ref=f42e126]:
+                        - paragraph [ref=f42e127]: Activity
+                        - paragraph [ref=f42e128]: Campaigns and imports
+                      - generic [ref=f42e129]: View all →
+                    - generic [ref=f42e130]:
+                      - img [ref=f42e132]
+                      - generic [ref=f42e135]:
+                        - generic [ref=f42e136]:
+                          - paragraph [ref=f42e137]: Shabbat schedule reminder
+                          - generic [ref=f42e138]: SMS
+                        - paragraph [ref=f42e139]: Parents · 186 recipients · sent
+                      - generic [ref=f42e140]: 2h ago
+                    - generic [ref=f42e141]:
+                      - img [ref=f42e143]
+                      - generic [ref=f42e146]:
+                        - generic [ref=f42e147]:
+                          - paragraph [ref=f42e148]: Spring Gala — save the date
+                          - generic [ref=f42e149]: Email
+                        - paragraph [ref=f42e150]: Families · 312 recipients · sent
+                      - generic [ref=f42e151]: 1d ago
+                    - generic [ref=f42e152]:
+                      - img [ref=f42e154]
+                      - generic [ref=f42e157]:
+                        - generic [ref=f42e158]:
+                          - paragraph [ref=f42e159]: School closure — weather alert
+                          - generic [ref=f42e160]: SMS
+                        - paragraph [ref=f42e161]: All · 498 recipients · sent
+                      - generic [ref=f42e162]: 3d ago
+                  - generic [ref=f42e163]:
+                    - paragraph [ref=f42e165]: Quick Actions
+                    - generic [ref=f42e166]:
+                      - generic [ref=f42e167]:
+                        - img [ref=f42e169]
+                        - generic [ref=f42e171]:
+                          - paragraph [ref=f42e172]: Compose
+                          - paragraph [ref=f42e173]: Send to any audience
+                      - generic [ref=f42e174]:
+                        - img [ref=f42e176]
+                        - generic [ref=f42e179]:
+                          - paragraph [ref=f42e180]: Import Contacts
+                          - paragraph [ref=f42e181]: Upload a CSV
+                      - generic [ref=f42e182]:
+                        - img [ref=f42e184]
+                        - generic [ref=f42e187]:
+                          - paragraph [ref=f42e188]: Add Contact
+                          - paragraph [ref=f42e189]: Add a single person
+                      - generic [ref=f42e190]:
+                        - img [ref=f42e192]
+                        - generic [ref=f42e196]:
+                          - paragraph [ref=f42e197]: Audiences
+                          - paragraph [ref=f42e198]: Manage groups
+        - generic [ref=f42e201]:
+          - generic [ref=f42e202]:
+            - img [ref=f42e203]
+            - text: Built specifically for K–12 schools and educational organizations
+          - generic [ref=f42e206]:
+            - img [ref=f42e207]
+            - text: Not adapted from a general-purpose marketing tool
+          - generic [ref=f42e210]:
+            - img [ref=f42e211]
+            - text: Compliance built in — not bolted on
+        - generic [ref=f42e215]:
+          - generic [ref=f42e216]:
+            - paragraph [ref=f42e217]: Platform
+            - heading "Everything your school needs to stay connected" [level=2] [ref=f42e218]
+            - paragraph [ref=f42e219]: Kesher replaces the patchwork of email blasts, group texts, and manual lists that most schools rely on. One platform, every channel, for every part of your community.
+          - generic [ref=f42e220]:
+            - generic [ref=f42e221]:
+              - img [ref=f42e223]
+              - heading "One contact directory" [level=3] [ref=f42e228]
+              - paragraph [ref=f42e229]: Import your school's contact list and organize it by role — parents, students, staff, alumni, board members, and donors. Every contact in one place, always up to date.
+            - generic [ref=f42e230]:
+              - img [ref=f42e232]
+              - heading "Simple message campaigns" [level=3] [ref=f42e235]
+              - paragraph [ref=f42e236]: Write a message, choose your audience, pick a channel, and send. Track delivery, opens, and failures in real time. Every campaign is saved with its full history.
+            - generic [ref=f42e237]:
+              - img [ref=f42e239]
+              - heading "Audiences and groups" [level=3] [ref=f42e243]
+              - paragraph [ref=f42e244]: Create custom audience segments — grade level, homeroom, specific families. Message exactly who needs to hear from you, without copy-pasting lists.
+          - generic [ref=f42e245]:
+            - paragraph [ref=f42e246]: Supported Channels
+            - generic [ref=f42e247]:
+              - generic [ref=f42e248]:
+                - img [ref=f42e250]
+                - generic [ref=f42e252]:
+                  - paragraph [ref=f42e253]: SMS
+                  - paragraph [ref=f42e254]: Text messages sent via a 10DLC-registered long code. Opt-outs handled in real time.
+              - generic [ref=f42e255]:
+                - img [ref=f42e257]
+                - generic [ref=f42e260]:
+                  - paragraph [ref=f42e261]: Email
+                  - paragraph [ref=f42e262]: HTML and plain-text email with delivery confirmation and open rate tracking.
+              - generic [ref=f42e263]:
+                - img [ref=f42e265]
+                - generic [ref=f42e267]:
+                  - paragraph [ref=f42e268]: WhatsApp
+                  - paragraph [ref=f42e269]: WhatsApp Business messaging for school communities that prefer it.
+        - generic [ref=f42e271]:
+          - generic [ref=f42e272]:
+            - paragraph [ref=f42e273]: How It Works
+            - heading "From contact list to delivered message in minutes" [level=2] [ref=f42e274]
+            - paragraph [ref=f42e275]: Kesher is designed for school administrators, not developers. No setup complexity, no integrations to configure.
+          - generic [ref=f42e276]:
+            - generic [ref=f42e277]:
+              - generic [ref=f42e278]: "01"
+              - heading "Import your contact list" [level=3] [ref=f42e280]
+              - paragraph [ref=f42e281]: Upload a CSV of your school community. Before any number is saved, you certify that every person has opted in to receive messages from your school. Kesher enforces this at every import.
+            - generic [ref=f42e282]:
+              - generic [ref=f42e283]: "02"
+              - heading "Compose your message" [level=3] [ref=f42e285]
+              - paragraph [ref=f42e286]: Write your message, select an audience — Parents, Staff, All Families — and choose the channel. Preview before sending. Every send requires a deliberate confirmation.
+            - generic [ref=f42e287]:
+              - generic [ref=f42e288]: "03"
+              - heading "Send and track delivery" [level=3] [ref=f42e290]
+              - paragraph [ref=f42e291]: "Kesher delivers your message and tracks every result: delivered, opened, failed, or opted out. Unsubscribes are processed automatically and are permanent."
+          - generic [ref=f42e292]:
+            - img [ref=f42e293]
+            - generic [ref=f42e295]:
+              - paragraph [ref=f42e296]: Consent certification is required before any import
+              - paragraph [ref=f42e297]: Before any phone numbers enter Kesher, the school administrator must certify that every person on the list has provided explicit written or digital consent to receive SMS messages. This is enforced at every import — not optional.
+        - generic [ref=f42e300]:
+          - generic [ref=f42e301]:
+            - paragraph [ref=f42e302]: About Kesher
+            - heading "Built because schools deserve better than group texts and mass emails" [level=2] [ref=f42e303]
+            - generic [ref=f42e304]:
+              - paragraph [ref=f42e305]: Most schools communicate through a patchwork of tools — a group text thread here, a Mailchimp blast there, an automated robocall for emergencies. None of them were designed with schools in mind, and none of them talk to each other.
+              - paragraph [ref=f42e306]: Kesher was built to solve exactly that. One platform that manages your school's contact directory, lets you compose and send messages across SMS, email, and WhatsApp, and handles all the compliance requirements that come with modern messaging — so your administrators don't have to.
+              - paragraph [ref=f42e307]:
+                - text: The name
+                - emphasis [ref=f42e308]: Kesher
+                - text: "means \"connection\" in Hebrew. That's what we're building: genuine, reliable connections between schools and the families and communities they serve."
+          - generic [ref=f42e309]:
+            - paragraph [ref=f42e310]: Who Kesher Is For
+            - generic [ref=f42e311]:
+              - generic [ref=f42e312]:
+                - paragraph [ref=f42e313]: School Principals & Administrators
+                - paragraph [ref=f42e314]: Send school-wide announcements, emergency alerts, and event reminders without needing a communications team.
+              - generic [ref=f42e315]:
+                - paragraph [ref=f42e316]: Communications & Outreach Staff
+                - paragraph [ref=f42e317]: Manage your contact directory, create audience segments, and run campaigns for specific groups — grade level, homeroom, department.
+              - generic [ref=f42e318]:
+                - paragraph [ref=f42e319]: K–12 Schools and Educational Organizations
+                - paragraph [ref=f42e320]: Day schools, yeshivas, community schools, after-school programs — any educational institution that needs to communicate reliably with its community.
+        - generic [ref=f42e322]:
+          - generic [ref=f42e323]:
+            - paragraph [ref=f42e324]: What Gets Sent
+            - heading "School communications, not marketing" [level=2] [ref=f42e325]
+            - paragraph [ref=f42e326]: Kesher is used exclusively for transactional and informational school communications. The platform does not support marketing, promotional, political, or commercial messaging of any kind.
+          - generic [ref=f42e327]:
+            - generic [ref=f42e328]:
+              - generic [ref=f42e329]:
+                - paragraph [ref=f42e330]: Event Reminder
+                - generic [ref=f42e331]: SMS
+              - generic [ref=f42e332]:
+                - paragraph [ref=f42e335]: "[School Name]: Parent-Teacher conferences are tomorrow, Thu 3/20, 4–8 PM. Sign up at school.edu/conferences. Reply STOP to opt out."
+                - generic [ref=f42e336]:
+                  - img [ref=f42e337]
+                  - generic [ref=f42e340]: Delivered
+            - generic [ref=f42e341]:
+              - generic [ref=f42e342]:
+                - paragraph [ref=f42e343]: Emergency Alert
+                - generic [ref=f42e344]: SMS
+              - generic [ref=f42e345]:
+                - paragraph [ref=f42e348]: "[School Name] ALERT: School will be closed tomorrow, Fri 1/17, due to inclement weather. All after-school programs are also cancelled. Reply STOP to opt out."
+                - generic [ref=f42e349]:
+                  - img [ref=f42e350]
+                  - generic [ref=f42e353]: Delivered
+            - generic [ref=f42e354]:
+              - generic [ref=f42e355]:
+                - paragraph [ref=f42e356]: General Announcement
+                - generic [ref=f42e357]: SMS
+              - generic [ref=f42e358]:
+                - paragraph [ref=f42e361]: "[School Name]: Registration for the 2025–26 school year opens next Monday. Visit school.edu/register or call 555-000-0000. Reply STOP to opt out."
+                - generic [ref=f42e362]:
+                  - img [ref=f42e363]
+                  - generic [ref=f42e366]: Delivered
+          - paragraph [ref=f42e367]:
+            - text: "Representative examples only. Full message type documentation:"
+            - link "CTA Documentation" [ref=f42e368] [cursor=pointer]:
+              - /url: /cta
+            - text: .
+        - generic [ref=f42e370]:
+          - generic [ref=f42e371]:
+            - paragraph [ref=f42e372]: Compliance
+            - heading "Meets carrier and regulatory standards" [level=2] [ref=f42e373]
+            - paragraph [ref=f42e374]: Every SMS message sent through Kesher complies with CTIA Messaging Principles and Best Practices, TCPA requirements, and 10DLC registration guidelines. Kesher acts as a messaging service provider; each school is the Message Originator and is responsible for obtaining and maintaining consent records.
+          - generic [ref=f42e375]:
+            - generic [ref=f42e377]:
+              - img [ref=f42e379]
+              - generic [ref=f42e382]:
+                - heading "A2P 10DLC Registered" [level=3] [ref=f42e383]
+                - paragraph [ref=f42e384]: Kesher operates as a registered A2P 10DLC messaging platform for school communications. All SMS is sent from a dedicated campaign registered with The Campaign Registry (TCR).
+            - generic [ref=f42e386]:
+              - img [ref=f42e388]
+              - generic [ref=f42e391]:
+                - heading "CTIA-Compliant" [level=3] [ref=f42e392]
+                - paragraph [ref=f42e393]: Every outbound SMS message includes compliant STOP and HELP instructions. Opt-out requests are processed immediately and suppress that number from all future sends — permanently.
+            - generic [ref=f42e395]:
+              - img [ref=f42e397]
+              - generic [ref=f42e400]:
+                - heading "School-Facilitated Opt-In" [level=3] [ref=f42e401]
+                - paragraph [ref=f42e402]: Schools certify at import that every contact has provided explicit written or digital consent. Kesher enforces this certification before any phone number can be imported.
+            - generic [ref=f42e404]:
+              - img [ref=f42e406]
+              - generic [ref=f42e409]:
+                - heading "No Third-Party Data Sharing" [level=3] [ref=f42e410]
+                - paragraph [ref=f42e411]: Mobile information is never shared with third parties or affiliates for marketing or promotional purposes. Text messaging opt-in data and consent records are not shared with anyone.
+          - generic [ref=f42e412]:
+            - paragraph [ref=f42e413]: Compliance Documentation
+            - generic [ref=f42e414]:
+              - link "SMS Terms & Conditions" [ref=f42e415] [cursor=pointer]:
+                - /url: /sms-terms
+                - img [ref=f42e416]
+                - text: SMS Terms & Conditions
+                - img [ref=f42e419]
+              - link "Privacy Policy" [ref=f42e421] [cursor=pointer]:
+                - /url: /privacy
+                - img [ref=f42e422]
+                - text: Privacy Policy
+                - img [ref=f42e425]
+              - link "Call-to-Action (CTA) Docs" [ref=f42e427] [cursor=pointer]:
+                - /url: /cta
+                - img [ref=f42e428]
+                - text: Call-to-Action (CTA) Docs
+                - img [ref=f42e431]
+              - link "Sample Opt-In Form" [ref=f42e433] [cursor=pointer]:
+                - /url: /sample-form
+                - img [ref=f42e434]
+                - text: Sample Opt-In Form
+                - img [ref=f42e437]
+              - link "Terms of Service" [ref=f42e439] [cursor=pointer]:
+                - /url: /terms
+                - img [ref=f42e440]
+                - text: Terms of Service
+                - img [ref=f42e443]
+        - generic [ref=f42e448]:
+          - paragraph [ref=f42e449]: For Carrier & Compliance Reviewers
+          - heading "Platform overview — Sinch, TCR, and carrier review" [level=2] [ref=f42e450]
+          - paragraph [ref=f42e451]: Kesher operates as an A2P messaging platform exclusively for educational institutions. Schools use Kesher to send transactional and informational communications — announcements, emergency alerts, attendance notices, event reminders — to community members who have provided explicit opt-in consent.
+          - generic [ref=f42e452]:
+            - generic [ref=f42e453]:
+              - generic [ref=f42e454]: Program type
+              - generic [ref=f42e455]: School communications — informational and transactional only. No marketing.
+            - generic [ref=f42e456]:
+              - generic [ref=f42e457]: Opt-in method
+              - generic [ref=f42e458]: School-facilitated explicit opt-in via enrollment forms, parent portals, and staff onboarding
+            - generic [ref=f42e459]:
+              - generic [ref=f42e460]: Message content
+              - generic [ref=f42e461]: Announcements, emergency alerts, event reminders, attendance, schedule changes
+            - generic [ref=f42e462]:
+              - generic [ref=f42e463]: Opt-out
+              - generic [ref=f42e464]: STOP keyword — processed in real time, suppressed permanently
+            - generic [ref=f42e465]:
+              - generic [ref=f42e466]: Help response
+              - generic [ref=f42e467]: HELP keyword triggers automated message with support contact
+            - generic [ref=f42e468]:
+              - generic [ref=f42e469]: Contact
+              - generic [ref=f42e470]: help@kesherhq.co
+          - generic [ref=f42e471]:
+            - link "Sample Opt-In Form" [ref=f42e472] [cursor=pointer]:
+              - /url: /sample-form
+              - img [ref=f42e473]
+              - text: Sample Opt-In Form
+            - link "CTA Documentation" [ref=f42e476] [cursor=pointer]:
+              - /url: /cta
+              - img [ref=f42e477]
+              - text: CTA Documentation
+            - link "SMS Terms & Conditions" [ref=f42e480] [cursor=pointer]:
+              - /url: /sms-terms
+              - img [ref=f42e481]
+              - text: SMS Terms & Conditions
+            - link "Privacy Policy" [ref=f42e484] [cursor=pointer]:
+              - /url: /privacy
+              - img [ref=f42e485]
+              - text: Privacy Policy
+            - link "help@kesherhq.co" [ref=f42e488] [cursor=pointer]:
+              - /url: mailto:help@kesherhq.co
+              - img [ref=f42e489]
+              - text: help@kesherhq.co
+        - generic [ref=f42e494]:
+          - generic [ref=f42e495]:
+            - paragraph [ref=f42e496]: Contact
+            - heading "Get in touch" [level=2] [ref=f42e497]
+            - paragraph [ref=f42e498]: We work with schools directly. Whether you want to see a demo, have questions about how Kesher works, or want to get your school set up — reach out and we'll respond promptly.
+            - generic [ref=f42e499]:
+              - link "Request a Demo contact@kesherhq.co" [ref=f42e500] [cursor=pointer]:
+                - /url: mailto:contact@kesherhq.co?subject=Demo%20Request%20%E2%80%94%20Kesher
+                - img [ref=f42e502]
+                - generic [ref=f42e505]:
+                  - paragraph [ref=f42e506]: Request a Demo
+                  - paragraph [ref=f42e507]: contact@kesherhq.co
+                - img [ref=f42e508]
+              - link "Questions & Support help@kesherhq.co" [ref=f42e510] [cursor=pointer]:
+                - /url: mailto:help@kesherhq.co
+                - img [ref=f42e512]
+                - generic [ref=f42e515]:
+                  - paragraph [ref=f42e516]: Questions & Support
+                  - paragraph [ref=f42e517]: help@kesherhq.co
+                - img [ref=f42e518]
+          - generic [ref=f42e520]:
+            - paragraph [ref=f42e521]: Common Questions
+            - generic [ref=f42e522]:
+              - paragraph [ref=f42e523]: Is Kesher available to any school?
+              - paragraph [ref=f42e524]: Yes. Kesher is built for K–12 schools, yeshivas, community schools, and educational organizations of any size. We work with schools directly to get them onboarded.
+            - generic [ref=f42e525]:
+              - paragraph [ref=f42e526]: How does consent work for SMS?
+              - paragraph [ref=f42e527]: Every school must certify at import that each contact has provided explicit written or digital consent to receive SMS messages. Kesher enforces this before any number can be imported.
+            - generic [ref=f42e528]:
+              - paragraph [ref=f42e529]: What happens when someone replies STOP?
+              - paragraph [ref=f42e530]: Opt-out requests are processed in real time. The number is permanently suppressed from all future sends for that school and a confirmation message is sent automatically.
+            - generic [ref=f42e531]:
+              - paragraph [ref=f42e532]: Is there a contract or long-term commitment?
+              - paragraph [ref=f42e533]: Reach out to discuss your school's needs. We work with schools directly to find the right setup.
+        - generic [ref=f42e535]:
+          - heading "Bring your school community together" [level=2] [ref=f42e536]:
+            - text: Bring your school
+            - text: community together
+          - paragraph [ref=f42e537]: Kesher works with schools directly. Reach out to schedule a demo or ask about getting your school set up — we'll get back to you promptly.
+          - generic [ref=f42e538]:
+            - link "Request a demo" [ref=f42e539] [cursor=pointer]:
+              - /url: mailto:contact@kesherhq.co?subject=Demo%20Request%20%E2%80%94%20Kesher
+              - text: Request a demo
+              - img [ref=f42e540]
+            - link "help@kesherhq.co" [ref=f42e542] [cursor=pointer]:
+              - /url: mailto:help@kesherhq.co
+              - img [ref=f42e543]
+              - text: help@kesherhq.co
+      - generic [ref=f42e546]:
+        - generic [ref=f42e548]:
+          - generic [ref=f42e549]:
+            - generic [ref=f42e550]:
+              - generic [ref=f42e552]: K
+              - generic [ref=f42e553]: Kesher
+            - paragraph [ref=f42e554]: Purpose-built communications platform for schools and educational organizations.
+            - paragraph [ref=f42e555]: SMS · Email · WhatsApp
+          - generic [ref=f42e556]:
+            - navigation "Platform" [ref=f42e557]:
+              - paragraph [ref=f42e558]: Platform
+              - link "Features" [ref=f42e559] [cursor=pointer]:
+                - /url: "#features"
+              - link "How it works" [ref=f42e560] [cursor=pointer]:
+                - /url: "#how-it-works"
+              - link "About" [ref=f42e561] [cursor=pointer]:
+                - /url: "#about"
+              - link "Contact" [ref=f42e562] [cursor=pointer]:
+                - /url: "#contact"
+            - navigation "Legal" [ref=f42e563]:
+              - paragraph [ref=f42e564]: Legal
+              - link "Privacy Policy" [ref=f42e565] [cursor=pointer]:
+                - /url: /privacy
+              - link "SMS Terms" [ref=f42e566] [cursor=pointer]:
+                - /url: /sms-terms
+              - link "Terms of Service" [ref=f42e567] [cursor=pointer]:
+                - /url: /terms
+              - link "CTA Documentation" [ref=f42e568] [cursor=pointer]:
+                - /url: /cta
+              - link "Sample Opt-In Form" [ref=f42e569] [cursor=pointer]:
+                - /url: /sample-form
+            - generic [ref=f42e570]:
+              - paragraph [ref=f42e571]: Contact
+              - link "contact@kesherhq.co" [ref=f42e572] [cursor=pointer]:
+                - /url: mailto:contact@kesherhq.co
+              - link "help@kesherhq.co" [ref=f42e573] [cursor=pointer]:
+                - /url: mailto:help@kesherhq.co
+              - link "privacy@kesherhq.co" [ref=f42e574] [cursor=pointer]:
+                - /url: mailto:privacy@kesherhq.co
+        - generic [ref=f42e576]:
+          - paragraph [ref=f42e577]: © 2026 Kesher. All rights reserved.
+          - paragraph [ref=f42e578]: Kesher is not affiliated with any individual school. Schools are responsible for obtaining and maintaining consent records.
+  - alert [ref=f42e579]

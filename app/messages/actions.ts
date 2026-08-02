@@ -427,6 +427,40 @@ async function sendEmailBatch(
   return { inserts, sentCount, failedCount, batchError };
 }
 
+// ─── Phone normalization ──────────────────────────────────────────────────────
+
+/**
+ * Normalize a US phone number to E.164 format (+1XXXXXXXXXX).
+ * Handles:
+ *   "9172468571"    (10 digits)          → "+19172468571"
+ *   "19172468571"   (11 digits, starts 1) → "+19172468571"
+ *   "+19172468571"  (already E.164)       → "+19172468571"
+ *   "+12014095949"  (already E.164)       → "+12014095949"
+ * Numbers that don't match a US pattern are returned as-is so international
+ * numbers stored correctly are not corrupted.
+ */
+function normalizePhone(raw: string): string {
+  // Strip all non-digit characters except a leading +
+  const hasPlus = raw.startsWith("+");
+  const digits = raw.replace(/\D/g, "");
+
+  if (hasPlus) {
+    // Already has a + prefix — trust the stored value
+    return `+${digits}`;
+  }
+  if (digits.length === 10) {
+    // 10-digit US number — prepend +1
+    return `+1${digits}`;
+  }
+  if (digits.length === 11 && digits.startsWith("1")) {
+    // 11-digit with leading 1 — prepend +
+    return `+${digits}`;
+  }
+  // Unrecognized format — return with + prepended so Sinch at least gets
+  // a value with a country code indicator rather than a bare number.
+  return `+${digits}`;
+}
+
 // ─── SMS / WhatsApp send ───────────────────────────────────────────────────────
 
 // CTIA-required opt-out footer appended to every SMS.
@@ -473,7 +507,7 @@ async function sendViaSmsProvider(
   // Carriers also block at the network level, but we filter proactively to keep
   // analytics clean and avoid failed send attempts.
   const supabase = await createSupabaseServerClient();
-  const phones = withPhone.map((r) => r.phone!);
+  const phones = withPhone.map((r) => normalizePhone(r.phone!));
   const { data: optedOutRows } = await supabase
     .from("message_recipients")
     .select("contact_value")
@@ -482,7 +516,7 @@ async function sendViaSmsProvider(
     .limit(phones.length);
 
   const optedOutPhones = new Set((optedOutRows ?? []).map((r) => r.contact_value));
-  const eligible = withPhone.filter((r) => !optedOutPhones.has(r.phone!));
+  const eligible = withPhone.filter((r) => !optedOutPhones.has(normalizePhone(r.phone!)));
 
   if (optedOutPhones.size > 0) {
     console.log(
@@ -500,8 +534,9 @@ async function sendViaSmsProvider(
     // carrier 10DLC rules but we include it for consistency.
     const body = channel === "sms" ? rendered + SMS_STOP_FOOTER : rendered;
 
+    const toNumber = normalizePhone(r.phone!);
     const result = await provider.send(channel, {
-      to: r.phone!,
+      to: toNumber,
       from: fromNumber,
       body,
       mediaUrl: firstImageUrl,
@@ -510,7 +545,7 @@ async function sendViaSmsProvider(
     inserts.push({
       message_id: messageId,
       person_id: r.id,
-      contact_value: r.phone!,
+      contact_value: toNumber,
       name: `${r.first_name} ${r.last_name}`.trim(),
       status: result.success ? "sent" : "failed",
       provider_id: result.providerId,

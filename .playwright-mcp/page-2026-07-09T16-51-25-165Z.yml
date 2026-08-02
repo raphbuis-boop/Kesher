@@ -1,0 +1,196 @@
+- generic [active] [ref=f36e1]:
+  - main [ref=f36e2]:
+    - generic [ref=f36e3]:
+      - link "Kesher home" [ref=f36e6] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f36e8]: K
+        - generic [ref=f36e9]: Kesher
+      - main [ref=f36e10]:
+        - generic [ref=f36e11]:
+          - generic [ref=f36e12]:
+            - generic [ref=f36e14]: K
+            - generic [ref=f36e15]:
+              - paragraph [ref=f36e16]: Kesher
+              - paragraph [ref=f36e17]: The modern communications platform for schools.
+          - heading "Call-to-Action (CTA) Documentation" [level=1] [ref=f36e18]
+          - generic [ref=f36e19]:
+            - paragraph [ref=f36e20]: Effective July 6, 2026
+            - paragraph [ref=f36e21]: Last Updated July 6, 2026
+        - generic [ref=f36e22]:
+          - generic [ref=f36e23]:
+            - heading "1. Program Overview" [level=2] [ref=f36e24]
+            - paragraph [ref=f36e25]: Kesher ("Kesher") operates an A2P (Application-to-Person) SMS messaging platform designed exclusively for educational institutions. Schools use Kesher to communicate with their communities — including parents, guardians, students, staff, alumni, and other authorized school community members.
+            - paragraph [ref=f36e26]: Kesher operates as a messaging service provider on behalf of individual schools. Each school is the Message Originator responsible for obtaining, documenting, and maintaining consent from message recipients before importing contact information into the Kesher platform.
+            - paragraph [ref=f36e27]: All SMS messages sent through Kesher are transactional or informational school communications. Kesher does not send marketing or promotional messages on its own behalf.
+          - generic [ref=f36e28]:
+            - heading "2. Opt-In Method" [level=2] [ref=f36e29]
+            - paragraph [ref=f36e30]:
+              - text: Kesher uses a
+              - strong [ref=f36e31]: school-facilitated explicit opt-in model
+              - text: ". Consent is obtained by the school (Message Originator) directly from each recipient prior to that recipient's phone number being imported into Kesher. The following methods are used:"
+            - list [ref=f36e32]:
+              - listitem [ref=f36e33]:
+                - strong [ref=f36e34]: "Annual Enrollment / Re-Enrollment Forms:"
+                - text: Schools include a written or digital SMS consent checkbox on student enrollment and annual re-enrollment forms. The checkbox explicitly states the school's intent to send SMS messages via the Kesher platform.
+              - listitem [ref=f36e35]:
+                - strong [ref=f36e36]: "Emergency Contact Update Forms:"
+                - text: Schools collect updated phone numbers and SMS consent through emergency contact update forms distributed annually or at key school events.
+              - listitem [ref=f36e37]:
+                - strong [ref=f36e38]: "School Website / Parent Portal Registration:"
+                - text: Schools with online portals include an SMS opt-in checkbox during account creation or profile updates.
+              - listitem [ref=f36e39]:
+                - strong [ref=f36e40]: "Staff and Faculty Onboarding:"
+                - text: New staff and faculty provide SMS consent as part of the hiring or onboarding process.
+          - generic [ref=f36e41]:
+            - heading "3. Sample Call-to-Action Language" [level=2] [ref=f36e42]
+            - paragraph [ref=f36e43]: "The following is the recommended call-to-action (CTA) language that Kesher provides to schools for use on enrollment forms, parent portals, and other consent-collection surfaces. Schools are required to use language substantially similar to the following before importing phone numbers into Kesher:"
+            - generic [ref=f36e44]:
+              - paragraph [ref=f36e45]: Sample CTA — Enrollment Form
+              - paragraph [ref=f36e46]:
+                - text: ☐
+                - strong [ref=f36e47]: I consent to receive SMS text messages
+                - text: from
+                - emphasis [ref=f36e48]: "[School Name]"
+                - text: via Kesher, our school communications platform. Messages may include school announcements, emergency alerts, event reminders, attendance updates, and other school-related communications. Message frequency varies. Message and data rates may apply. Reply
+                - strong [ref=f36e49]: STOP
+                - text: to opt out at any time. Reply
+                - strong [ref=f36e50]: HELP
+                - text: for help. View our privacy policy at
+                - generic [ref=f36e51]: https://www.kesherhq.co/privacy
+                - text: and SMS Terms at
+                - generic [ref=f36e52]: https://www.kesherhq.co/sms-terms
+                - text: .
+                - strong [ref=f36e53]: Consent to receive text messages is not a condition of enrollment or any purchase.
+            - generic [ref=f36e54]:
+              - paragraph [ref=f36e55]: Sample CTA — School Website / Parent Portal
+              - paragraph [ref=f36e56]:
+                - text: ☐
+                - strong [ref=f36e57]: "Text Alerts:"
+                - text: I agree to receive text (SMS) messages from
+                - emphasis [ref=f36e58]: "[School Name]"
+                - text: to the mobile number provided above. These messages are sent through Kesher, a school communications platform, and may include important school announcements, emergency notifications, event reminders, and attendance alerts. Msg & data rates may apply. Frequency varies by school activity. You may opt out at any time by replying
+                - strong [ref=f36e59]: STOP
+                - text: . For support, reply
+                - strong [ref=f36e60]: HELP
+                - text: or contact help@kesherhq.co. View our privacy policy at
+                - generic [ref=f36e61]: https://www.kesherhq.co/privacy
+                - text: and SMS Terms at
+                - generic [ref=f36e62]: https://www.kesherhq.co/sms-terms
+                - text: .
+                - strong [ref=f36e63]: Consent is not a condition of enrollment or any purchase.
+          - generic [ref=f36e64]:
+            - heading "4. Required CTA Elements" [level=2] [ref=f36e65]
+            - paragraph [ref=f36e66]: "All school-facing CTAs used to collect SMS consent must include the following elements, consistent with CTIA Messaging Principles and Best Practices and TCPA requirements:"
+            - list [ref=f36e67]:
+              - listitem [ref=f36e68]: Identity of the message sender (school name and/or Kesher)
+              - listitem [ref=f36e69]: Description of the types of messages to be received
+              - listitem [ref=f36e70]: Disclosure that message and data rates may apply
+              - listitem [ref=f36e71]: Disclosure of message frequency or that frequency varies
+              - listitem [ref=f36e72]: Instructions for opting out (STOP keyword)
+              - listitem [ref=f36e73]: Instructions for getting help (HELP keyword or support contact)
+              - listitem [ref=f36e74]: Link to privacy policy
+              - listitem [ref=f36e75]: Statement that consent is not a condition of purchase or enrollment
+          - generic [ref=f36e76]:
+            - heading "5. Import Certification" [level=2] [ref=f36e77]
+            - paragraph [ref=f36e78]: "Before importing any phone number list into Kesher, school administrators must affirmatively certify the following:"
+            - paragraph [ref=f36e80]: "\"By importing these contacts, I certify that all individuals on this list have provided explicit, written or digital consent to receive SMS text messages from our school via the Kesher platform. I acknowledge that it is the school's responsibility to maintain accurate consent records and to honor all opt-out requests in accordance with TCPA and CTIA guidelines.\""
+            - paragraph [ref=f36e81]: Kesher enforces this certification requirement at the time of every contact import. Schools that cannot provide this certification may not import those contacts for SMS messaging.
+          - generic [ref=f36e82]:
+            - heading "6. Message Types" [level=2] [ref=f36e83]
+            - paragraph [ref=f36e84]: "Messages sent through the Kesher platform are limited to the following school communications use cases:"
+            - list [ref=f36e85]:
+              - listitem [ref=f36e86]: Emergency alerts and safety notifications
+              - listitem [ref=f36e87]: School event announcements and reminders
+              - listitem [ref=f36e88]: Attendance and absence notifications
+              - listitem [ref=f36e89]: Administrative announcements from school leadership
+              - listitem [ref=f36e90]: Schedule changes and closures
+              - listitem [ref=f36e91]: Fundraising and community event information
+              - listitem [ref=f36e92]: General school community communications
+            - paragraph [ref=f36e93]: Kesher does not support or permit the sending of marketing, promotional, political, or unsolicited commercial messages through its platform.
+          - generic [ref=f36e94]:
+            - heading "7. Sample Messages" [level=2] [ref=f36e95]
+            - paragraph [ref=f36e96]: "The following are representative examples of messages sent through the Kesher platform on behalf of schools:"
+            - generic [ref=f36e97]:
+              - generic [ref=f36e98]:
+                - paragraph [ref=f36e99]: Sample Message 1 — Event Reminder
+                - paragraph [ref=f36e100]: "[School Name]: Parent-Teacher conferences are tomorrow, Thu 3/20, 4–8 PM. Sign up at school.edu/conferences. Reply STOP to opt out."
+              - generic [ref=f36e101]:
+                - paragraph [ref=f36e102]: Sample Message 2 — Emergency Alert
+                - paragraph [ref=f36e103]: "[School Name] ALERT: School will be closed tomorrow, Fri 1/17, due to inclement weather. All after-school programs are also cancelled. Stay safe. Reply STOP to opt out."
+              - generic [ref=f36e104]:
+                - paragraph [ref=f36e105]: Sample Message 3 — General Announcement
+                - paragraph [ref=f36e106]: "[School Name]: Registration for the 2025–26 school year opens next Monday. Visit school.edu/register or contact the office at 555-000-0000. Reply STOP to opt out."
+          - generic [ref=f36e107]:
+            - heading "8. Opt-Out Processing" [level=2] [ref=f36e108]
+            - paragraph [ref=f36e109]: "Kesher processes opt-out requests in real time. When a recipient replies STOP (or any recognized opt-out keyword), the system immediately:"
+            - list [ref=f36e110]:
+              - listitem [ref=f36e111]: Marks the phone number as opted-out in the Kesher database
+              - listitem [ref=f36e112]:
+                - text: "Sends a single confirmation message:"
+                - emphasis [ref=f36e113]: "\"You have been unsubscribed from [School Name] via Kesher. No further messages will be sent to this number. Reply UNSTOP to re-subscribe.\""
+              - listitem [ref=f36e114]: Suppresses that number from all future sends for that school
+              - listitem [ref=f36e115]: Records the opt-out timestamp and keyword received
+            - paragraph [ref=f36e116]: "Recognized opt-out keywords: STOP, STOPALL, UNSUBSCRIBE, CANCEL, END, QUIT."
+            - paragraph [ref=f36e117]: Opt-out records are retained indefinitely to prevent re-messaging opted-out recipients.
+          - generic [ref=f36e118]:
+            - heading "9. HELP Response" [level=2] [ref=f36e119]
+            - paragraph [ref=f36e120]: "When a recipient replies HELP, the system automatically sends the following response:"
+            - paragraph [ref=f36e122]: "“[School Name] via Kesher School Comms. For support: help@kesherhq.co or https://www.kesherhq.co. Msg & data rates may apply. Reply STOP to opt out.”"
+          - generic [ref=f36e123]:
+            - heading "10. Privacy and Data Handling" [level=2] [ref=f36e124]
+            - paragraph [ref=f36e125]: No mobile information will be shared with third parties or affiliates for marketing or promotional purposes. Text messaging originator opt-in data and consent will not be shared with any third parties.
+            - paragraph [ref=f36e126]:
+              - text: For complete privacy information, see our
+              - link "Privacy Policy" [ref=f36e127] [cursor=pointer]:
+                - /url: /privacy
+              - text: and
+              - link "SMS Terms & Conditions" [ref=f36e128] [cursor=pointer]:
+                - /url: /sms-terms
+              - text: .
+          - generic [ref=f36e129]:
+            - heading "11. Contact" [level=2] [ref=f36e130]
+            - generic [ref=f36e131]:
+              - paragraph [ref=f36e132]:
+                - strong [ref=f36e133]: Kesher
+              - paragraph [ref=f36e134]:
+                - text: "Email:"
+                - link "help@kesherhq.co" [ref=f36e135] [cursor=pointer]:
+                  - /url: mailto:help@kesherhq.co
+              - paragraph [ref=f36e136]:
+                - text: "Website:"
+                - link "https://www.kesherhq.co" [ref=f36e137] [cursor=pointer]:
+                  - /url: https://www.kesherhq.co
+      - generic [ref=f36e138]:
+        - generic [ref=f36e140]:
+          - generic [ref=f36e141]:
+            - link "Kesher home" [ref=f36e142] [cursor=pointer]:
+              - /url: /
+              - generic [ref=f36e144]: K
+              - generic [ref=f36e145]: Kesher
+            - paragraph [ref=f36e146]: The modern communications platform for schools.
+            - paragraph [ref=f36e147]: Email · SMS · WhatsApp
+          - generic [ref=f36e148]:
+            - navigation "Legal" [ref=f36e149]:
+              - paragraph [ref=f36e150]: Legal
+              - link "Privacy Policy" [ref=f36e151] [cursor=pointer]:
+                - /url: /privacy
+              - link "SMS Terms" [ref=f36e152] [cursor=pointer]:
+                - /url: /sms-terms
+              - link "Terms of Service" [ref=f36e153] [cursor=pointer]:
+                - /url: /terms
+              - link "CTA Documentation" [ref=f36e154] [cursor=pointer]:
+                - /url: /cta
+              - link "Opt-In Documentation" [ref=f36e155] [cursor=pointer]:
+                - /url: /opt-in
+              - link "Sample Opt-In Form" [ref=f36e156] [cursor=pointer]:
+                - /url: /sample-form
+            - generic [ref=f36e157]:
+              - paragraph [ref=f36e158]: Contact
+              - link "Contact Us" [ref=f36e159] [cursor=pointer]:
+                - /url: /contact
+              - link "help@kesherhq.co" [ref=f36e160] [cursor=pointer]:
+                - /url: mailto:help@kesherhq.co
+              - link "privacy@kesherhq.co" [ref=f36e161] [cursor=pointer]:
+                - /url: mailto:privacy@kesherhq.co
+        - paragraph [ref=f36e164]: © 2026 Kesher. All rights reserved.
+  - alert [ref=f36e165]

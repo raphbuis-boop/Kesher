@@ -153,7 +153,7 @@ export default async function MessagesPage({
                   <th className="py-2.5 pl-5 pr-3 text-left text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-wide">Subject</th>
                   <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-wide">Channel</th>
                   <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-wide">Audience</th>
-                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-wide">Delivery</th>
+                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-wide">Sent</th>
                   <th className="pl-3 pr-5 py-2.5 text-right text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-wide">Sent</th>
                 </tr>
               </thead>
@@ -164,7 +164,7 @@ export default async function MessagesPage({
                   const isLast      = i === messages.length - 1;
                   const sent        = msg.sent_count ?? 0;
                   const total       = msg.recipient_count;
-                  const delivPct    = total > 0 ? Math.round((sent / total) * 100) : 0;
+                  const sentPct     = total > 0 ? Math.round((sent / total) * 100) : 0;
                   const failed      = msg.failed_count ?? 0;
 
                   return (
@@ -180,7 +180,7 @@ export default async function MessagesPage({
                         >
                           <CampaignStatusDot status={msg.status} />
                           <span className="text-[13px] font-medium text-[#0f0f0f] hover:text-[#27272a] leading-snug">
-                            {msg.subject ?? msg.body.slice(0, 55) + (msg.body.length > 55 ? "…" : "")}
+                            {msg.subject ?? msg.body.replace(/\{\{(\w+)\}\}/g, "[$1]").slice(0, 55) + (msg.body.length > 55 ? "…" : "")}
                           </span>
                         </Link>
                       </td>
@@ -207,7 +207,7 @@ export default async function MessagesPage({
                               <span className="text-[#a1a1aa]">/{total.toLocaleString()}</span>
                             </span>
                             <div className="flex items-center gap-2">
-                              <span className="text-[10px] tabular-nums font-medium text-[#71717a]">{delivPct}%</span>
+                              <span className="text-[10px] tabular-nums font-medium text-[#71717a]">{sentPct}%</span>
                               {failed > 0 && (
                                 <span className="text-[10px] tabular-nums text-red-400 font-medium">
                                   {failed} failed
@@ -218,7 +218,7 @@ export default async function MessagesPage({
                           <div className="h-1 w-full overflow-hidden rounded-full bg-[#f0f0f0]">
                             <div
                               className="h-full rounded-full bg-emerald-500"
-                              style={{ width: `${delivPct}%` }}
+                              style={{ width: `${sentPct}%` }}
                             />
                           </div>
                         </div>

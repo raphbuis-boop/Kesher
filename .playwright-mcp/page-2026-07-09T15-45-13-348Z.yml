@@ -1,0 +1,187 @@
+- generic [active] [ref=f8e1]:
+  - main [ref=f8e2]:
+    - generic [ref=f8e3]:
+      - link "Kesher home" [ref=f8e6] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f8e8]: K
+        - generic [ref=f8e9]: Kesher
+      - main [ref=f8e10]:
+        - generic [ref=f8e11]:
+          - generic [ref=f8e12]:
+            - generic [ref=f8e14]: K
+            - generic [ref=f8e15]:
+              - paragraph [ref=f8e16]: Kesher
+              - paragraph [ref=f8e17]: The modern communications platform for schools.
+          - heading "Privacy Policy" [level=1] [ref=f8e18]
+          - generic [ref=f8e19]:
+            - paragraph [ref=f8e20]: Effective July 6, 2026
+            - paragraph [ref=f8e21]: Last Updated July 6, 2026
+        - generic [ref=f8e22]:
+          - generic [ref=f8e23]:
+            - heading "1. About This Policy" [level=2] [ref=f8e24]
+            - paragraph [ref=f8e25]: Kesher ("Kesher", "we", "us", or "our") operates a school communications platform that enables educational institutions to communicate with their communities via email, SMS, and WhatsApp. This Privacy Policy explains how we collect, use, share, and protect information when schools and their authorized administrators ("School Users") use the Kesher platform, and when members of a school community ("Recipients") receive communications sent through Kesher.
+            - paragraph [ref=f8e26]: By using our platform or receiving messages sent through it, you acknowledge this Privacy Policy. If you are a School User, your use of Kesher is also governed by your school's agreement with us.
+          - generic [ref=f8e27]:
+            - heading "2. Information We Collect" [level=2] [ref=f8e28]
+            - heading "From School Administrators" [level=3] [ref=f8e29]
+            - list [ref=f8e30]:
+              - listitem [ref=f8e31]: Name, email address, and login credentials
+              - listitem [ref=f8e32]: School name, address, and contact information
+              - listitem [ref=f8e33]: Billing and subscription information
+              - listitem [ref=f8e34]: Usage data and activity logs within the platform
+            - heading "From School Community Members (Recipients)" [level=3] [ref=f8e35]
+            - paragraph [ref=f8e36]: "Schools import contact information for their communities into Kesher. This may include:"
+            - list [ref=f8e37]:
+              - listitem [ref=f8e38]: Full name
+              - listitem [ref=f8e39]: Email address
+              - listitem [ref=f8e40]: Mobile phone number (used for SMS and WhatsApp messaging)
+              - listitem [ref=f8e41]: Relationship to the school (e.g., parent, student, staff, alumni)
+              - listitem [ref=f8e42]: Graduation year or grade level
+              - listitem [ref=f8e43]: Mailing address
+            - heading "Automatically Collected Information" [level=3] [ref=f8e44]
+            - list [ref=f8e45]:
+              - listitem [ref=f8e46]: Message delivery status and timestamps (delivered, opened, clicked, replied)
+              - listitem [ref=f8e47]: Opt-in and opt-out records for SMS messaging
+              - listitem [ref=f8e48]: IP addresses and device information for security purposes
+              - listitem [ref=f8e49]: Log data from platform usage
+          - generic [ref=f8e50]:
+            - heading "3. How We Use Your Information" [level=2] [ref=f8e51]
+            - list [ref=f8e52]:
+              - listitem [ref=f8e53]: To transmit communications on behalf of schools to their authorized Recipients
+              - listitem [ref=f8e54]: To track message delivery, engagement, and analytics for school administrators
+              - listitem [ref=f8e55]: To process opt-out requests and maintain suppression lists
+              - listitem [ref=f8e56]: To provide customer support and respond to inquiries
+              - listitem [ref=f8e57]: To improve and secure the platform
+              - listitem [ref=f8e58]: To comply with legal obligations, including carrier and regulatory requirements
+          - generic [ref=f8e59]:
+            - heading "4. SMS Text Messaging Program" [level=2] [ref=f8e60]
+            - heading "Program Description" [level=3] [ref=f8e61]
+            - paragraph [ref=f8e62]: Kesher enables schools to send SMS text messages to parents, guardians, students, staff, alumni, and other authorized community members. Message types include school event notifications, emergency alerts, administrative announcements, attendance reminders, and general school communications. Messages are sent on behalf of individual schools; the school is responsible for obtaining appropriate consent from its community members before sending SMS through Kesher.
+            - heading "SMS Consent" [level=3] [ref=f8e63]
+            - paragraph [ref=f8e64]: Recipients receive SMS messages because their school has their phone number on file and has determined they have consented to receive school communications. Message frequency varies based on school activity and needs. Schools are responsible for maintaining accurate consent records for their community.
+            - heading "Message and Data Rates" [level=3] [ref=f8e65]
+            - paragraph [ref=f8e66]: Message and data rates may apply. Contact your mobile carrier for details.
+            - heading "How to Opt Out of SMS" [level=3] [ref=f8e67]
+            - paragraph [ref=f8e68]:
+              - text: You may opt out of SMS messages at any time by replying
+              - strong [ref=f8e69]: STOP
+              - text: to any text message you receive. You will receive a single confirmation message and no further messages will be sent. To opt back in, reply
+              - strong [ref=f8e70]: UNSTOP
+              - text: or
+              - strong [ref=f8e71]: START
+              - text: . For help, reply
+              - strong [ref=f8e72]: HELP
+              - text: or contact us at
+              - link "privacy@kesherhq.co" [ref=f8e73] [cursor=pointer]:
+                - /url: mailto:privacy@kesherhq.co
+              - text: .
+            - heading "SMS Data — Sharing Restrictions" [level=3] [ref=f8e74]
+            - paragraph [ref=f8e75]: No mobile information will be shared with third parties or affiliates for marketing or promotional purposes.
+            - paragraph [ref=f8e76]: All other categories of information described in this Privacy Policy exclude text messaging originator opt-in data and consent; this information will not be shared with any third parties.
+            - paragraph [ref=f8e77]: We do not sell, rent, or lease mobile phone numbers or SMS consent records to any third party. We do not use phone numbers collected through SMS opt-in for any purpose other than delivering school communications on behalf of the school that collected the number.
+            - heading "Supported Keywords" [level=3] [ref=f8e78]
+            - generic [ref=f8e79]:
+              - paragraph [ref=f8e80]:
+                - strong [ref=f8e81]: STOP
+                - text: — Opt out of all messages. Confirmation sent immediately. No further messages.
+              - paragraph [ref=f8e82]:
+                - strong [ref=f8e83]: UNSTOP / START
+                - text: — Re-subscribe to messages.
+              - paragraph [ref=f8e84]:
+                - strong [ref=f8e85]: HELP
+                - text: — Receive contact information and support details.
+          - generic [ref=f8e86]:
+            - heading "5. How We Share Information" [level=2] [ref=f8e87]
+            - paragraph [ref=f8e88]: "We do not sell, rent, or trade personal information. We may share information only in the following limited circumstances:"
+            - list [ref=f8e89]:
+              - listitem [ref=f8e90]:
+                - strong [ref=f8e91]: "With the school:"
+                - text: School administrators have access to the contact data and messaging analytics for their own school community.
+              - listitem [ref=f8e92]:
+                - strong [ref=f8e93]: "With service providers:"
+                - text: We work with vetted third-party providers to deliver messaging services (including SMS carriers), host our infrastructure, and process payments. These providers are contractually prohibited from using your data for any purpose other than providing services to us.
+              - listitem [ref=f8e94]:
+                - strong [ref=f8e95]: "Legal requirements:"
+                - text: We may disclose information if required by law, court order, or governmental authority, or to protect the rights and safety of Kesher, our users, or the public.
+              - listitem [ref=f8e96]:
+                - strong [ref=f8e97]: "Business transfers:"
+                - text: In the event of a merger, acquisition, or sale of assets, contact information may be transferred. We will notify affected parties in advance.
+            - paragraph [ref=f8e98]: As stated in Section 4, mobile phone numbers and SMS opt-in data are explicitly excluded from any third-party sharing for marketing or promotional purposes.
+          - generic [ref=f8e99]:
+            - heading "6. Student Data and FERPA" [level=2] [ref=f8e100]
+            - paragraph [ref=f8e101]: To the extent Kesher processes education records as defined under the Family Educational Rights and Privacy Act (FERPA), we do so solely as a service provider to the school and only at the school's direction. Schools retain control over their students' education records. Kesher does not use student data for any purpose other than providing the services requested by the school, and does not disclose student data to third parties except as directed by the school or as required by law.
+          - generic [ref=f8e102]:
+            - heading "7. Data Security" [level=2] [ref=f8e103]
+            - paragraph [ref=f8e104]: We implement industry-standard security measures including encryption in transit and at rest, access controls, and regular security reviews. However, no method of transmission over the internet or electronic storage is 100% secure. We encourage School Users to protect their login credentials and notify us immediately of any suspected unauthorized access.
+          - generic [ref=f8e105]:
+            - heading "8. Data Retention" [level=2] [ref=f8e106]
+            - paragraph [ref=f8e107]: We retain contact and messaging data for as long as a school maintains an active account with Kesher. SMS opt-out records (suppression lists) are retained indefinitely to ensure we do not re-contact opted-out individuals. Upon account termination, schools may request deletion of their data in accordance with our data retention policy. Certain data may be retained longer if required by law.
+          - generic [ref=f8e108]:
+            - heading "9. Your Rights" [level=2] [ref=f8e109]
+            - paragraph [ref=f8e110]: "Depending on your location, you may have rights to:"
+            - list [ref=f8e111]:
+              - listitem [ref=f8e112]: Access the personal information we hold about you
+              - listitem [ref=f8e113]: Request correction of inaccurate information
+              - listitem [ref=f8e114]: Request deletion of your information (subject to legal retention requirements)
+              - listitem [ref=f8e115]: Opt out of SMS communications at any time by replying STOP
+              - listitem [ref=f8e116]: Contact your school directly to update or remove your contact information
+            - paragraph [ref=f8e117]:
+              - text: To exercise these rights, contact us at
+              - link "privacy@kesherhq.co" [ref=f8e118] [cursor=pointer]:
+                - /url: mailto:privacy@kesherhq.co
+              - text: . For information stored by your school, please contact the school directly.
+          - generic [ref=f8e119]:
+            - heading "10. Children's Privacy" [level=2] [ref=f8e120]
+            - paragraph [ref=f8e121]: Kesher is a platform used by schools to communicate with their communities. When schools send communications to students who are minors, the school is responsible for ensuring that appropriate parental or guardian consent has been obtained. We do not knowingly collect personal information directly from children under the age of 13 without parental consent.
+          - generic [ref=f8e122]:
+            - heading "11. Changes to This Policy" [level=2] [ref=f8e123]
+            - paragraph [ref=f8e124]: We may update this Privacy Policy from time to time. We will notify School Users of material changes by email or by posting a notice on the platform. The effective date at the top of this page indicates when the policy was last updated. Your continued use of Kesher after changes are posted constitutes your acceptance of the updated policy.
+          - generic [ref=f8e125]:
+            - heading "12. Contact Us" [level=2] [ref=f8e126]
+            - paragraph [ref=f8e127]: "If you have questions about this Privacy Policy or how we handle your information, please contact us:"
+            - generic [ref=f8e128]:
+              - paragraph [ref=f8e129]:
+                - strong [ref=f8e130]: Kesher
+              - paragraph [ref=f8e131]:
+                - text: "Email:"
+                - link "privacy@kesherhq.co" [ref=f8e132] [cursor=pointer]:
+                  - /url: mailto:privacy@kesherhq.co
+              - paragraph [ref=f8e133]:
+                - text: "Website:"
+                - link "https://www.kesherhq.co" [ref=f8e134] [cursor=pointer]:
+                  - /url: https://www.kesherhq.co
+            - paragraph [ref=f8e135]:
+              - text: For SMS opt-out, reply
+              - strong [ref=f8e136]: STOP
+              - text: to any message, or email us at
+              - link "privacy@kesherhq.co" [ref=f8e137] [cursor=pointer]:
+                - /url: mailto:privacy@kesherhq.co
+              - text: with your phone number and the school name.
+      - generic [ref=f8e138]:
+        - generic [ref=f8e140]:
+          - generic [ref=f8e141]:
+            - link "Kesher home" [ref=f8e142] [cursor=pointer]:
+              - /url: /
+              - generic [ref=f8e144]: K
+              - generic [ref=f8e145]: Kesher
+            - paragraph [ref=f8e146]: The modern communications platform for schools.
+            - paragraph [ref=f8e147]: Email · SMS · WhatsApp
+          - generic [ref=f8e148]:
+            - navigation "Legal" [ref=f8e149]:
+              - paragraph [ref=f8e150]: Legal
+              - link "Privacy Policy" [ref=f8e151] [cursor=pointer]:
+                - /url: /privacy
+              - link "SMS Terms" [ref=f8e152] [cursor=pointer]:
+                - /url: /sms-terms
+              - link "Terms of Service" [ref=f8e153] [cursor=pointer]:
+                - /url: /terms
+            - generic [ref=f8e154]:
+              - paragraph [ref=f8e155]: Contact
+              - link "Contact Us" [ref=f8e156] [cursor=pointer]:
+                - /url: /contact
+              - link "help@kesherhq.co" [ref=f8e157] [cursor=pointer]:
+                - /url: mailto:help@kesherhq.co
+              - link "privacy@kesherhq.co" [ref=f8e158] [cursor=pointer]:
+                - /url: mailto:privacy@kesherhq.co
+        - paragraph [ref=f8e161]: © 2026 Kesher. All rights reserved.
+  - alert [ref=f8e162]

@@ -162,12 +162,14 @@ type SinchWebhookPayload = {
 function verifySecret(headers: Headers): boolean {
   const webhookSecret = process.env.SINCH_WEBHOOK_SECRET;
   if (!webhookSecret) {
-    // Not configured — log a warning but allow through (same as Telnyx fallback).
-    // Set SINCH_WEBHOOK_SECRET in production to enforce verification.
-    console.warn(
-      "[sinch-webhook] SINCH_WEBHOOK_SECRET not set — skipping signature verification"
+    // SINCH_WEBHOOK_SECRET is required. Reject all requests if it is unset so
+    // that a misconfigured deployment fails loudly rather than accepting
+    // unauthenticated payloads.
+    console.error(
+      "[sinch-webhook] SINCH_WEBHOOK_SECRET is not set — rejecting request. " +
+      "Set this env var to the secret configured in Sinch Dashboard → Webhooks."
     );
-    return true;
+    return false;
   }
 
   const incoming = headers.get("x-sinch-webhook-secret");
