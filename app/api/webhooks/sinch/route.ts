@@ -166,10 +166,9 @@ type SinchWebhookPayload = {
 
 // Sinch Conversation API signs every webhook with HMAC-SHA256 using the App Secret.
 // Signed payload = rawBody + "." + nonce + "." + timestamp
-// Signature      = base64(HMAC-SHA256(key=base64Decode(appSecret), data=signedPayload))
-// IMPORTANT: The App Secret in the Sinch Dashboard is base64-encoded. It must be
-// decoded to raw bytes before use as the HMAC key.
-// Docs: https://developers.sinch.com/docs/conversation/callbacks/#validating-callbacks
+// Signature      = base64(HMAC-SHA256(key=appSecret_raw_utf8, data=signedPayload))
+// The App Secret is used RAW (UTF-8 string) as the HMAC key — NOT base64-decoded.
+// Docs: https://developers.sinch.com/docs/conversation/callbacks
 function verifySignature(headers: Headers, rawBody: string): boolean {
   const appSecret = process.env.SINCH_WEBHOOK_SECRET;
 
@@ -205,10 +204,10 @@ function verifySignature(headers: Headers, rawBody: string): boolean {
     return false;
   }
 
-  // The App Secret from the Sinch Dashboard is base64-encoded; decode to raw bytes.
-  const keyBytes   = Buffer.from(appSecret, "base64");
+  // Use the App Secret raw (UTF-8) as the HMAC key — Sinch docs confirm this,
+  // their own JS example: crypto.createHmac('sha256', secret).update(signedData).digest('base64')
   const signedData = `${rawBody}.${nonce}.${timestamp}`;
-  const expected   = crypto.createHmac("sha256", keyBytes).update(signedData).digest("base64");
+  const expected   = crypto.createHmac("sha256", appSecret).update(signedData).digest("base64");
 
   // DEBUG: compare computed vs received (safe to log — reveals no secret)
   console.log(
