@@ -62,6 +62,21 @@ const HELP_RESPONSE =
   "Reply STOP to opt out. Reply UNSTOP to re-subscribe. " +
   "Msg & Data rates may apply. Support: contact@kesherhq.co | kesherhq.co/sms-terms";
 
+// ─── E.164 normalization ──────────────────────────────────────────────────────
+
+// Inbound Sinch webhooks deliver the sender's number without a leading +
+// (e.g. "19172468571" instead of "+19172468571"). Sending back to the raw
+// value causes an "unallocated prefix" failure at the carrier. This mirrors
+// the normalizePhone() function used in the outbound send path.
+function normalizePhone(raw: string): string {
+  const hasPlus = raw.startsWith("+");
+  const digits  = raw.replace(/\D/g, "");
+  if (hasPlus)                                    return `+${digits}`;
+  if (digits.length === 10)                       return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
+  return `+${digits}`;
+}
+
 // ─── Send auto-response via Sinch Conversation API ───────────────────────────
 
 async function sendAutoResponse(to: string, text: string): Promise<void> {
@@ -69,6 +84,7 @@ async function sendAutoResponse(to: string, text: string): Promise<void> {
   const appId        = process.env.SINCH_APP_ID;
   const accessKey    = process.env.SINCH_ACCESS_KEY;
   const accessSecret = process.env.SINCH_ACCESS_SECRET;
+  const smsSender    = process.env.SINCH_SMS_SENDER;
   const region       = process.env.SINCH_REGION ?? "us";
 
   if (!projectId || !appId || !accessKey || !accessSecret) {
@@ -76,8 +92,25 @@ async function sendAutoResponse(to: string, text: string): Promise<void> {
     return;
   }
 
+  // Normalize to E.164 — inbound numbers arrive without the leading +
+  const toE164 = normalizePhone(to);
+
   const credentials = Buffer.from(`${accessKey}:${accessSecret}`).toString("base64");
   const url = `https://${region}.conversation.api.sinch.com/v1/projects/${projectId}/messages:send`;
+
+  const body: Record<string, unknown> = {
+    app_id: appId,
+    recipient: {
+      identified_by: {
+        channel_identities: [{ channel: "SMS", identity: toE164 }],
+      },
+    },
+    message: { text_message: { text } },
+    channel_priority_order: ["SMS"],
+    // Specify the sender number explicitly — same as regular outbound sends.
+    // Without this Sinch falls back to the app default which may be wrong.
+    ...(smsSender ? { channel_properties: { SMS_SENDER: smsSender } } : {}),
+  };
 
   try {
     const res = await fetch(url, {
@@ -86,21 +119,13 @@ async function sendAutoResponse(to: string, text: string): Promise<void> {
         Authorization:  `Basic ${credentials}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        app_id: appId,
-        recipient: {
-          identified_by: {
-            channel_identities: [{ channel: "SMS", identity: to }],
-          },
-        },
-        message: { text_message: { text } },
-        channel_priority_order: ["SMS"],
-      }),
+      body: JSON.stringify(body),
     });
     if (!res.ok) {
-      console.error(`[sinch-webhook] Auto-response failed to=${to} status=${res.status}`);
+      const detail = await res.text();
+      console.error(`[sinch-webhook] Auto-response failed to=${toE164} status=${res.status}: ${detail}`);
     } else {
-      console.log(`[sinch-webhook] Auto-response sent to=${to}`);
+      console.log(`[sinch-webhook] Auto-response sent to=${toE164}`);
     }
   } catch (err) {
     console.error("[sinch-webhook] Auto-response exception:", err);
