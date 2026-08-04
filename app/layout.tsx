@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Nav } from "./components/Nav";
+import { AppShell } from "./components/AppShell";
 import { AppFooter } from "./components/AppFooter";
 import "./globals.css";
 
@@ -32,17 +32,12 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable}`}
     >
       <body className="flex bg-[#fafafa] text-[#0f0f0f]">
-        <Nav />
-        {/*
-          flex-col so AppFooter sits after page content.
-          min-h-screen so short pages still fill the viewport.
-          Pages that wrap themselves in min-h-screen will naturally
-          push the footer below their content (visible on scroll).
-        */}
-        <main className="flex-1 min-w-0 flex flex-col min-h-screen">
-          {children}
-          <AppFooter />
-        </main>
+        <AppShell>
+          <main className="flex-1 min-w-0 flex flex-col min-h-screen">
+            {children}
+            <AppFooter />
+          </main>
+        </AppShell>
       </body>
     </html>
   );
