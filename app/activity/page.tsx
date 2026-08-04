@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getOrgId } from "@/lib/org";
 import { Mail, Smartphone, MessageSquare, FileText, Plus } from "lucide-react";
 
 type MessageEvent = {
@@ -64,16 +65,19 @@ const CHANNEL_META: Record<string, { icon: React.FC<{ size?: number; strokeWidth
 
 export default async function ActivityPage() {
   const supabase = await createSupabaseServerClient();
+  const orgId = await getOrgId();
 
   const [messagesResult, importsResult] = await Promise.all([
     supabase
       .from("messages")
       .select("id, subject, body, channel, audience_label, sent_count, failed_count, status, created_at")
+      .eq("org_id", orgId)
       .order("created_at", { ascending: false })
       .limit(100),
     supabase
       .from("imports")
       .select("id, file_name, imported_count, failed_count, created_at")
+      .eq("org_id", orgId)
       .order("created_at", { ascending: false })
       .limit(50),
   ]);

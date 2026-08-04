@@ -1,6 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getOrgId } from "@/lib/org";
 import { revalidatePath } from "next/cache";
 
 export type UpdatePersonState = {
@@ -25,6 +26,7 @@ export async function updatePerson(
   formData: FormData
 ): Promise<UpdatePersonState> {
   const supabase = await createSupabaseServerClient();
+  const orgId = await getOrgId();
   const id = (formData.get("person_id") as string | null)?.trim() ?? "";
   const firstName = (formData.get("first_name") as string | null)?.trim() ?? "";
   const lastName = (formData.get("last_name") as string | null)?.trim() ?? "";
@@ -70,7 +72,8 @@ export async function updatePerson(
       notes,
       categories,
     })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("org_id", orgId);
 
   if (updateError) {
     return { success: false, error: updateError.message };
@@ -126,6 +129,7 @@ export async function addRelationship(
   formData: FormData
 ): Promise<AddRelationshipState> {
   const supabase = await createSupabaseServerClient();
+  const orgId = await getOrgId();
   const personId = (formData.get("person_id") as string | null)?.trim() ?? "";
   const relatedPersonId =
     (formData.get("related_person_id") as string | null)?.trim() ?? "";
@@ -149,6 +153,7 @@ export async function addRelationship(
   }
 
   const { error } = await supabase.from("relationships").insert({
+    org_id: orgId,
     person_id: personId,
     related_person_id: relatedPersonId,
     relationship_type: relationshipType,

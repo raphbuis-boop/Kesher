@@ -1,6 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getOrgId } from "@/lib/org";
 import { revalidatePath } from "next/cache";
 
 export type CommitRow = {
@@ -34,11 +35,13 @@ export async function commitImport(
   rows: CommitRow[]
 ): Promise<CommitResult> {
   const supabase = await createSupabaseServerClient();
+  const orgId = await getOrgId();
 
   // ── Diagnostic: count before ──────────────────────────────────────────────
   const { count: countBefore } = await supabase
     .from("people")
-    .select("*", { count: "exact", head: true });
+    .select("*", { count: "exact", head: true })
+    .eq("org_id", orgId);
 
   console.log(`[commitImport] START — file="${fileName}" rows_received=${rows.length} people_before=${countBefore ?? "error"}`);
 
@@ -65,6 +68,7 @@ export async function commitImport(
 
     // Build payload WITHOUT address first — we'll add it only if the column exists
     const payload: Record<string, unknown> = {
+      org_id: orgId,
       first_name: firstName,
       last_name: lastName,
       email,
@@ -89,6 +93,7 @@ export async function commitImport(
       const { data: existing, error: lookupError } = await supabase
         .from("people")
         .select("id")
+        .eq("org_id", orgId)
         .eq("email", email)
         .maybeSingle();
 
@@ -134,12 +139,14 @@ export async function commitImport(
   // ── Diagnostic: count after ───────────────────────────────────────────────
   const { count: countAfter } = await supabase
     .from("people")
-    .select("*", { count: "exact", head: true });
+    .select("*", { count: "exact", head: true })
+    .eq("org_id", orgId);
 
   console.log(`[commitImport] END — imported=${imported} failed=${failed} people_after=${countAfter ?? "error"} first_error="${firstErrorMessage ?? "none"}"`);
 
   // Record in import_jobs
   await supabase.from("import_jobs").insert({
+    org_id: orgId,
     file_name: fileName,
     status: "committed",
     row_count: rows.length,
@@ -151,7 +158,7 @@ export async function commitImport(
   try {
     await supabase
       .from("imports")
-      .insert({ file_name: fileName, imported_count: imported, failed_count: failed });
+      .insert({ org_id: orgId, file_name: fileName, imported_count: imported, failed_count: failed });
   } catch { /* best-effort */ }
 
   revalidatePath("/people");

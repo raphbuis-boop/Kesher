@@ -1,6 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getOrgId } from "@/lib/org";
 import { revalidatePath } from "next/cache";
 
 export type SettingsState = {
@@ -24,15 +25,17 @@ export async function saveSettings(
   formData: FormData
 ): Promise<SettingsState> {
   const supabase = await createSupabaseServerClient();
+  const orgId = await getOrgId();
 
   const rows = FIELDS.map((key) => ({
+    org_id: orgId,
     key,
     value: ((formData.get(key) as string) ?? "").trim(),
   }));
 
   const { error } = await supabase
     .from("settings")
-    .upsert(rows, { onConflict: "key" });
+    .upsert(rows, { onConflict: "org_id,key" });
 
   if (error) {
     return { success: false, error: error.message };

@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getOrgId } from "@/lib/org";
 import { AddPersonButton, type Tag } from "./AddPersonButton";
 import { PeopleClient } from "./PeopleClient";
 
@@ -19,6 +20,7 @@ export type PersonRow = {
 
 export default async function PeoplePage() {
   const supabase = await createSupabaseServerClient();
+  const orgId = await getOrgId();
 
   const [peopleResult, tagsResult] = await Promise.all([
     supabase
@@ -26,8 +28,9 @@ export default async function PeoplePage() {
       .select(
         "id, first_name, last_name, email, phone, whatsapp, grade, categories, created_at, person_tags ( tag_id, tags ( id, name ) )"
       )
+      .eq("org_id", orgId)
       .order("last_name"),
-    supabase.from("tags").select("id, name").order("name"),
+    supabase.from("tags").select("id, name").eq("org_id", orgId).order("name"),
   ]);
 
   if (peopleResult.error) throw new Error(peopleResult.error.message);

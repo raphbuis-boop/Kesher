@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getOrgId } from "@/lib/org";
 import {
   Users,
   Send,
@@ -124,6 +125,7 @@ function pctNum(num: number, den: number): number {
 
 export default async function OverviewPage() {
   const supabase = await createSupabaseServerClient();
+  const orgId = await getOrgId();
   const monthAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
   const weekAgo  = Date.now() - 7  * 24 * 60 * 60 * 1000;
 
@@ -134,16 +136,18 @@ export default async function OverviewPage() {
     { data: rawMessages },
     { data: rawImports },
   ] = await Promise.all([
-    supabase.from("people").select("*", { count: "exact", head: true }),
-    supabase.from("people").select("categories"),
+    supabase.from("people").select("*", { count: "exact", head: true }).eq("org_id", orgId),
+    supabase.from("people").select("categories").eq("org_id", orgId),
     supabase
       .from("messages")
       .select("id, subject, body, channel, audience_label, recipient_count, sent_count, failed_count, status, sent_at, created_at")
+      .eq("org_id", orgId)
       .order("created_at", { ascending: false })
       .limit(10),
     supabase
       .from("imports")
       .select("id, file_name, imported_count, created_at")
+      .eq("org_id", orgId)
       .order("created_at", { ascending: false })
       .limit(5),
   ]);

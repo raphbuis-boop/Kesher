@@ -1,6 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getOrgId } from "@/lib/org";
 import { revalidatePath } from "next/cache";
 import type { FilterNode } from "@/lib/resolveAudience";
 
@@ -14,6 +15,7 @@ export async function addGroup(
   formData: FormData
 ): Promise<AddGroupState> {
   const supabase = await createSupabaseServerClient();
+  const orgId = await getOrgId();
   const name = (formData.get("name") as string | null)?.trim() ?? "";
   const description = (formData.get("description") as string | null)?.trim() || null;
   const tagIds = formData.getAll("tag_ids") as string[];
@@ -36,6 +38,7 @@ export async function addGroup(
   const { data: newGroup, error } = await supabase
     .from("groups")
     .insert({
+      org_id: orgId,
       name,
       description,
       is_dynamic: isDynamic,
@@ -60,7 +63,7 @@ export async function addGroup(
       // can be added from the audience page without understanding tags.
       const { data: newTag, error: tagError } = await supabase
         .from("tags")
-        .insert({ name })
+        .insert({ org_id: orgId, name })
         .select("id")
         .single();
       if (tagError || !newTag) return { success: false, error: "Could not set up audience." };
@@ -81,6 +84,7 @@ export async function addContactsToGroup(
 ): Promise<{ success: boolean; error: string | null }> {
   if (personIds.length === 0) return { success: true, error: null };
   const supabase = await createSupabaseServerClient();
+  const orgId = await getOrgId();
 
   // Resolve the group's tag(s)
   const { data: groupTagRows } = await supabase
@@ -101,7 +105,7 @@ export async function addContactsToGroup(
 
     const { data: newTag, error: tagError } = await supabase
       .from("tags")
-      .insert({ name: (group as any).name })
+      .insert({ org_id: orgId, name: (group as any).name })
       .select("id")
       .single();
     if (tagError || !newTag) return { success: false, error: "Could not set up audience." };

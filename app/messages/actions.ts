@@ -2,6 +2,7 @@
 
 import { Resend } from "resend";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getOrgId } from "@/lib/org";
 import { revalidatePath } from "next/cache";
 import { renderTemplate } from "@/lib/template";
 import { getBrandingSettings, type BrandingSettings } from "@/lib/settings";
@@ -272,7 +273,7 @@ ${docs
 
 // ─── Recipient resolution ─────────────────────────────────────────────────────
 
-async function getPeopleForAudience(audienceSlug: string): Promise<Person[]> {
+async function getPeopleForAudience(audienceSlug: string, orgId: string): Promise<Person[]> {
   const supabase = await createSupabaseServerClient();
   const isSystem = audienceSlug in SYSTEM_CATEGORY_MAP;
 
@@ -281,6 +282,7 @@ async function getPeopleForAudience(audienceSlug: string): Promise<Person[]> {
     const { data } = await supabase
       .from("people")
       .select("id, first_name, last_name, preferred_name, salutation, email, phone, graduation_year")
+      .eq("org_id", orgId)
       .contains("categories", [category]);
     return (data ?? []) as Person[];
   }
@@ -289,6 +291,7 @@ async function getPeopleForAudience(audienceSlug: string): Promise<Person[]> {
   const { data: group } = await supabase
     .from("groups")
     .select("id, group_tags ( tag_id )")
+    .eq("org_id", orgId)
     .eq("id", audienceSlug)
     .single();
 
@@ -299,7 +302,8 @@ async function getPeopleForAudience(audienceSlug: string): Promise<Person[]> {
 
   const { data: allPeople } = await supabase
     .from("people")
-    .select("id, first_name, last_name, preferred_name, salutation, email, phone, graduation_year, person_tags ( tag_id )");
+    .select("id, first_name, last_name, preferred_name, salutation, email, phone, graduation_year, person_tags ( tag_id )")
+    .eq("org_id", orgId);
 
   const tagIdSet = new Set<string>(tagIds);
   return ((allPeople ?? []) as any[])
@@ -583,6 +587,7 @@ export async function sendMessage(
   greetingTemplate?: string | null
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createSupabaseServerClient();
+  const orgId = await getOrgId();
   const envError = validateEnv(channel);
   if (envError) return { success: false, error: envError };
 
@@ -599,7 +604,7 @@ export async function sendMessage(
     return { success: false, error: "At least one audience is required." };
 
   // Resolve & deduplicate recipients
-  const peopleArrays = await Promise.all(audienceSlugs.map(getPeopleForAudience));
+  const peopleArrays = await Promise.all(audienceSlugs.map((slug) => getPeopleForAudience(slug, orgId)));
   const seenIds = new Set<string>();
   const allPeople: Person[] = [];
   for (const batch of peopleArrays) {
@@ -628,6 +633,7 @@ export async function sendMessage(
   const { data: messageRow, error: msgError } = await supabase
     .from("messages")
     .insert({
+      org_id: orgId,
       subject: channel === "email" ? trimmedSubject : null,
       body: trimmedBody,
       channel,
@@ -718,7 +724,8 @@ export async function resolveAllRecipients(
 ): Promise<ResolvedRecipient[]> {
   if (audienceSlugs.length === 0) return [];
 
-  const peopleArrays = await Promise.all(audienceSlugs.map(getPeopleForAudience));
+  const orgId = await getOrgId();
+  const peopleArrays = await Promise.all(audienceSlugs.map((slug) => getPeopleForAudience(slug, orgId)));
   const seenIds = new Set<string>();
   const allPeople: Person[] = [];
   for (const batch of peopleArrays) {
@@ -759,7 +766,8 @@ export async function previewRecipients(
     return { previews: [], totalCount: 0 };
   }
 
-  const peopleArrays = await Promise.all(audienceSlugs.map(getPeopleForAudience));
+  const orgId = await getOrgId();
+  const peopleArrays = await Promise.all(audienceSlugs.map((slug) => getPeopleForAudience(slug, orgId)));
   const seenIds = new Set<string>();
   const allPeople: Person[] = [];
   for (const batch of peopleArrays) {

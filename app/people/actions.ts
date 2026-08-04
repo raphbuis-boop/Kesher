@@ -1,6 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getOrgId } from "@/lib/org";
 import { revalidatePath } from "next/cache";
 
 export type AddPersonState = {
@@ -25,6 +26,7 @@ export async function addPerson(
   formData: FormData
 ): Promise<AddPersonState> {
   const supabase = await createSupabaseServerClient();
+  const orgId = await getOrgId();
   const firstName = (formData.get("first_name") as string | null)?.trim() ?? "";
   const lastName = (formData.get("last_name") as string | null)?.trim() ?? "";
   const email = (formData.get("email") as string | null)?.trim() || null;
@@ -44,7 +46,7 @@ export async function addPerson(
 
   const { data: newPerson, error } = await supabase
     .from("people")
-    .insert({ first_name: firstName, last_name: lastName, email, phone, grade, categories })
+    .insert({ org_id: orgId, first_name: firstName, last_name: lastName, email, phone, grade, categories })
     .select("id")
     .single();
 

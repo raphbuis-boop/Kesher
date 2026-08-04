@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getOrgId } from "@/lib/org";
 
 export type BrandingSettings = {
   schoolName: string;
@@ -41,7 +42,8 @@ const KEY_MAP: Record<string, keyof BrandingSettings> = {
 export async function getBrandingSettings(): Promise<BrandingSettings> {
   try {
     const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.from("settings").select("key, value");
+    const orgId = await getOrgId();
+    const { data, error } = await supabase.from("settings").select("key, value").eq("org_id", orgId);
     if (error) {
       console.error("[getBrandingSettings] Supabase query error:", error.message, error.code);
       return ENV_DEFAULTS;
