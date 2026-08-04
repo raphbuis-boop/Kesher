@@ -94,6 +94,8 @@ export default async function NewMessagePage({
 
   const audiences = [...systemAudiences, ...customAudiences];
   const attachmentsEnabled = !!process.env.BLOB_READ_WRITE_TOKEN;
+  // MMS uses Supabase Storage — available whenever the admin client is configured.
+  const mmsEnabled = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   return (
     <div className="min-h-screen bg-[#fafafa]">
@@ -109,6 +111,7 @@ export default async function NewMessagePage({
           fromEmail={fromEmail}
           initialAudienceSlugs={initialAudienceSlugs}
           attachmentsEnabled={attachmentsEnabled}
+          mmsEnabled={mmsEnabled}
         />
       </div>
     </div>

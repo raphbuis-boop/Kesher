@@ -321,17 +321,31 @@ function EmailPreview({
   );
 }
 
-function SmsPreview({ body }: { body: string }) {
+function SmsPreview({ body, attachments }: { body: string; attachments: Attachment[] }) {
   const rendered = renderTemplate(body, PREVIEW_PERSON);
+  const mediaAttachment = attachments[0];
+  const isImage = mediaAttachment && IMAGE_RE.test(mediaAttachment.url);
+  const isPdf   = mediaAttachment && /\.pdf$/i.test(mediaAttachment.url);
   return (
     <div className="rounded-xl border border-zinc-200 bg-zinc-100 p-6">
       <p className="mb-3 text-center text-[10px] font-medium uppercase tracking-wider text-zinc-400">
-        Preview — as Sarah Cohen will see it
+        Preview — as Sarah Cohen will see it{mediaAttachment ? " · MMS" : ""}
       </p>
       <div className="mx-auto max-w-[280px]">
-        {rendered ? (
-          <div className="inline-block max-w-full rounded-2xl rounded-tl-sm bg-zinc-300 px-4 py-2.5 text-sm leading-relaxed text-zinc-900">
-            {rendered}
+        {mediaAttachment || rendered ? (
+          <div className="inline-block max-w-full rounded-2xl rounded-tl-sm bg-zinc-300 text-sm leading-relaxed text-zinc-900 overflow-hidden">
+            {isImage && (
+              <img src={mediaAttachment.url} alt={mediaAttachment.fileName} className="max-w-full block" />
+            )}
+            {isPdf && (
+              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-zinc-400/30">
+                {fileIcon(mediaAttachment.url)}
+                <span className="text-xs text-zinc-700 truncate max-w-[180px]">{mediaAttachment.fileName}</span>
+              </div>
+            )}
+            {rendered && (
+              <div className="px-4 py-2.5">{rendered}</div>
+            )}
           </div>
         ) : (
           <p className="text-xs italic text-zinc-400">Your message will appear here…</p>
@@ -380,11 +394,13 @@ export function ComposeFlow({
   fromEmail,
   initialAudienceSlugs,
   attachmentsEnabled = false,
+  mmsEnabled = false,
 }: {
   audiences: AudienceOption[];
   fromEmail: string;
   initialAudienceSlugs?: string[];
   attachmentsEnabled?: boolean;
+  mmsEnabled?: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -427,7 +443,8 @@ export function ComposeFlow({
   function handleChannelChange(c: Channel) {
     setChannel(c);
     if (c !== "email") setSubject("");
-    if (c === "sms") setAttachments([]);
+    // Clear attachments on every channel switch — accepted types differ per channel.
+    setAttachments([]);
     setUploadError(null);
     setRecipientPreviews(null);
     setRecipientTotal(0);
@@ -489,7 +506,12 @@ export function ComposeFlow({
         setUploadError("The file could not be uploaded. Please try a different file or try again.");
         return;
       }
-      setAttachments((prev) => [...prev, data as Attachment]);
+      // SMS/MMS supports one media item — replace any existing attachment.
+      if (channel === "sms") {
+        setAttachments([data as Attachment]);
+      } else {
+        setAttachments((prev) => [...prev, data as Attachment]);
+      }
     } catch {
       setUploadError("The file could not be uploaded. Please check your connection and try again.");
     } finally {
@@ -548,10 +570,13 @@ export function ComposeFlow({
   }
 
   const SMS_LIMIT = 160;
-  const channelSupportsAttachments = channel !== "sms";
-  const showAttachments = attachmentsEnabled && channelSupportsAttachments;
+  // SMS uses Supabase Storage (mmsEnabled); email/WhatsApp use Vercel Blob (attachmentsEnabled).
+  const showAttachments =
+    channel === "sms" ? mmsEnabled : attachmentsEnabled;
   const acceptTypes =
-    channel === "whatsapp"
+    channel === "sms"
+      ? "image/jpeg,image/png,application/pdf"
+      : channel === "whatsapp"
       ? "image/jpeg,image/png,image/gif,image/webp,application/pdf"
       : "image/jpeg,image/png,image/gif,image/webp,application/pdf,.docx,.xlsx";
 
@@ -781,10 +806,18 @@ export function ComposeFlow({
                         <path strokeLinecap="round" strokeLinejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" />
                       </svg>
                     )}
-                    {isUploading ? "Uploading…" : "Attach files"}
+                    {isUploading
+                      ? "Uploading…"
+                      : channel === "sms" && attachments.length > 0
+                      ? "Replace image"
+                      : channel === "sms"
+                      ? "Attach image / PDF"
+                      : "Attach files"}
                   </button>
                   <span className="text-xs text-zinc-400">
-                    {channel === "email"
+                    {channel === "sms"
+                      ? "JPG, PNG, or PDF · 5 MB max · sends as MMS"
+                      : channel === "email"
                       ? "PDF, Word, Excel, or image · 10 MB max"
                       : "PDF or image · 10 MB max"}
                   </span>
@@ -827,7 +860,7 @@ export function ComposeFlow({
         {showPreview && (
           <div className="mt-4">
             {channel === "email" && <EmailPreview subject={subject} body={body} attachments={attachments} greetingTemplate={greetingEnabled ? greetingTemplate : null} />}
-            {channel === "sms" && <SmsPreview body={body} />}
+            {channel === "sms" && <SmsPreview body={body} attachments={attachments} />}
             {channel === "whatsapp" && <WhatsAppPreview body={body} attachments={attachments} />}
           </div>
         )}

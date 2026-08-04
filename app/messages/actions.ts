@@ -501,8 +501,10 @@ async function sendViaSmsProvider(
       ? (process.env.SINCH_WHATSAPP_SENDER ?? "")
       : (process.env.SINCH_SMS_SENDER ?? "");
 
-  const IMAGE_RE = /\.(jpg|jpeg|png|gif|webp)$/i;
-  const firstImageUrl = attachmentUrls?.find((u) => IMAGE_RE.test(u));
+  // MMS supports images; PDF is included for Supabase-hosted flyers — carrier
+  // delivery of PDF-as-MMS is limited but we pass it through and let Sinch/carrier decide.
+  const MMS_MEDIA_RE = /\.(jpg|jpeg|png|gif|webp|pdf)$/i;
+  const firstMediaUrl = attachmentUrls?.find((u) => MMS_MEDIA_RE.test(u));
   const withPhone = recipients.filter((r) => r.phone);
 
   // ── Suppress opted-out recipients ────────────────────────────────────────
@@ -543,7 +545,7 @@ async function sendViaSmsProvider(
       to: toNumber,
       from: fromNumber,
       body,
-      mediaUrl: firstImageUrl,
+      mediaUrl: firstMediaUrl,
     });
 
     inserts.push({
