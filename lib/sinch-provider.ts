@@ -115,10 +115,8 @@ export class SinchProvider implements SmsProvider {
       };
 
       if (!res.ok || !json.message_id) {
-        // DEBUG: include full HTTP status + raw response body so the caller can
-        // surface it in the browser. REMOVE BEFORE COMMITTING.
-        const rawDetail = `HTTP ${res.status} — ${JSON.stringify(json)}`;
-        const detail = rawDetail;
+        const detail =
+          json.error?.message ?? json.message ?? `HTTP ${res.status} ${json.status ?? ""}`.trim();
         console.error(`[sinch] send failed to=${msg.to} channel=${channel}: ${detail}`);
         return { providerId: null, success: false, error: detail };
       }
