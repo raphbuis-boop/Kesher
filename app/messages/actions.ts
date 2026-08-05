@@ -586,6 +586,9 @@ export async function sendMessage(
   attachmentUrls?: string[],
   greetingTemplate?: string | null
 ): Promise<{ success: boolean; error?: string }> {
+  // DEBUG: wrap entire action so throws surface to browser instead of silently dying.
+  // REMOVE BEFORE NEXT FEATURE COMMIT.
+  try {
   const supabase = await createSupabaseServerClient();
   const orgId = await getOrgId();
   const envError = validateEnv(channel);
@@ -704,6 +707,13 @@ export async function sendMessage(
     return { success: false, error: batchError };
   }
   return { success: true };
+  // DEBUG catch block — REMOVE BEFORE NEXT FEATURE COMMIT.
+  } catch (err: unknown) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    console.error("[sendMessage] UNCAUGHT EXCEPTION:", e.message);
+    console.error("[sendMessage] STACK:", e.stack);
+    return { success: false, error: `Server error: ${e.message}` };
+  }
 }
 
 // ─── Full recipient resolution (pre-send audit) ───────────────────────────────
