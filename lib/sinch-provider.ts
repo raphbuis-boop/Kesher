@@ -63,13 +63,9 @@ export class SinchProvider implements SmsProvider {
     const url     = `${this.baseUrl}/projects/${this.projectId}/messages:send`;
     const sinchCh = SINCH_CHANNEL[channel];
 
-    // Build message content.
-    // SMS + media → MMS: send as media_message with the body as a caption so
-    // the text is not lost. Caption is supported by the Sinch Conversation API
-    // for SMS/MMS; carrier delivery of captions varies but is widely supported.
-    // Plain SMS (no media) → text_message as before.
+    // Build message content — media takes precedence over text
     const message: Record<string, unknown> = msg.mediaUrl
-      ? { media_message: { url: msg.mediaUrl, ...(msg.body ? { caption: msg.body } : {}) } }
+      ? { media_message: { url: msg.mediaUrl } }
       : { text_message: { text: msg.body } };
 
     // channel_properties lets us override the sender number per-request.
