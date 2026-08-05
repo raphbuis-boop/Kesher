@@ -478,7 +478,7 @@ async function sendViaSmsProvider(
   messageId: string,
   now: string,
   attachmentUrls?: string[]
-): Promise<{ inserts: RecipientInsert[]; sentCount: number; failedCount: number }> {
+): Promise<{ inserts: RecipientInsert[]; sentCount: number; failedCount: number; sinchError: string | null }> {
   const provider = getSmsProvider();
   if (!provider) {
     // Provider not configured — fail all recipients gracefully
@@ -493,7 +493,7 @@ async function sendViaSmsProvider(
         provider_id: null,
         sent_at: null,
       }));
-    return { inserts, sentCount: 0, failedCount: inserts.length };
+    return { inserts, sentCount: 0, failedCount: inserts.length, sinchError: null };
   }
 
   const fromNumber =
@@ -533,6 +533,8 @@ async function sendViaSmsProvider(
   let sentCount = 0;
   let failedCount = 0;
   const inserts: RecipientInsert[] = [];
+  // DEBUG: capture first Sinch error to surface in browser. REMOVE BEFORE COMMITTING.
+  let firstSinchError: string | null = null;
 
   for (const r of eligible) {
     const rendered = renderTemplate(bodyTemplate, r);
@@ -548,6 +550,11 @@ async function sendViaSmsProvider(
       mediaUrl: firstMediaUrl,
     });
 
+    // DEBUG: capture first error. REMOVE BEFORE COMMITTING.
+    if (!result.success && result.error && !firstSinchError) {
+      firstSinchError = result.error;
+    }
+
     inserts.push({
       message_id: messageId,
       person_id: r.id,
@@ -561,7 +568,7 @@ async function sendViaSmsProvider(
     if (result.success) sentCount++; else failedCount++;
   }
 
-  return { inserts, sentCount, failedCount };
+  return { inserts, sentCount, failedCount, sinchError: firstSinchError };
 }
 
 // ─── Validation ───────────────────────────────────────────────────────────────
@@ -688,6 +695,8 @@ export async function sendMessage(
     sentCount = result.sentCount;
     failedCount = result.failedCount;
     inserts = result.inserts;
+    // DEBUG: surface Sinch error to browser. REMOVE BEFORE COMMITTING.
+    if (result.sinchError) batchError = result.sinchError;
   }
 
   const finalStatus = sentCount === 0 ? "failed" : "sent";
