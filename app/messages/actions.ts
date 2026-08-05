@@ -330,6 +330,7 @@ type RecipientInsert = {
   status: string;
   provider_id: string | null;
   sent_at: string | null;
+  error_detail: string | null;
 };
 
 async function sendEmailBatch(
@@ -401,6 +402,7 @@ async function sendEmailBatch(
           status: "failed",
           provider_id: null,
           sent_at: null,
+          error_detail: errMsg,
         });
         failedCount++;
       }
@@ -421,6 +423,7 @@ async function sendEmailBatch(
           status: providerId ? "sent" : "failed",
           provider_id: providerId,
           sent_at: providerId ? now : null,
+          error_detail: providerId ? null : "Resend did not return a message ID",
         });
         if (providerId) sentCount++; else failedCount++;
       }
@@ -492,6 +495,7 @@ async function sendViaSmsProvider(
         status: "failed",
         provider_id: null,
         sent_at: null,
+        error_detail: "SMS provider not configured",
       }));
     return { inserts, sentCount: 0, failedCount: inserts.length };
   }
@@ -554,6 +558,7 @@ async function sendViaSmsProvider(
       status: result.success ? "sent" : "failed",
       provider_id: result.providerId,
       sent_at: result.success ? now : null,
+      error_detail: result.success ? null : (result.error ?? "Unknown send error"),
     });
 
     if (result.success) sentCount++; else failedCount++;
@@ -693,11 +698,23 @@ export async function sendMessage(
 
   const finalStatus = sentCount === 0 ? "failed" : "sent";
 
+  // Collect the most representative error for the campaign row
+  const campaignError: string | null =
+    sentCount === 0
+      ? (batchError ?? inserts.find((i) => i.error_detail)?.error_detail ?? "All sends failed")
+      : null;
+
   await Promise.all([
     inserts.length > 0 ? supabase.from("message_recipients").insert(inserts) : Promise.resolve(),
     supabase
       .from("messages")
-      .update({ sent_count: sentCount, failed_count: failedCount, status: finalStatus, sent_at: now })
+      .update({
+        sent_count: sentCount,
+        failed_count: failedCount,
+        status: finalStatus,
+        sent_at: now,
+        ...(campaignError ? { error_detail: campaignError } : {}),
+      })
       .eq("id", messageId),
   ]);
 
