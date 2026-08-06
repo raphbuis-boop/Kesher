@@ -481,7 +481,7 @@ async function sendViaSmsProvider(
   messageId: string,
   now: string,
   attachmentUrls?: string[]
-): Promise<{ inserts: RecipientInsert[]; sentCount: number; failedCount: number }> {
+): Promise<{ inserts: RecipientInsert[]; sentCount: number; failedCount: number; batchError: string | null }> {
   const provider = getSmsProvider();
   if (!provider) {
     // Provider not configured — fail all recipients gracefully
@@ -497,7 +497,7 @@ async function sendViaSmsProvider(
         sent_at: null,
         error_detail: "SMS provider not configured",
       }));
-    return { inserts, sentCount: 0, failedCount: inserts.length };
+    return { inserts, sentCount: 0, failedCount: inserts.length, batchError: "SMS provider not configured" };
   }
 
   const fromNumber =
@@ -505,8 +505,8 @@ async function sendViaSmsProvider(
       ? (process.env.SINCH_WHATSAPP_SENDER ?? "")
       : (process.env.SINCH_SMS_SENDER ?? "");
 
-  const IMAGE_RE = /\.(jpg|jpeg|png|gif|webp)$/i;
-  const firstImageUrl = attachmentUrls?.find((u) => IMAGE_RE.test(u));
+  const MEDIA_RE = /\.(jpg|jpeg|png|gif|webp|pdf)$/i;
+  const firstMediaUrl = attachmentUrls?.find((u) => MEDIA_RE.test(u));
   const withPhone = recipients.filter((r) => r.phone);
 
   // ── Suppress opted-out recipients ────────────────────────────────────────
@@ -547,7 +547,7 @@ async function sendViaSmsProvider(
       to: toNumber,
       from: fromNumber,
       body,
-      mediaUrl: firstImageUrl,
+      mediaUrl: firstMediaUrl,
     });
 
     inserts.push({
@@ -564,7 +564,13 @@ async function sendViaSmsProvider(
     if (result.success) sentCount++; else failedCount++;
   }
 
-  return { inserts, sentCount, failedCount };
+  // Surface the first failure reason as the batch-level error so sendMessage
+  // can return it to the UI (mirrors the batchError pattern in sendEmailBatch).
+  const batchError = sentCount === 0 && inserts.length > 0
+    ? (inserts.find((i) => i.error_detail)?.error_detail ?? "All SMS sends failed")
+    : null;
+
+  return { inserts, sentCount, failedCount, batchError };
 }
 
 // ─── Validation ───────────────────────────────────────────────────────────────
@@ -699,6 +705,7 @@ export async function sendMessage(
     sentCount = result.sentCount;
     failedCount = result.failedCount;
     inserts = result.inserts;
+    batchError = result.batchError;
   }
 
   const finalStatus = sentCount === 0 ? "failed" : "sent";
