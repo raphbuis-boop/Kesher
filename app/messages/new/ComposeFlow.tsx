@@ -413,6 +413,7 @@ export function ComposeFlow({
 
   // Confirmation step — populated when user clicks "Send Email"
   const [confirmRecipients, setConfirmRecipients] = useState<ResolvedRecipient[] | null>(null);
+  const [removedPersonIds, setRemovedPersonIds] = useState<Set<string>>(new Set());
   const [isResolvingRecipients, startResolveTransition] = useTransition();
 
   function toggleAudience(a: AudienceOption) {
@@ -513,6 +514,7 @@ export function ComposeFlow({
   function handleSend() {
     if (!canSend) return;
     setSendError(null);
+    setRemovedPersonIds(new Set());
     startResolveTransition(async () => {
       const resolved = await resolveAllRecipients(
         selectedAudiences.map((a) => a.slug),
@@ -536,7 +538,8 @@ export function ComposeFlow({
         subject,
         body,
         attachments.map((a) => a.url),
-        channel === "email" && greetingEnabled ? greetingTemplate : null
+        channel === "email" && greetingEnabled ? greetingTemplate : null,
+        removedPersonIds.size > 0 ? Array.from(removedPersonIds) : undefined
       );
       if (result.success) {
         router.push("/messages");
@@ -970,44 +973,66 @@ export function ComposeFlow({
               Confirm send to {confirmRecipients.length.toLocaleString()} {confirmRecipients.length === 1 ? "recipient" : "recipients"}
             </h2>
             <p className="mt-0.5 text-xs text-zinc-500">
-              Review the complete recipient list before sending. This cannot be undone.
+              Review the list and remove anyone who should not receive this message.
             </p>
           </div>
 
           {/* Recipient list — scrollable, shows every address */}
           <div className="max-h-72 overflow-y-auto divide-y divide-zinc-50">
             {confirmRecipients.length === 0 ? (
-              <p className="px-5 py-4 text-sm text-zinc-400">No eligible recipients found.</p>
+              <p className="px-5 py-4 text-sm text-zinc-400">No recipients remaining.</p>
             ) : (
-              confirmRecipients.map((r, i) => (
-                <div key={i} className="flex items-center justify-between px-5 py-2.5 hover:bg-zinc-50">
+              confirmRecipients.map((r) => (
+                <div key={r.personId} className="group flex items-center justify-between px-5 py-2.5 hover:bg-zinc-50">
                   <span className="text-sm font-medium text-zinc-800 truncate mr-3">{r.name}</span>
-                  <span className="text-xs text-zinc-400 tabular-nums shrink-0">{r.contactValue}</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs text-zinc-400 tabular-nums">{r.contactValue}</span>
+                    <button
+                      type="button"
+                      aria-label={`Remove ${r.name}`}
+                      onClick={() => {
+                        setRemovedPersonIds((prev) => new Set([...prev, r.personId]));
+                        setConfirmRecipients((prev) => prev ? prev.filter((x) => x.personId !== r.personId) : prev);
+                      }}
+                      className="flex h-5 w-5 items-center justify-center rounded text-zinc-300 opacity-0 transition-opacity hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
+                    >
+                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               ))
             )}
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-3 border-t border-zinc-100 px-5 py-4">
-            <button
-              type="button"
-              onClick={() => setConfirmRecipients(null)}
-              className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleConfirmedSend}
-              disabled={confirmRecipients.length === 0}
-              className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Confirm &amp; Send {channelLabel(channel)}
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-              </svg>
-            </button>
+          <div className="border-t border-zinc-100 px-5 py-4">
+            {confirmRecipients.length === 0 && (
+              <p className="mb-3 text-xs text-amber-600">
+                Add at least one recipient to send.
+              </p>
+            )}
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmRecipients(null)}
+                className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmedSend}
+                disabled={confirmRecipients.length === 0}
+                className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Confirm &amp; Send {channelLabel(channel)}
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -589,7 +589,8 @@ export async function sendMessage(
   subject: string,
   body: string,
   attachmentUrls?: string[],
-  greetingTemplate?: string | null
+  greetingTemplate?: string | null,
+  excludePersonIds?: string[]
 ): Promise<{ success: boolean; error?: string }> {
   // DEBUG: wrap entire action so throws surface to browser instead of silently dying.
   // REMOVE BEFORE NEXT FEATURE COMMIT.
@@ -624,10 +625,14 @@ export async function sendMessage(
     }
   }
 
+  // Apply per-send exclusions (recipients removed from the confirm dialog)
+  const excludeSet = new Set(excludePersonIds ?? []);
+  const filtered = excludeSet.size > 0 ? allPeople.filter((p) => !excludeSet.has(p.id)) : allPeople;
+
   const eligible =
     channel === "email"
-      ? allPeople.filter((p) => p.email)
-      : allPeople.filter((p) => p.phone);
+      ? filtered.filter((p) => p.email)
+      : filtered.filter((p) => p.phone);
 
   if (eligible.length === 0) {
     const field = channel === "email" ? "email addresses" : "phone numbers";
@@ -736,8 +741,9 @@ export async function sendMessage(
 // ─── Full recipient resolution (pre-send audit) ───────────────────────────────
 
 export type ResolvedRecipient = {
+  personId: string;
   name: string;
-  contactValue: string; // email or phone
+  contactValue: string; // email or phone (E.164 for phone)
 };
 
 /**
@@ -770,8 +776,9 @@ export async function resolveAllRecipients(
       : allPeople.filter((p) => p.phone);
 
   return eligible.map((r) => ({
+    personId: r.id,
     name: [r.first_name, r.last_name].filter(Boolean).join(" ") || (channel === "email" ? r.email ?? "" : r.phone ?? ""),
-    contactValue: channel === "email" ? (r.email ?? "") : (r.phone ?? ""),
+    contactValue: channel === "email" ? (r.email ?? "") : normalizePhone(r.phone ?? ""),
   }));
 }
 
