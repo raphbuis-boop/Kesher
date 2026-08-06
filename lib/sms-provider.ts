@@ -45,6 +45,17 @@ export function getSmsProvider(): SmsProvider | null {
   const accessKey    = process.env.SINCH_ACCESS_KEY;
   const accessSecret = process.env.SINCH_ACCESS_SECRET;
 
+  // DEBUG: log presence (not values) of every Sinch credential at call time.
+  // REMOVE BEFORE NEXT FEATURE COMMIT.
+  console.log(`[sinch-debug] env check — ` +
+    `SINCH_PROJECT_ID=${projectId ? `set(${projectId.length}ch)` : "MISSING"} ` +
+    `SINCH_APP_ID=${appId ? `set(${appId.length}ch)` : "MISSING"} ` +
+    `SINCH_ACCESS_KEY=${accessKey ? `set(${accessKey.length}ch)` : "MISSING"} ` +
+    `SINCH_ACCESS_SECRET=${accessSecret ? `set(${accessSecret.length}ch)` : "MISSING"} ` +
+    `SINCH_SMS_SENDER=${process.env.SINCH_SMS_SENDER ? `set=${process.env.SINCH_SMS_SENDER}` : "MISSING"} ` +
+    `SINCH_REGION=${process.env.SINCH_REGION ?? "us(default)"}`
+  );
+
   if (!projectId || !appId || !accessKey || !accessSecret) {
     const missing = [
       !projectId    && "SINCH_PROJECT_ID",
