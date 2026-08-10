@@ -101,16 +101,9 @@ export class SinchProvider implements SmsProvider {
         body: JSON.stringify(payload),
       });
 
-      // DEBUG: log raw HTTP status + full body so we can see exactly what Sinch returns.
-      // REMOVE BEFORE NEXT FEATURE COMMIT.
-      const rawBody = await res.text();
-      console.log(`[sinch-debug] HTTP ${res.status} ${res.statusText}`);
-      console.log(`[sinch-debug] url=${url}`);
-      console.log(`[sinch-debug] payload=${JSON.stringify(payload)}`);
-      console.log(`[sinch-debug] response body=${rawBody}`);
-
       // Sinch errors may be nested under .error OR at the root level depending
       // on API version and error type — handle both shapes.
+      const rawBody = await res.text();
       let json: { message_id?: string; error?: { message?: string; code?: number; status?: string }; message?: string; status?: string };
       try {
         json = JSON.parse(rawBody);

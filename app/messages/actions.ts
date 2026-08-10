@@ -6,7 +6,7 @@ import { getOrgId } from "@/lib/org";
 import { revalidatePath } from "next/cache";
 import { renderTemplate } from "@/lib/template";
 import { getBrandingSettings, type BrandingSettings } from "@/lib/settings";
-import { getSmsProvider, validateSmsEnv } from "@/lib/sms-provider";
+import { getSmsProvider, getWhatsAppProvider, validateSmsEnv, validateWhatsAppEnv } from "@/lib/sms-provider";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -482,9 +482,12 @@ async function sendViaSmsProvider(
   now: string,
   attachmentUrls?: string[]
 ): Promise<{ inserts: RecipientInsert[]; sentCount: number; failedCount: number; batchError: string | null }> {
-  const provider = getSmsProvider();
+  // Route by channel: SMS → Sinch, WhatsApp → Twilio
+  const provider = channel === "whatsapp" ? getWhatsAppProvider() : getSmsProvider();
+  const providerName = channel === "whatsapp" ? "WhatsApp (Twilio)" : "SMS (Sinch)";
+
   if (!provider) {
-    // Provider not configured — fail all recipients gracefully
+    const errMsg = `${providerName} provider not configured`;
     const inserts: RecipientInsert[] = recipients
       .filter((r) => r.phone)
       .map((r) => ({
@@ -495,15 +498,17 @@ async function sendViaSmsProvider(
         status: "failed",
         provider_id: null,
         sent_at: null,
-        error_detail: "SMS provider not configured",
+        error_detail: errMsg,
       }));
-    return { inserts, sentCount: 0, failedCount: inserts.length, batchError: "SMS provider not configured" };
+    return { inserts, sentCount: 0, failedCount: inserts.length, batchError: errMsg };
   }
 
-  const fromNumber =
-    channel === "whatsapp"
-      ? (process.env.SINCH_WHATSAPP_SENDER ?? "")
-      : (process.env.SINCH_SMS_SENDER ?? "");
+  // fromNumber is used by Sinch for SMS_SENDER channel property.
+  // Twilio derives the sender from TWILIO_WHATSAPP_FROM internally — the
+  // OutboundSms.from field is ignored by TwilioWhatsAppProvider.
+  const fromNumber = channel === "whatsapp"
+    ? (process.env.TWILIO_WHATSAPP_FROM ?? "")
+    : (process.env.SINCH_SMS_SENDER ?? "");
 
   const MEDIA_RE = /\.(jpg|jpeg|png|gif|webp|pdf)$/i;
   const firstMediaUrl = attachmentUrls?.find((u) => MEDIA_RE.test(u));
@@ -580,9 +585,8 @@ function validateEnv(channel: Channel): string | null {
     if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL)
       return "Email delivery is not configured for this account. Contact your administrator.";
   }
-  if (channel === "sms" || channel === "whatsapp") {
-    return validateSmsEnv(channel);
-  }
+  if (channel === "sms") return validateSmsEnv("sms");
+  if (channel === "whatsapp") return validateWhatsAppEnv();
   return null;
 }
 
@@ -598,8 +602,6 @@ export async function sendMessage(
   greetingTemplate?: string | null,
   excludePersonIds?: string[]
 ): Promise<{ success: boolean; error?: string }> {
-  // DEBUG: wrap entire action so throws surface to browser instead of silently dying.
-  // REMOVE BEFORE NEXT FEATURE COMMIT.
   try {
   const supabase = await createSupabaseServerClient();
   const orgId = await getOrgId();
@@ -736,11 +738,9 @@ export async function sendMessage(
     return { success: false, error: batchError };
   }
   return { success: true };
-  // DEBUG catch block — REMOVE BEFORE NEXT FEATURE COMMIT.
   } catch (err: unknown) {
     const e = err instanceof Error ? err : new Error(String(err));
-    console.error("[sendMessage] UNCAUGHT EXCEPTION:", e.message);
-    console.error("[sendMessage] STACK:", e.stack);
+    console.error("[sendMessage] UNCAUGHT EXCEPTION:", e.message, e.stack);
     return { success: false, error: `Server error: ${e.message}` };
   }
 }
