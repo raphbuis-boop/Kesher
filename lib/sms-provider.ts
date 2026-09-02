@@ -2,10 +2,13 @@
  * Provider-agnostic SMS/WhatsApp interface.
  *
  * Routing:
- *   SMS     → Sinch Conversation API  (lib/sinch-provider.ts)
- *   WhatsApp → Twilio Messages API    (lib/twilio-provider.ts)
+ *   SMS      → Sinch Conversation API      (lib/sinch-provider.ts)
+ *   WhatsApp → Meta WhatsApp Cloud API      (lib/meta-whatsapp-provider.ts)
  *
- * Previous implementations: Telnyx (lib/telnyx-provider.ts — kept for reference)
+ * Previous implementations:
+ *   Telnyx (lib/telnyx-provider.ts — kept for reference)
+ *   Twilio WhatsApp (lib/twilio-provider.ts — kept for reference, no longer
+ *     referenced by getWhatsAppProvider() below; replaced by Meta Cloud API)
  *
  * ─── Sinch (SMS) ──────────────────────────────────────────────────────────────
  * Required env vars:
@@ -17,15 +20,14 @@
  *   SINCH_WEBHOOK_SECRET   — Shared secret for webhook verification
  *   SINCH_REGION           — "us" (default) or "eu"
  *
- * ─── Twilio (WhatsApp) ────────────────────────────────────────────────────────
+ * ─── Meta WhatsApp Cloud API (WhatsApp) ────────────────────────────────────────
  * Required env vars:
- *   TWILIO_ACCOUNT_SID            — Account SID (starts with "AC")
- *   TWILIO_AUTH_TOKEN             — Auth Token
- *   TWILIO_WHATSAPP_FROM          — E.164 sender, e.g. "+14155238886"
+ *   META_WHATSAPP_PHONE_NUMBER_ID — WhatsApp Business phone number ID
+ *   META_WHATSAPP_ACCESS_TOKEN    — System user access token
+ *   META_WHATSAPP_TEMPLATE_NAME   — Approved message template name
  *
  * Optional env vars:
- *   TWILIO_WHATSAPP_SANDBOX       — "true" → sandbox mode (freeform, no template)
- *   TWILIO_WHATSAPP_TEMPLATE_SID  — Content Template SID (HXxxxxxxxx) for production
+ *   META_WHATSAPP_TEMPLATE_LANG   — Template language code (default "en_US")
  */
 
 export type SmsChannel = "sms" | "whatsapp";
@@ -76,28 +78,27 @@ export function getSmsProvider(): SmsProvider | null {
   );
 }
 
-// ─── WhatsApp factory (Twilio) ────────────────────────────────────────────────
+// ─── WhatsApp factory (Meta Cloud API) ─────────────────────────────────────────
 
 export function getWhatsAppProvider(): SmsProvider | null {
-  const accountSid = process.env.TWILIO_ACCOUNT_SID;
-  const authToken  = process.env.TWILIO_AUTH_TOKEN;
-  const from       = process.env.TWILIO_WHATSAPP_FROM;
+  const phoneNumberId = process.env.META_WHATSAPP_PHONE_NUMBER_ID;
+  const accessToken   = process.env.META_WHATSAPP_ACCESS_TOKEN;
+  const templateName  = process.env.META_WHATSAPP_TEMPLATE_NAME;
 
-  if (!accountSid || !authToken || !from) {
+  if (!phoneNumberId || !accessToken || !templateName) {
     const missing = [
-      !accountSid && "TWILIO_ACCOUNT_SID",
-      !authToken  && "TWILIO_AUTH_TOKEN",
-      !from       && "TWILIO_WHATSAPP_FROM",
+      !phoneNumberId && "META_WHATSAPP_PHONE_NUMBER_ID",
+      !accessToken   && "META_WHATSAPP_ACCESS_TOKEN",
+      !templateName  && "META_WHATSAPP_TEMPLATE_NAME",
     ].filter(Boolean).join(", ");
-    console.warn(`[twilio] getWhatsAppProvider: missing env vars: ${missing}`);
+    console.warn(`[meta-whatsapp] getWhatsAppProvider: missing env vars: ${missing}`);
     return null;
   }
 
-  const sandbox     = process.env.TWILIO_WHATSAPP_SANDBOX === "true";
-  const templateSid = process.env.TWILIO_WHATSAPP_TEMPLATE_SID || undefined;
+  const templateLang = process.env.META_WHATSAPP_TEMPLATE_LANG || "en_US";
 
-  const { TwilioWhatsAppProvider } = require("./twilio-provider") as typeof import("./twilio-provider");
-  return new TwilioWhatsAppProvider(accountSid, authToken, from, sandbox, templateSid);
+  const { MetaWhatsAppProvider } = require("./meta-whatsapp-provider") as typeof import("./meta-whatsapp-provider");
+  return new MetaWhatsAppProvider(phoneNumberId, accessToken, templateName, templateLang);
 }
 
 // ─── Validation ───────────────────────────────────────────────────────────────
@@ -118,18 +119,16 @@ export function validateSmsEnv(channel: "sms"): string | null {
   return null;
 }
 
-export function validateWhatsAppEnv(): string | null {
+export function validateMetaWhatsAppEnv(): string | null {
   const hasCredentials =
-    process.env.TWILIO_ACCOUNT_SID &&
-    process.env.TWILIO_AUTH_TOKEN &&
-    process.env.TWILIO_WHATSAPP_FROM;
+    process.env.META_WHATSAPP_PHONE_NUMBER_ID &&
+    process.env.META_WHATSAPP_ACCESS_TOKEN;
 
   if (!hasCredentials)
     return "WhatsApp delivery is not configured for this account. Contact your administrator.";
 
-  const sandbox = process.env.TWILIO_WHATSAPP_SANDBOX === "true";
-  if (!sandbox && !process.env.TWILIO_WHATSAPP_TEMPLATE_SID)
-    return "WhatsApp template is not configured. Set TWILIO_WHATSAPP_TEMPLATE_SID or enable sandbox mode.";
+  if (!process.env.META_WHATSAPP_TEMPLATE_NAME)
+    return "WhatsApp template is not configured. Set META_WHATSAPP_TEMPLATE_NAME.";
 
   return null;
 }

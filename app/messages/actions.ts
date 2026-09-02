@@ -6,7 +6,7 @@ import { getOrgId } from "@/lib/org";
 import { revalidatePath } from "next/cache";
 import { renderTemplate } from "@/lib/template";
 import { getBrandingSettings, type BrandingSettings } from "@/lib/settings";
-import { getSmsProvider, getWhatsAppProvider, validateSmsEnv, validateWhatsAppEnv } from "@/lib/sms-provider";
+import { getSmsProvider, getWhatsAppProvider, validateSmsEnv, validateMetaWhatsAppEnv } from "@/lib/sms-provider";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -20,6 +20,7 @@ type Person = {
   salutation: string | null;
   email: string | null;
   phone: string | null;
+  whatsapp: string | null;
   graduation_year: number | null;
 };
 
@@ -281,7 +282,7 @@ async function getPeopleForAudience(audienceSlug: string, orgId: string): Promis
     const category = SYSTEM_CATEGORY_MAP[audienceSlug];
     const { data } = await supabase
       .from("people")
-      .select("id, first_name, last_name, preferred_name, salutation, email, phone, graduation_year")
+      .select("id, first_name, last_name, preferred_name, salutation, email, phone, whatsapp, graduation_year")
       .eq("org_id", orgId)
       .contains("categories", [category]);
     return (data ?? []) as Person[];
@@ -302,7 +303,7 @@ async function getPeopleForAudience(audienceSlug: string, orgId: string): Promis
 
   const { data: allPeople } = await supabase
     .from("people")
-    .select("id, first_name, last_name, preferred_name, salutation, email, phone, graduation_year, person_tags ( tag_id )")
+    .select("id, first_name, last_name, preferred_name, salutation, email, phone, whatsapp, graduation_year, person_tags ( tag_id )")
     .eq("org_id", orgId);
 
   const tagIdSet = new Set<string>(tagIds);
@@ -316,6 +317,7 @@ async function getPeopleForAudience(audienceSlug: string, orgId: string): Promis
       salutation: p.salutation as string | null,
       email: p.email as string | null,
       phone: p.phone as string | null,
+      whatsapp: p.whatsapp as string | null,
       graduation_year: (p.graduation_year as number | null) ?? null,
     }));
 }
@@ -468,6 +470,17 @@ function normalizePhone(raw: string): string {
   return `+${digits}`;
 }
 
+/**
+ * Resolves the phone number a message actually goes to for a given channel.
+ * WhatsApp sends target person.whatsapp when set (falling back to person.phone
+ * for contacts that only have one number on file); SMS always targets
+ * person.phone. Returns null when neither field is populated.
+ */
+function targetContactValue(r: Person, channel: "sms" | "whatsapp"): string | null {
+  if (channel === "whatsapp") return r.whatsapp?.trim() || r.phone;
+  return r.phone;
+}
+
 // ─── SMS / WhatsApp send ───────────────────────────────────────────────────────
 
 // CTIA-required opt-out footer appended to every SMS.
@@ -482,18 +495,18 @@ async function sendViaSmsProvider(
   now: string,
   attachmentUrls?: string[]
 ): Promise<{ inserts: RecipientInsert[]; sentCount: number; failedCount: number; batchError: string | null }> {
-  // Route by channel: SMS → Sinch, WhatsApp → Twilio
+  // Route by channel: SMS → Sinch, WhatsApp → Meta Cloud API
   const provider = channel === "whatsapp" ? getWhatsAppProvider() : getSmsProvider();
-  const providerName = channel === "whatsapp" ? "WhatsApp (Twilio)" : "SMS (Sinch)";
+  const providerName = channel === "whatsapp" ? "WhatsApp (Meta Cloud API)" : "SMS (Sinch)";
 
   if (!provider) {
     const errMsg = `${providerName} provider not configured`;
     const inserts: RecipientInsert[] = recipients
-      .filter((r) => r.phone)
+      .filter((r) => targetContactValue(r, channel))
       .map((r) => ({
         message_id: messageId,
         person_id: r.id,
-        contact_value: r.phone!,
+        contact_value: targetContactValue(r, channel)!,
         name: `${r.first_name} ${r.last_name}`.trim(),
         status: "failed",
         provider_id: null,
@@ -503,16 +516,14 @@ async function sendViaSmsProvider(
     return { inserts, sentCount: 0, failedCount: inserts.length, batchError: errMsg };
   }
 
-  // fromNumber is used by Sinch for SMS_SENDER channel property.
-  // Twilio derives the sender from TWILIO_WHATSAPP_FROM internally — the
-  // OutboundSms.from field is ignored by TwilioWhatsAppProvider.
-  const fromNumber = channel === "whatsapp"
-    ? (process.env.TWILIO_WHATSAPP_FROM ?? "")
-    : (process.env.SINCH_SMS_SENDER ?? "");
+  // fromNumber is used by Sinch for SMS_SENDER channel property. Meta Cloud API
+  // identifies the sender by META_WHATSAPP_PHONE_NUMBER_ID baked into the request
+  // URL — the OutboundSms.from field is ignored by MetaWhatsAppProvider.
+  const fromNumber = channel === "sms" ? (process.env.SINCH_SMS_SENDER ?? "") : "";
 
   const MEDIA_RE = /\.(jpg|jpeg|png|gif|webp|pdf)$/i;
   const firstMediaUrl = attachmentUrls?.find((u) => MEDIA_RE.test(u));
-  const withPhone = recipients.filter((r) => r.phone);
+  const withPhone = recipients.filter((r) => targetContactValue(r, channel));
 
   // ── Suppress opted-out recipients ────────────────────────────────────────
   // Check for any prior STOP / opted_out status on these phone numbers.
@@ -520,7 +531,7 @@ async function sendViaSmsProvider(
   // Carriers also block at the network level, but we filter proactively to keep
   // analytics clean and avoid failed send attempts.
   const supabase = await createSupabaseServerClient();
-  const phones = withPhone.map((r) => normalizePhone(r.phone!));
+  const phones = withPhone.map((r) => normalizePhone(targetContactValue(r, channel)!));
   const { data: optedOutRows } = await supabase
     .from("message_recipients")
     .select("contact_value")
@@ -529,7 +540,7 @@ async function sendViaSmsProvider(
     .limit(phones.length);
 
   const optedOutPhones = new Set((optedOutRows ?? []).map((r) => r.contact_value));
-  const eligible = withPhone.filter((r) => !optedOutPhones.has(normalizePhone(r.phone!)));
+  const eligible = withPhone.filter((r) => !optedOutPhones.has(normalizePhone(targetContactValue(r, channel)!)));
 
   if (optedOutPhones.size > 0) {
     console.log(
@@ -547,7 +558,7 @@ async function sendViaSmsProvider(
     // carrier 10DLC rules but we include it for consistency.
     const body = channel === "sms" ? rendered + SMS_STOP_FOOTER : rendered;
 
-    const toNumber = normalizePhone(r.phone!);
+    const toNumber = normalizePhone(targetContactValue(r, channel)!);
     const result = await provider.send(channel, {
       to: toNumber,
       from: fromNumber,
@@ -586,7 +597,7 @@ function validateEnv(channel: Channel): string | null {
       return "Email delivery is not configured for this account. Contact your administrator.";
   }
   if (channel === "sms") return validateSmsEnv("sms");
-  if (channel === "whatsapp") return validateWhatsAppEnv();
+  if (channel === "whatsapp") return validateMetaWhatsAppEnv();
   return null;
 }
 
@@ -640,7 +651,7 @@ export async function sendMessage(
   const eligible =
     channel === "email"
       ? filtered.filter((p) => p.email)
-      : filtered.filter((p) => p.phone);
+      : filtered.filter((p) => targetContactValue(p, channel));
 
   if (eligible.length === 0) {
     const field = channel === "email" ? "email addresses" : "phone numbers";
@@ -780,12 +791,14 @@ export async function resolveAllRecipients(
   const eligible =
     channel === "email"
       ? allPeople.filter((p) => p.email)
-      : allPeople.filter((p) => p.phone);
+      : allPeople.filter((p) => targetContactValue(p, channel));
 
   return eligible.map((r) => ({
     personId: r.id,
-    name: [r.first_name, r.last_name].filter(Boolean).join(" ") || (channel === "email" ? r.email ?? "" : r.phone ?? ""),
-    contactValue: channel === "email" ? (r.email ?? "") : normalizePhone(r.phone ?? ""),
+    name:
+      [r.first_name, r.last_name].filter(Boolean).join(" ") ||
+      (channel === "email" ? r.email ?? "" : targetContactValue(r, channel) ?? ""),
+    contactValue: channel === "email" ? (r.email ?? "") : normalizePhone(targetContactValue(r, channel) ?? ""),
   }));
 }
 
@@ -823,12 +836,12 @@ export async function previewRecipients(
   const eligible =
     channel === "email"
       ? allPeople.filter((p) => p.email)
-      : allPeople.filter((p) => p.phone);
+      : allPeople.filter((p) => targetContactValue(p, channel));
 
   const sample = eligible.slice(0, limit);
   const previews: RecipientPreview[] = sample.map((r) => ({
     name: [r.first_name, r.last_name].filter(Boolean).join(" ") || r.email || "Unknown",
-    contactValue: channel === "email" ? (r.email ?? "") : (r.phone ?? ""),
+    contactValue: channel === "email" ? (r.email ?? "") : (targetContactValue(r, channel) ?? ""),
     rendered: renderTemplate(bodyTemplate, r),
   }));
 
