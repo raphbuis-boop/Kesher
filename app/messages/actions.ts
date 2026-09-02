@@ -280,31 +280,51 @@ async function getPeopleForAudience(audienceSlug: string, orgId: string): Promis
 
   if (isSystem) {
     const category = SYSTEM_CATEGORY_MAP[audienceSlug];
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("people")
       .select("id, first_name, last_name, preferred_name, salutation, email, phone, whatsapp, graduation_year")
       .eq("org_id", orgId)
       .contains("categories", [category]);
+    if (error) {
+      console.error(
+        `[getPeopleForAudience] system category query failed — slug=${audienceSlug} category=${category} org=${orgId}:`,
+        error.message
+      );
+    }
     return (data ?? []) as Person[];
   }
 
   // Custom audience — resolve by group tags
-  const { data: group } = await supabase
+  const { data: group, error: groupError } = await supabase
     .from("groups")
     .select("id, group_tags ( tag_id )")
     .eq("org_id", orgId)
     .eq("id", audienceSlug)
     .single();
 
-  if (!group) return [];
+  if (!group) {
+    if (groupError) {
+      console.warn(
+        `[getPeopleForAudience] group lookup failed — slug=${audienceSlug} org=${orgId}:`,
+        groupError.message
+      );
+    }
+    return [];
+  }
 
   const tagIds = (group as any).group_tags?.map((gt: any) => gt.tag_id) ?? [];
   if (tagIds.length === 0) return [];
 
-  const { data: allPeople } = await supabase
+  const { data: allPeople, error: peopleError } = await supabase
     .from("people")
     .select("id, first_name, last_name, preferred_name, salutation, email, phone, whatsapp, graduation_year, person_tags ( tag_id )")
     .eq("org_id", orgId);
+  if (peopleError) {
+    console.error(
+      `[getPeopleForAudience] custom audience people query failed — slug=${audienceSlug} org=${orgId}:`,
+      peopleError.message
+    );
+  }
 
   const tagIdSet = new Set<string>(tagIds);
   return ((allPeople ?? []) as any[])
