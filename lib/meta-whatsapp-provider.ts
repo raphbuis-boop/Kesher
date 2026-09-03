@@ -89,14 +89,7 @@ export class MetaWhatsAppProvider implements SmsProvider {
       const rawBody = await res.text();
       let json: {
         messages?: { id?: string }[];
-        error?: {
-          message?: string;
-          type?: string;
-          code?: number;
-          error_subcode?: number;
-          error_data?: { details?: string };
-          fbtrace_id?: string;
-        };
+        error?: { message?: string; type?: string; code?: number; error_subcode?: number };
       };
       try {
         json = JSON.parse(rawBody);
@@ -111,9 +104,6 @@ export class MetaWhatsAppProvider implements SmsProvider {
       if (!res.ok || !providerId) {
         const detail = json.error?.message ?? `HTTP ${res.status}`;
         console.error(`[meta-whatsapp] send failed to=${msg.to}: ${detail}`);
-        // TEMP DEBUG — remove once the send failure is diagnosed. Logs the full
-        // Graph API error object (message, code, error_data.details, fbtrace_id).
-        console.error(`[meta-whatsapp] TEMP DEBUG full error object:`, JSON.stringify(json.error, null, 2));
         return { providerId: null, success: false, error: detail };
       }
 
