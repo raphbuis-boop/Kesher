@@ -112,91 +112,102 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  // Basic shape check before touching the DB.
-  if (payload.object !== "whatsapp_business_account" || !Array.isArray(payload.entry)) {
-    console.warn(`[meta-status] unexpected payload shape — object=${payload.object}, skipping`);
-    return NextResponse.json({ ok: true });
-  }
+  // Everything below can throw (bad env vars, unexpected Supabase client errors,
+  // etc.) — wrapped so a failure surfaces as a real 500 with a body, instead of an
+  // unhandled exception. Meta's webhook dashboard reports the HTTP outcome of each
+  // delivery attempt, so a clean 500 here is what lets it show a failed delivery
+  // instead of looking identical to "never called us at all."
+  try {
+    // Basic shape check before touching the DB.
+    if (payload.object !== "whatsapp_business_account" || !Array.isArray(payload.entry)) {
+      console.warn(`[meta-status] unexpected payload shape — object=${payload.object}, skipping`);
+      return NextResponse.json({ ok: true });
+    }
 
-  const supabase = createSupabaseAdminClient();
+    const supabase = createSupabaseAdminClient();
 
-  for (const entry of payload.entry) {
-    for (const change of entry.changes ?? []) {
-      if (change.field !== "messages" || !change.value) continue;
+    for (const entry of payload.entry) {
+      for (const change of entry.changes ?? []) {
+        if (change.field !== "messages" || !change.value) continue;
 
-      for (const status of change.value.statuses ?? []) {
-        if (!status.id || !status.status) continue;
+        for (const status of change.value.statuses ?? []) {
+          if (!status.id || !status.status) continue;
 
-        const eventTime = metaTimestampToIso(status.timestamp);
+          const eventTime = metaTimestampToIso(status.timestamp);
 
-        console.log(
-          `[meta-status] status update: wamid=${status.id} status=${status.status} recipient=${status.recipient_id} timestamp=${status.timestamp}`
-        );
+          console.log(
+            `[meta-status] status update: wamid=${status.id} status=${status.status} recipient=${status.recipient_id} timestamp=${status.timestamp}`
+          );
 
-        if (status.status === "delivered") {
-          const { data: updated, error } = await supabase
-            .from("message_recipients")
-            .update({ status: "delivered", delivered_at: eventTime })
-            .eq("provider_id", status.id)
-            .is("delivered_at", null) // idempotent — only set once
-            .select("id");
+          if (status.status === "delivered") {
+            const { data: updated, error } = await supabase
+              .from("message_recipients")
+              .update({ status: "delivered", delivered_at: eventTime })
+              .eq("provider_id", status.id)
+              .is("delivered_at", null) // idempotent — only set once
+              .select("id");
 
-          if (error) {
-            console.error(`[meta-status] DB update failed (delivered) wamid=${status.id}:`, error.message);
-          } else if (!updated || updated.length === 0) {
-            console.warn(`[meta-status] DELIVERED matched no recipient for wamid=${status.id} — already set or provider_id mismatch`);
+            if (error) {
+              console.error(`[meta-status] DB update failed (delivered) wamid=${status.id}:`, error.message);
+            } else if (!updated || updated.length === 0) {
+              console.warn(`[meta-status] DELIVERED matched no recipient for wamid=${status.id} — already set or provider_id mismatch`);
+            }
+            continue;
           }
-          continue;
+
+          if (status.status === "read") {
+            const { data: updated, error } = await supabase
+              .from("message_recipients")
+              .update({ read_at: eventTime })
+              .eq("provider_id", status.id)
+              .is("read_at", null) // idempotent — only set once
+              .select("id");
+
+            if (error) {
+              console.error(`[meta-status] DB update failed (read) wamid=${status.id}:`, error.message);
+            } else if (!updated || updated.length === 0) {
+              console.warn(`[meta-status] READ matched no recipient for wamid=${status.id} — already set or provider_id mismatch`);
+            }
+            continue;
+          }
+
+          if (status.status === "failed") {
+            const err = status.errors?.[0];
+            if (err) {
+              console.error(
+                `[meta-status] delivery error: wamid=${status.id} code=${err.code} title=${err.title} message=${err.message} details=${err.error_data?.details}`
+              );
+            }
+
+            const { data: updated, error } = await supabase
+              .from("message_recipients")
+              .update({ status: "failed", error_detail: formatErrorDetail(err) })
+              .eq("provider_id", status.id)
+              .select("id");
+
+            if (error) {
+              console.error(`[meta-status] DB update failed (failed) wamid=${status.id}:`, error.message);
+            } else if (!updated || updated.length === 0) {
+              console.warn(`[meta-status] FAILED matched no recipient for wamid=${status.id} — provider_id mismatch`);
+            }
+            continue;
+          }
+
+          // "sent" (and any other/future status values) — no DB change needed.
         }
 
-        if (status.status === "read") {
-          const { data: updated, error } = await supabase
-            .from("message_recipients")
-            .update({ read_at: eventTime })
-            .eq("provider_id", status.id)
-            .is("read_at", null) // idempotent — only set once
-            .select("id");
-
-          if (error) {
-            console.error(`[meta-status] DB update failed (read) wamid=${status.id}:`, error.message);
-          } else if (!updated || updated.length === 0) {
-            console.warn(`[meta-status] READ matched no recipient for wamid=${status.id} — already set or provider_id mismatch`);
-          }
-          continue;
+        if (change.value.messages) {
+          console.log(`[meta-status] inbound message(s) received: ${JSON.stringify(change.value.messages)}`);
         }
-
-        if (status.status === "failed") {
-          const err = status.errors?.[0];
-          if (err) {
-            console.error(
-              `[meta-status] delivery error: wamid=${status.id} code=${err.code} title=${err.title} message=${err.message} details=${err.error_data?.details}`
-            );
-          }
-
-          const { data: updated, error } = await supabase
-            .from("message_recipients")
-            .update({ status: "failed", error_detail: formatErrorDetail(err) })
-            .eq("provider_id", status.id)
-            .select("id");
-
-          if (error) {
-            console.error(`[meta-status] DB update failed (failed) wamid=${status.id}:`, error.message);
-          } else if (!updated || updated.length === 0) {
-            console.warn(`[meta-status] FAILED matched no recipient for wamid=${status.id} — provider_id mismatch`);
-          }
-          continue;
-        }
-
-        // "sent" (and any other/future status values) — no DB change needed.
-      }
-
-      if (change.value.messages) {
-        console.log(`[meta-status] inbound message(s) received: ${JSON.stringify(change.value.messages)}`);
       }
     }
-  }
 
-  // Always ack quickly — Meta retries (and can eventually disable the webhook) if
-  // it doesn't get a fast 200.
-  return NextResponse.json({ ok: true });
+    // Always ack quickly — Meta retries (and can eventually disable the webhook) if
+    // it doesn't get a fast 200.
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : "Unknown error";
+    console.error("[meta-status] POST handler exception:", detail);
+    return NextResponse.json({ error: detail }, { status: 500 });
+  }
 }
