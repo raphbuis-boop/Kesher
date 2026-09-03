@@ -22,12 +22,15 @@
  *
  * ─── Meta WhatsApp Cloud API (WhatsApp) ────────────────────────────────────────
  * Required env vars:
- *   META_WHATSAPP_PHONE_NUMBER_ID — WhatsApp Business phone number ID
- *   META_WHATSAPP_ACCESS_TOKEN    — System user access token
- *   META_WHATSAPP_TEMPLATE_NAME   — Approved message template name
+ *   META_WHATSAPP_PHONE_NUMBER_ID   — WhatsApp Business phone number ID
+ *   META_WHATSAPP_ACCESS_TOKEN      — System user access token
+ *   META_WHATSAPP_TEMPLATE_NAME     — Approved message template name
+ *   WHATSAPP_WEBHOOK_VERIFY_TOKEN   — Arbitrary string you choose; entered in Meta
+ *     App Dashboard → WhatsApp → Configuration → Webhooks when registering the
+ *     callback URL. Verified by app/api/webhooks/meta-whatsapp/route.ts (GET).
  *
  * Optional env vars:
- *   META_WHATSAPP_TEMPLATE_LANG   — Template language code (default "en_US")
+ *   META_WHATSAPP_TEMPLATE_LANG     — Template language code (default "en_US")
  */
 
 export type SmsChannel = "sms" | "whatsapp";
