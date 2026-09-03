@@ -75,12 +75,6 @@ export class MetaWhatsAppProvider implements SmsProvider {
       },
     };
 
-    // TEMP DEBUG [meta-send-debug] — remove once delivery is confirmed working.
-    // Never logs this.accessToken.
-    console.log(
-      `[meta-send-debug] request: url=${url} template=${this.templateName} lang=${this.templateLang} to=${to}`
-    );
-
     try {
       const res = await fetch(url, {
         method: "POST",
@@ -93,10 +87,6 @@ export class MetaWhatsAppProvider implements SmsProvider {
 
       // Meta always returns JSON — 2xx has messages[0].id, 4xx/5xx has error.message.
       const rawBody = await res.text();
-
-      // TEMP DEBUG [meta-send-debug] — full raw response, every send, success or failure.
-      console.log(`[meta-send-debug] response: httpStatus=${res.status} rawBody=${rawBody}`);
-
       let json: {
         messages?: { id?: string }[];
         error?: {
@@ -117,13 +107,6 @@ export class MetaWhatsAppProvider implements SmsProvider {
       }
 
       const providerId = json.messages?.[0]?.id ?? null;
-
-      // TEMP DEBUG [meta-send-debug] — how success/failure was decided for this send.
-      console.log(
-        `[meta-send-debug] decision: httpOk=${res.ok} hasMessageId=${providerId !== null} providerId=${providerId} → ${
-          !res.ok || !providerId ? "FAILED" : "SUCCESS"
-        }`
-      );
 
       if (!res.ok || !providerId) {
         const detail = json.error?.message ?? `HTTP ${res.status}`;
