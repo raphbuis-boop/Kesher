@@ -21,11 +21,11 @@ type Attachment = {
 };
 
 const PREVIEW_PERSON = {
-  first_name: "Sarah",
-  last_name: "Cohen",
-  preferred_name: "Sarah",
-  salutation: "Mrs.",
-  email: "sarah.cohen@example.com",
+  first_name: "Jordan",
+  last_name: "Parker",
+  preferred_name: "Jordan",
+  salutation: "Mx.",
+  email: "jordan.parker@example.com",
   graduation_year: new Date().getFullYear() + 4, // ~Grade 8
 };
 
@@ -277,7 +277,7 @@ function EmailPreview({
   return (
     <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
       <p className="mb-3 text-center text-[10px] font-medium uppercase tracking-wider text-zinc-400">
-        Preview — as Sarah Cohen will see it
+        Preview — as {PREVIEW_PERSON.first_name} {PREVIEW_PERSON.last_name} will see it
       </p>
       <div className="mx-auto max-w-[560px] rounded-xl border border-zinc-200 bg-white px-8 py-6 shadow-sm">
         {subject && (
@@ -326,7 +326,7 @@ function SmsPreview({ body }: { body: string }) {
   return (
     <div className="rounded-xl border border-zinc-200 bg-zinc-100 p-6">
       <p className="mb-3 text-center text-[10px] font-medium uppercase tracking-wider text-zinc-400">
-        Preview — as Sarah Cohen will see it
+        Preview — as {PREVIEW_PERSON.first_name} {PREVIEW_PERSON.last_name} will see it
       </p>
       <div className="mx-auto max-w-[280px]">
         {rendered ? (
@@ -348,7 +348,7 @@ function WhatsAppPreview({ body, attachments }: { body: string; attachments: Att
   return (
     <div className="rounded-xl border border-zinc-200 bg-[#e5ddd5] p-6">
       <p className="mb-3 text-center text-[10px] font-medium uppercase tracking-wider text-zinc-500">
-        Preview — as Sarah Cohen will see it
+        Preview — as {PREVIEW_PERSON.first_name} {PREVIEW_PERSON.last_name} will see it
       </p>
       <div className="mx-auto max-w-[280px]">
         <div className="inline-block max-w-full rounded-2xl rounded-tl-sm bg-white px-4 py-2.5 text-sm leading-relaxed text-zinc-900 shadow-sm">

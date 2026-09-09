@@ -113,9 +113,17 @@ export function LoginClient({ next }: { next?: string }) {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="signin-password" className="text-[11px] font-semibold uppercase tracking-wider text-[#a1a1aa]">
-                  Password
-                </label>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="signin-password" className="text-[11px] font-semibold uppercase tracking-wider text-[#a1a1aa]">
+                    Password
+                  </label>
+                  <a
+                    href="/forgot-password"
+                    className="text-[11px] font-medium text-[#71717a] hover:text-[#0f0f0f] transition-colors"
+                  >
+                    Forgot password?
+                  </a>
+                </div>
                 <div className="relative">
                   <input
                     id="signin-password"

@@ -2,7 +2,7 @@
 
 import { Resend } from "resend";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { getOrgId } from "@/lib/org";
+import { getOrgId, isDemoOrg } from "@/lib/org";
 import { revalidatePath } from "next/cache";
 import { renderTemplate } from "@/lib/template";
 import { getBrandingSettings, type BrandingSettings } from "@/lib/settings";
@@ -609,6 +609,43 @@ async function sendViaSmsProvider(
   return { inserts, sentCount, failedCount, batchError };
 }
 
+// ─── Demo-mode simulated send ──────────────────────────────────────────────────
+
+/**
+ * Simulates a send for demo-mode orgs: no Resend/Sinch/Meta API call is made,
+ * every eligible recipient is recorded as "sent" with a synthetic provider_id,
+ * and the normal message/message_recipients rows are written exactly as a real
+ * send would write them — so Message History, the dashboard, and the campaign
+ * detail page all look and behave identically to a real campaign.
+ */
+function simulateSend(
+  recipients: Person[],
+  channel: Channel,
+  messageId: string,
+  now: string
+): { inserts: RecipientInsert[]; sentCount: number; failedCount: number; batchError: string | null } {
+  const eligible =
+    channel === "email"
+      ? recipients.filter((r) => r.email)
+      : recipients.filter((r) => targetContactValue(r, channel as "sms" | "whatsapp"));
+
+  const inserts: RecipientInsert[] = eligible.map((r) => ({
+    message_id: messageId,
+    person_id: r.id,
+    contact_value:
+      channel === "email"
+        ? r.email!
+        : normalizePhone(targetContactValue(r, channel as "sms" | "whatsapp")!),
+    name: `${r.first_name} ${r.last_name}`.trim(),
+    status: "sent",
+    provider_id: `demo-${crypto.randomUUID()}`,
+    sent_at: now,
+    error_detail: null,
+  }));
+
+  return { inserts, sentCount: inserts.length, failedCount: 0, batchError: null };
+}
+
 // ─── Validation ───────────────────────────────────────────────────────────────
 
 function validateEnv(channel: Channel): string | null {
@@ -636,7 +673,10 @@ export async function sendMessage(
   try {
   const supabase = await createSupabaseServerClient();
   const orgId = await getOrgId();
-  const envError = validateEnv(channel);
+  const demoMode = await isDemoOrg(orgId);
+
+  // Demo tenants never touch a real provider — env credentials aren't required.
+  const envError = demoMode ? null : validateEnv(channel);
   if (envError) return { success: false, error: envError };
 
   // Fetch branding for email template (no-op for SMS/WhatsApp)
@@ -726,7 +766,13 @@ export async function sendMessage(
     }
   }
 
-  if (channel === "email") {
+  if (demoMode) {
+    const result = simulateSend(eligible, channel, messageId, now);
+    sentCount = result.sentCount;
+    failedCount = result.failedCount;
+    inserts = result.inserts;
+    batchError = result.batchError;
+  } else if (channel === "email") {
     const result = await sendEmailBatch(eligible, trimmedSubject, trimmedBody, messageId, now, branding, greetingTemplate ?? null, attachmentUrls);
     sentCount = result.sentCount;
     failedCount = result.failedCount;

@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getOrgId } from "@/lib/org";
+import { getBrandingSettings } from "@/lib/settings";
 import {
   Users,
   Send,
@@ -131,11 +132,13 @@ export default async function OverviewPage() {
 
   // ── Phase 1 (parallel) ──────────────────────────────────────────────────────
   const [
+    branding,
     { count: rawContactCount },
     { data: rawPeople },
     { data: rawMessages },
     { data: rawImports },
   ] = await Promise.all([
+    getBrandingSettings(),
     supabase.from("people").select("*", { count: "exact", head: true }).eq("org_id", orgId),
     supabase.from("people").select("categories").eq("org_id", orgId),
     supabase
@@ -249,7 +252,7 @@ export default async function OverviewPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-[13px] font-semibold text-[#0f0f0f]">Overview</h1>
-            <p className="text-[11px] text-[#a1a1aa] mt-px">Heichal HaTorah</p>
+            <p className="text-[11px] text-[#a1a1aa] mt-px">{branding.schoolName || "Your Organization"}</p>
           </div>
           <Link
             href="/messages/new"

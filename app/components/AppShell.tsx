@@ -5,7 +5,7 @@ import { Nav } from "./Nav";
 
 // Auth routes that should render without the sidebar Nav.
 // AppFooter handles its own suppression via the same pattern.
-const NO_NAV_ROUTES = ["/login", "/reset-password"];
+const NO_NAV_ROUTES = ["/login", "/reset-password", "/forgot-password"];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

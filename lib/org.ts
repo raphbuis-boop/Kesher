@@ -40,3 +40,22 @@ export async function getOrgId(): Promise<string> {
 
   return membership.org_id as string;
 }
+
+/**
+ * True when this org is a sandboxed demo tenant (settings row: key='demo_mode',
+ * value='true'). Used to short-circuit real SMS/email/WhatsApp sends so demo
+ * accounts can never contact a real person — see sendMessage() in
+ * app/messages/actions.ts. Stored in `settings` (not a schema column) so no
+ * migration is needed to flip a tenant in or out of demo mode.
+ */
+export async function isDemoOrg(orgId: string): Promise<boolean> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("settings")
+    .select("value")
+    .eq("org_id", orgId)
+    .eq("key", "demo_mode")
+    .maybeSingle();
+
+  return data?.value === "true";
+}
