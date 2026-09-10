@@ -582,8 +582,8 @@ function TimelineChart({ data, channel }: { data: ChartBucket[]; channel: string
         </defs>
 
         {/* Grid lines */}
-        {yTicks.map((v) => (
-          <line key={v} x1={PAD.left} x2={W - PAD.right} y1={yS(v)} y2={yS(v)}
+        {yTicks.map((v, i) => (
+          <line key={`grid-${i}-${v}`} x1={PAD.left} x2={W - PAD.right} y1={yS(v)} y2={yS(v)}
             stroke="#f0f0f0" strokeWidth="1" />
         ))}
 
@@ -608,8 +608,8 @@ function TimelineChart({ data, channel }: { data: ChartBucket[]; channel: string
             {i === 0 ? "0h" : i === 23 ? "24h" : `${i}h`}
           </text>
         ))}
-        {yTicks.filter((v) => v > 0).map((v) => (
-          <text key={v} x={PAD.left - 7} y={yS(v) + 3} textAnchor="end" fontSize="9" fill="#a1a1aa">
+        {yTicks.filter((v) => v > 0).map((v, i) => (
+          <text key={`ytick-${i}-${v}`} x={PAD.left - 7} y={yS(v) + 3} textAnchor="end" fontSize="9" fill="#a1a1aa">
             {v}
           </text>
         ))}
