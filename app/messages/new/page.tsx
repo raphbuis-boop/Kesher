@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getOrgId } from "@/lib/org";
+import { resolveGroupMemberIds, type GroupRow } from "@/lib/audienceMembers";
 import { ComposeFlow, type AudienceOption } from "./ComposeFlow";
 
 const SYSTEM_AUDIENCES: { slug: string; label: string; category: string }[] = [
@@ -56,17 +57,21 @@ export default async function NewMessagePage({
     }
   );
 
-  // Custom audiences (groups with tag-based membership)
+  // Custom audiences — tag-based groups are counted from the batch fetch
+  // below; dynamic (filter_config) groups are resolved the same way the
+  // audiences pages and the actual send path resolve them (see
+  // lib/audienceMembers.ts), so this picker's counts never lie about who a
+  // send will actually reach.
   const [groupsResult, personTagsResult] = await Promise.all([
-    supabase.from("groups").select("id, name, group_tags ( tag_id )").eq("org_id", orgId).order("name"),
+    supabase
+      .from("groups")
+      .select("id, name, is_dynamic, filter_config, group_tags ( tag_id )")
+      .eq("org_id", orgId)
+      .order("name"),
     supabase.from("person_tags").select("person_id, tag_id"),
   ]);
 
-  const groups = (groupsResult.data ?? []) as {
-    id: string;
-    name: string;
-    group_tags: { tag_id: string }[];
-  }[];
+  const groups = (groupsResult.data ?? []) as unknown as GroupRow[];
 
   const personTags = (personTagsResult.data ?? []) as {
     person_id: string;
@@ -75,22 +80,25 @@ export default async function NewMessagePage({
 
   const personById = new Map(people.map((p) => [p.id, p]));
 
-  const customAudiences: AudienceOption[] = groups.map((g) => {
-    const tagIdSet = new Set(g.group_tags.map((gt) => gt.tag_id));
-    const memberIds = new Set(
-      personTags
-        .filter((pt) => tagIdSet.has(pt.tag_id))
-        .map((pt) => pt.person_id)
-    );
-    const members = [...memberIds].map((id) => personById.get(id)).filter(Boolean) as typeof people;
-    return {
-      slug: g.id,
-      label: g.name,
-      totalCount: memberIds.size,
-      emailCount: members.filter((p) => p.email).length,
-      phoneCount: members.filter((p) => p.phone).length,
-    };
-  });
+  const customAudiences: AudienceOption[] = await Promise.all(
+    groups.map(async (g) => {
+      let memberIds: string[];
+      if (g.is_dynamic) {
+        memberIds = await resolveGroupMemberIds(supabase, orgId, g);
+      } else {
+        const tagIdSet = new Set(g.group_tags.map((gt) => gt.tag_id));
+        memberIds = [...new Set(personTags.filter((pt) => tagIdSet.has(pt.tag_id)).map((pt) => pt.person_id))];
+      }
+      const members = memberIds.map((id) => personById.get(id)).filter(Boolean) as typeof people;
+      return {
+        slug: g.id,
+        label: g.name,
+        totalCount: memberIds.length,
+        emailCount: members.filter((p) => p.email).length,
+        phoneCount: members.filter((p) => p.phone).length,
+      };
+    })
+  );
 
   const audiences = [...systemAudiences, ...customAudiences];
   const attachmentsEnabled = !!process.env.BLOB_READ_WRITE_TOKEN;

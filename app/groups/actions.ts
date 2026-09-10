@@ -52,28 +52,63 @@ export async function addGroup(
   }
 
   if (!isDynamic) {
-    if (tagIds.length > 0) {
-      // User picked existing tags — link them
-      const { error: tagError } = await supabase
-        .from("group_tags")
-        .insert(tagIds.map((tag_id) => ({ group_id: newGroup.id, tag_id })));
-      if (tagError) return { success: false, error: tagError.message };
-    } else {
-      // No tags chosen — auto-create a tag named after the group so contacts
-      // can be added from the audience page without understanding tags.
-      const { data: newTag, error: tagError } = await supabase
-        .from("tags")
-        .insert({ org_id: orgId, name })
-        .select("id")
-        .single();
-      if (tagError || !newTag) return { success: false, error: "Could not set up audience." };
-      await supabase.from("group_tags").insert({ group_id: newGroup.id, tag_id: newTag.id });
+    const setupError = await attachTagsToNewGroup(supabase, orgId, newGroup.id, name, tagIds);
+    if (setupError) {
+      // Compensating rollback — otherwise a failed tag setup left a
+      // permanently-empty group behind despite the UI reporting an error.
+      await supabase.from("groups").delete().eq("id", newGroup.id);
+      return { success: false, error: setupError };
     }
   }
 
+  revalidatePath("/audiences");
   revalidatePath("/groups");
   revalidatePath("/");
   return { success: true, error: null };
+}
+
+/** Friendlier message for the known "tag name already taken" collision (see migrate_tags_org_scoped_unique.sql). */
+function describeTagError(error: { code?: string; message: string }, name: string): string {
+  if (error.code === "23505") {
+    return `A tag named "${name}" already exists. Rename the audience, or add contacts to the existing tag instead.`;
+  }
+  return error.message;
+}
+
+/** Links tags to a freshly-created group — reused by addGroup's auto-tag path. */
+async function attachTagsToNewGroup(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  orgId: string,
+  groupId: string,
+  fallbackTagName: string,
+  tagIds: string[]
+): Promise<string | null> {
+  if (tagIds.length > 0) {
+    const { error } = await supabase
+      .from("group_tags")
+      .insert(tagIds.map((tag_id) => ({ group_id: groupId, tag_id })));
+    return error ? error.message : null;
+  }
+
+  // No tags chosen — auto-create a tag named after the group so contacts
+  // can be added from the audience page without understanding tags.
+  const { data: newTag, error: tagError } = await supabase
+    .from("tags")
+    .insert({ org_id: orgId, name: fallbackTagName })
+    .select("id")
+    .single();
+  if (tagError || !newTag) {
+    return tagError ? describeTagError(tagError, fallbackTagName) : "Could not set up audience.";
+  }
+
+  const { error: linkError } = await supabase
+    .from("group_tags")
+    .insert({ group_id: groupId, tag_id: newTag.id });
+  if (linkError) {
+    await supabase.from("tags").delete().eq("id", newTag.id);
+    return linkError.message;
+  }
+  return null;
 }
 
 // ─── Add contacts to a custom audience ───────────────────────────────────────
@@ -86,31 +121,38 @@ export async function addContactsToGroup(
   const supabase = await createSupabaseServerClient();
   const orgId = await getOrgId();
 
-  // Resolve the group's tag(s)
-  const { data: groupTagRows } = await supabase
-    .from("group_tags")
-    .select("tag_id")
-    .eq("group_id", groupId);
+  // Look up the group scoped to this org — never trust a bare groupId from
+  // the client. Also guards against manually adding contacts to a dynamic
+  // group, whose membership is meant to come from its rule, not hand-picks.
+  const { data: group } = await supabase
+    .from("groups")
+    .select("id, name, is_dynamic, group_tags ( tag_id )")
+    .eq("org_id", orgId)
+    .eq("id", groupId)
+    .maybeSingle();
+  if (!group) return { success: false, error: "Audience not found." };
+  if (group.is_dynamic) {
+    return { success: false, error: "This is a dynamic audience — its membership is computed automatically and can't be edited by hand." };
+  }
 
-  let tagIds = (groupTagRows ?? []).map((gt: any) => gt.tag_id as string);
+  let tagIds = (group.group_tags ?? []).map((gt: any) => gt.tag_id as string);
 
-  // Edge case: group has no tags yet (e.g. dynamic group re-used) — auto-create one
+  // Edge case: group has no tags yet — auto-create one
   if (tagIds.length === 0) {
-    const { data: group } = await supabase
-      .from("groups")
-      .select("name")
-      .eq("id", groupId)
-      .single();
-    if (!group) return { success: false, error: "Audience not found." };
-
     const { data: newTag, error: tagError } = await supabase
       .from("tags")
-      .insert({ org_id: orgId, name: (group as any).name })
+      .insert({ org_id: orgId, name: group.name })
       .select("id")
       .single();
-    if (tagError || !newTag) return { success: false, error: "Could not set up audience." };
+    if (tagError || !newTag) {
+      return { success: false, error: tagError ? describeTagError(tagError, group.name) : "Could not set up audience." };
+    }
 
-    await supabase.from("group_tags").insert({ group_id: groupId, tag_id: newTag.id });
+    const { error: linkError } = await supabase.from("group_tags").insert({ group_id: groupId, tag_id: newTag.id });
+    if (linkError) {
+      await supabase.from("tags").delete().eq("id", newTag.id);
+      return { success: false, error: linkError.message };
+    }
     tagIds = [newTag.id];
   }
 
@@ -153,13 +195,19 @@ export async function removeContactFromGroup(
   _formData: FormData
 ): Promise<void> {
   const supabase = await createSupabaseServerClient();
+  // Every other action in this file (and the rest of the app) explicitly
+  // scopes by org_id as defense-in-depth on top of RLS — this one didn't.
+  const orgId = await getOrgId();
 
-  const { data: groupTagRows } = await supabase
-    .from("group_tags")
-    .select("tag_id")
-    .eq("group_id", groupId);
+  const { data: group } = await supabase
+    .from("groups")
+    .select("id, group_tags ( tag_id )")
+    .eq("org_id", orgId)
+    .eq("id", groupId)
+    .maybeSingle();
+  if (!group) return;
 
-  const tagIds = (groupTagRows ?? []).map((gt: any) => gt.tag_id as string);
+  const tagIds = (group.group_tags ?? []).map((gt: any) => gt.tag_id as string);
   if (tagIds.length > 0) {
     await supabase
       .from("person_tags")

@@ -49,9 +49,9 @@ function matchesNode(person: PersonRow, node: FilterNode): boolean {
   }
 }
 
-export async function resolveAudience(filterConfig: FilterNode): Promise<string[]> {
+export async function resolveAudience(filterConfig: FilterNode, knownOrgId?: string): Promise<string[]> {
   const supabase = await createSupabaseServerClient();
-  const orgId = await getOrgId();
+  const orgId = knownOrgId ?? (await getOrgId());
   const { data } = await supabase
     .from("people")
     .select("id, categories, graduation_year")

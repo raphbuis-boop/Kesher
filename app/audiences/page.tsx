@@ -3,12 +3,11 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getOrgId } from "@/lib/org";
+import { resolveGroupMemberIds, type GroupRow } from "@/lib/audienceMembers";
 import { AddGroupButton } from "@/app/groups/AddGroupButton";
 import { Plus, Users, ArrowRight } from "lucide-react";
 
 type PersonRow = { id: string; categories: string[] | null };
-type PersonForGroup = { id: string; person_tags: Array<{ tag_id: string }> };
-type Group = { id: string; name: string; description: string | null; group_tags: Array<{ tag_id: string }> };
 
 const SYSTEM_AUDIENCES = [
   { slug: "parents", label: "Parents", category: "parent" },
@@ -25,26 +24,31 @@ const SYSTEM_AUDIENCES = [
 export default async function AudiencesPage() {
   const supabase = await createSupabaseServerClient();
   const orgId = await getOrgId();
-  const [peopleResult, groupPeopleResult, groupsResult] = await Promise.all([
+  const [peopleResult, groupsResult] = await Promise.all([
     supabase.from("people").select("id, categories").eq("org_id", orgId),
-    supabase.from("people").select("id, person_tags ( tag_id )").eq("org_id", orgId),
-    supabase.from("groups").select("id, name, description, group_tags ( tag_id )").eq("org_id", orgId).order("name"),
+    supabase
+      .from("groups")
+      .select("id, name, description, is_dynamic, filter_config, group_tags ( tag_id )")
+      .eq("org_id", orgId)
+      .order("name"),
   ]);
 
   const people = (peopleResult.data ?? []) as unknown as PersonRow[];
-  const groupPeople = (groupPeopleResult.data ?? []) as unknown as PersonForGroup[];
-  const groups = (groupsResult.data ?? []) as unknown as Group[];
+  const groups = (groupsResult.data ?? []) as unknown as GroupRow[];
 
   const systemAudiences = SYSTEM_AUDIENCES.map((a) => ({
     ...a,
     count: people.filter((p) => Array.isArray(p.categories) && p.categories.includes(a.category)).length,
   }));
 
-  const customAudiences = groups.map((g) => {
-    const tagIds = new Set(g.group_tags.map((gt) => gt.tag_id));
-    const count = tagIds.size === 0 ? 0 : groupPeople.filter((p) => p.person_tags.some((pt) => tagIds.has(pt.tag_id))).length;
-    return { ...g, count };
-  });
+  // Real counts for every group, dynamic or tag-based — resolved the same
+  // way the audience detail page and message sends resolve them.
+  const customAudiences = await Promise.all(
+    groups.map(async (g) => ({
+      ...g,
+      count: (await resolveGroupMemberIds(supabase, orgId, g)).length,
+    }))
+  );
 
   const totalInSystem = people.length;
 

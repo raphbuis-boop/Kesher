@@ -4,10 +4,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getOrgId } from "@/lib/org";
+import { getGroup, getGroupMembers, getSystemAudienceMembers, type AudienceMember } from "@/lib/audienceMembers";
 import { AddPersonButton } from "@/app/people/AddPersonButton";
 import { AddContactsButton } from "./AddContactsButton";
 import { removeContactFromGroup } from "@/app/groups/actions";
-import { ArrowLeft, Users, Search, Mail, Plus } from "lucide-react";
+import { ArrowLeft, Users, Search, Mail, Plus, Sparkles } from "lucide-react";
 
 const SYSTEM_AUDIENCES = {
   parents: { label: "Parents", category: "parent" },
@@ -46,24 +47,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 type Tag = { id: string; name: string };
-
-type PersonRow = {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string | null;
-  phone: string | null;
-  categories: string[] | null;
-  grade: string | null;
-  person_tags: Array<{ tag_id: string; tags: Tag }>;
-};
-
-type Group = {
-  id: string;
-  name: string;
-  description: string | null;
-  group_tags: Array<{ tag_id: string }>;
-};
+type PersonRow = AudienceMember;
 
 export default async function AudiencePage({
   params,
@@ -88,6 +72,7 @@ export default async function AudiencePage({
   let defaultCategory: string | null = null;
   let people: PersonRow[] = [];
   let nonMembers: { id: string; first_name: string; last_name: string; email: string | null }[] = [];
+  let isDynamicGroup = false;
 
   const { data: allTagsData } = await supabase
     .from("tags")
@@ -99,57 +84,30 @@ export default async function AudiencePage({
   if (isSystem) {
     audienceLabel = systemConfig!.label;
     defaultCategory = systemConfig!.category;
-
-    const { data, error } = await supabase
-      .from("people")
-      .select(
-        "id, first_name, last_name, email, phone, categories, grade, person_tags ( tag_id, tags ( id, name ) )"
-      )
-      .eq("org_id", orgId)
-      .contains("categories", [systemConfig!.category])
-      .order("last_name");
-
-    if (error) throw new Error(error.message);
-    people = (data ?? []) as unknown as PersonRow[];
+    people = await getSystemAudienceMembers(supabase, orgId, systemConfig!.category);
   } else {
-    const { data: group, error: groupError } = await supabase
-      .from("groups")
-      .select("id, name, description, group_tags ( tag_id )")
-      .eq("org_id", orgId)
-      .eq("id", slug)
-      .single();
+    const group = await getGroup(supabase, orgId, slug);
+    if (!group) notFound();
 
-    if (groupError || !group) notFound();
+    audienceLabel = group.name;
+    audienceDescription = group.description ?? "";
+    isDynamicGroup = group.is_dynamic;
 
-    const typedGroup = group as unknown as Group;
-    audienceLabel = typedGroup.name;
-    audienceDescription = typedGroup.description ?? "";
+    people = await getGroupMembers(supabase, orgId, group);
 
-    const tagIds = typedGroup.group_tags.map((gt) => gt.tag_id);
+    // Manual "Add Contacts" only makes sense for tag-based groups — a
+    // dynamic group's membership is computed from its saved rule, not by
+    // hand-picking people, so we don't bother loading candidates for it.
+    if (!isDynamicGroup) {
+      const { data: allPeopleData, error: allPeopleError } = await supabase
+        .from("people")
+        .select("id, first_name, last_name, email")
+        .eq("org_id", orgId);
+      if (allPeopleError) throw new Error(allPeopleError.message);
 
-    const { data, error } = await supabase
-      .from("people")
-      .select(
-        "id, first_name, last_name, email, phone, categories, grade, person_tags ( tag_id, tags ( id, name ) )"
-      )
-      .eq("org_id", orgId)
-      .order("last_name");
-
-    if (error) throw new Error(error.message);
-
-    const allPeople = (data ?? []) as unknown as PersonRow[];
-
-    if (tagIds.length > 0) {
-      const tagIdSet = new Set(tagIds);
-      people = allPeople.filter((p) =>
-        p.person_tags.some((pt) => tagIdSet.has(pt.tag_id))
-      );
+      const memberIds = new Set(people.map((p) => p.id));
+      nonMembers = (allPeopleData ?? []).filter((p) => !memberIds.has(p.id));
     }
-
-    const memberIds = new Set(people.map((p) => p.id));
-    nonMembers = allPeople
-      .filter((p) => !memberIds.has(p.id))
-      .map((p) => ({ id: p.id, first_name: p.first_name, last_name: p.last_name, email: p.email }));
   }
 
   let filtered = people;
@@ -236,7 +194,7 @@ export default async function AudiencePage({
               </span>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              {!isSystem && (
+              {!isSystem && !isDynamicGroup && (
                 <AddContactsButton groupId={slug} nonMembers={nonMembers} />
               )}
               <Link
@@ -256,6 +214,12 @@ export default async function AudiencePage({
           </div>
           {audienceDescription && (
             <p className="mt-1 text-[11px] text-[#a1a1aa] ml-[calc(13px+0.375rem+1.25rem)]">{audienceDescription}</p>
+          )}
+          {isDynamicGroup && (
+            <p className="mt-1.5 flex items-center gap-1.5 text-[11px] text-[#a1a1aa] ml-[calc(13px+0.375rem+1.25rem)]">
+              <Sparkles size={11} strokeWidth={2} />
+              Dynamic audience — membership updates automatically from its saved rule.
+            </p>
           )}
         </div>
 
@@ -370,7 +334,7 @@ export default async function AudiencePage({
                   <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-[#a1a1aa] uppercase tracking-wide">Phone</th>
                   <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-[#a1a1aa] uppercase tracking-wide">Audiences</th>
                   <th className="pl-3 pr-4 py-2.5 text-left text-[11px] font-semibold text-[#a1a1aa] uppercase tracking-wide">Tags</th>
-                  {!isSystem && <th className="pl-3 pr-4 py-2.5" />}
+                  {!isSystem && !isDynamicGroup && <th className="pl-3 pr-4 py-2.5" />}
                 </tr>
               </thead>
               <tbody>
@@ -445,7 +409,7 @@ export default async function AudiencePage({
                           <span className="text-[#d4d4d8] text-[12px]">—</span>
                         )}
                       </td>
-                      {!isSystem && (
+                      {!isSystem && !isDynamicGroup && (
                         <td className="pl-3 pr-4 py-3 text-right">
                           <form action={removeContactFromGroup.bind(null, slug, person.id)}>
                             <button

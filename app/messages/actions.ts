@@ -3,6 +3,7 @@
 import { Resend } from "resend";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getOrgId, isDemoOrg } from "@/lib/org";
+import { getGroup, getGroupMembers, getSystemAudienceMembers } from "@/lib/audienceMembers";
 import { revalidatePath } from "next/cache";
 import { renderTemplate } from "@/lib/template";
 import { getBrandingSettings, type BrandingSettings } from "@/lib/settings";
@@ -274,72 +275,29 @@ ${docs
 
 // ─── Recipient resolution ─────────────────────────────────────────────────────
 
+/**
+ * Resolves the real recipient list for an audience — system category or
+ * custom group (tag-based OR dynamic/filter_config-based; both resolve
+ * identically here and everywhere else via lib/audienceMembers.ts, so a
+ * "Dynamic rules" audience actually receives messages instead of silently
+ * sending to nobody).
+ */
 async function getPeopleForAudience(audienceSlug: string, orgId: string): Promise<Person[]> {
   const supabase = await createSupabaseServerClient();
   const isSystem = audienceSlug in SYSTEM_CATEGORY_MAP;
 
   if (isSystem) {
-    const category = SYSTEM_CATEGORY_MAP[audienceSlug];
-    const { data, error } = await supabase
-      .from("people")
-      .select("id, first_name, last_name, preferred_name, salutation, email, phone, whatsapp, graduation_year")
-      .eq("org_id", orgId)
-      .contains("categories", [category]);
-    if (error) {
-      console.error(
-        `[getPeopleForAudience] system category query failed — slug=${audienceSlug} category=${category} org=${orgId}:`,
-        error.message
-      );
-    }
-    return (data ?? []) as Person[];
+    const members = await getSystemAudienceMembers(supabase, orgId, SYSTEM_CATEGORY_MAP[audienceSlug]);
+    return members;
   }
 
-  // Custom audience — resolve by group tags
-  const { data: group, error: groupError } = await supabase
-    .from("groups")
-    .select("id, group_tags ( tag_id )")
-    .eq("org_id", orgId)
-    .eq("id", audienceSlug)
-    .single();
-
+  const group = await getGroup(supabase, orgId, audienceSlug);
   if (!group) {
-    if (groupError) {
-      console.warn(
-        `[getPeopleForAudience] group lookup failed — slug=${audienceSlug} org=${orgId}:`,
-        groupError.message
-      );
-    }
+    console.warn(`[getPeopleForAudience] group not found — slug=${audienceSlug} org=${orgId}`);
     return [];
   }
 
-  const tagIds = (group as any).group_tags?.map((gt: any) => gt.tag_id) ?? [];
-  if (tagIds.length === 0) return [];
-
-  const { data: allPeople, error: peopleError } = await supabase
-    .from("people")
-    .select("id, first_name, last_name, preferred_name, salutation, email, phone, whatsapp, graduation_year, person_tags ( tag_id )")
-    .eq("org_id", orgId);
-  if (peopleError) {
-    console.error(
-      `[getPeopleForAudience] custom audience people query failed — slug=${audienceSlug} org=${orgId}:`,
-      peopleError.message
-    );
-  }
-
-  const tagIdSet = new Set<string>(tagIds);
-  return ((allPeople ?? []) as any[])
-    .filter((p: any) => p.person_tags?.some((pt: any) => tagIdSet.has(pt.tag_id)))
-    .map((p: any) => ({
-      id: p.id,
-      first_name: p.first_name,
-      last_name: p.last_name,
-      preferred_name: p.preferred_name as string | null,
-      salutation: p.salutation as string | null,
-      email: p.email as string | null,
-      phone: p.phone as string | null,
-      whatsapp: p.whatsapp as string | null,
-      graduation_year: (p.graduation_year as number | null) ?? null,
-    }));
+  return getGroupMembers(supabase, orgId, group);
 }
 
 // ─── Channel senders ─────────────────────────────────────────────────────────

@@ -2,6 +2,7 @@
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getOrgId } from "@/lib/org";
+import { isValidEmail } from "@/lib/validation";
 import { revalidatePath } from "next/cache";
 
 export type UpdatePersonState = {
@@ -56,6 +57,24 @@ export async function updatePerson(
   if (graduationYear !== null && isNaN(graduationYear)) {
     return { success: false, error: "Graduation year must be a valid number." };
   }
+  if (email && !isValidEmail(email)) {
+    return { success: false, error: "Enter a valid email address." };
+  }
+  if (email) {
+    const { data: existing } = await supabase
+      .from("people")
+      .select("id, first_name, last_name")
+      .eq("org_id", orgId)
+      .eq("email", email)
+      .neq("id", id)
+      .maybeSingle();
+    if (existing) {
+      return {
+        success: false,
+        error: `Another contact already uses this email: ${existing.first_name} ${existing.last_name}.`,
+      };
+    }
+  }
 
   const { error: updateError } = await supabase
     .from("people")
@@ -79,7 +98,16 @@ export async function updatePerson(
     return { success: false, error: updateError.message };
   }
 
-  // Replace tags: delete all then re-insert selected
+  // Replace tags: delete all then re-insert selected. If the re-insert
+  // fails, restore the previous tags instead of leaving the contact
+  // silently detagged — the old code left a person with zero tags and no
+  // way to recover them whenever the second call failed.
+  const { data: previousTagRows } = await supabase
+    .from("person_tags")
+    .select("tag_id")
+    .eq("person_id", id);
+  const previousTagIds = (previousTagRows ?? []).map((r) => r.tag_id as string);
+
   const { error: deleteError } = await supabase
     .from("person_tags")
     .delete()
@@ -95,6 +123,11 @@ export async function updatePerson(
       .insert(tagIds.map((tag_id) => ({ person_id: id, tag_id })));
 
     if (insertError) {
+      if (previousTagIds.length > 0) {
+        await supabase
+          .from("person_tags")
+          .insert(previousTagIds.map((tag_id) => ({ person_id: id, tag_id })));
+      }
       return { success: false, error: insertError.message };
     }
   }
