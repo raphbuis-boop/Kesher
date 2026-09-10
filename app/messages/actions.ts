@@ -2,7 +2,7 @@
 
 import { Resend } from "resend";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { getOrgId, isDemoOrg } from "@/lib/org";
+import { getOrgId, sendsAreSimulated } from "@/lib/org";
 import { getGroup, getGroupMembers, getSystemAudienceMembers } from "@/lib/audienceMembers";
 import { revalidatePath } from "next/cache";
 import { renderTemplate } from "@/lib/template";
@@ -631,10 +631,10 @@ export async function sendMessage(
   try {
   const supabase = await createSupabaseServerClient();
   const orgId = await getOrgId();
-  const demoMode = await isDemoOrg(orgId);
+  const simulated = await sendsAreSimulated(orgId);
 
-  // Demo tenants never touch a real provider — env credentials aren't required.
-  const envError = demoMode ? null : validateEnv(channel);
+  // Simulated-send tenants never touch a real provider — env credentials aren't required.
+  const envError = simulated ? null : validateEnv(channel);
   if (envError) return { success: false, error: envError };
 
   // Fetch branding for email template (no-op for SMS/WhatsApp)
@@ -724,7 +724,7 @@ export async function sendMessage(
     }
   }
 
-  if (demoMode) {
+  if (simulated) {
     const result = simulateSend(eligible, channel, messageId, now);
     sentCount = result.sentCount;
     failedCount = result.failedCount;

@@ -42,19 +42,27 @@ export async function getOrgId(): Promise<string> {
 }
 
 /**
- * True when this org is a sandboxed demo tenant (settings row: key='demo_mode',
- * value='true'). Used to short-circuit real SMS/email/WhatsApp sends so demo
- * accounts can never contact a real person — see sendMessage() in
- * app/messages/actions.ts. Stored in `settings` (not a schema column) so no
- * migration is needed to flip a tenant in or out of demo mode.
+ * True when this org's SMS/email/WhatsApp sends should be simulated instead
+ * of hitting a real provider (settings row: key='simulate_sends',
+ * value='true') — see sendMessage() in app/messages/actions.ts. Stored in
+ * `settings` (not a schema column) so no migration is needed to flip it.
+ *
+ * This is deliberately independent of an org having sample/demo data and
+ * generic branding — those are just ordinary rows in `people`/`groups`/
+ * `settings` like any other org's. A tenant can have fully fake contacts
+ * and still send real messages (e.g. a sales-demo account the owner sends
+ * real test emails from); this flag only controls whether sendMessage()
+ * calls the real provider or fabricates success. Previously named
+ * `demo_mode`, which conflated "has sample data" with "blocks real sends"
+ * and made the coupling easy to trip over.
  */
-export async function isDemoOrg(orgId: string): Promise<boolean> {
+export async function sendsAreSimulated(orgId: string): Promise<boolean> {
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("settings")
     .select("value")
     .eq("org_id", orgId)
-    .eq("key", "demo_mode")
+    .eq("key", "simulate_sends")
     .maybeSingle();
 
   return data?.value === "true";

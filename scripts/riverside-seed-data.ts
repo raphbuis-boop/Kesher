@@ -153,9 +153,9 @@ export async function seedSettings(supabase: SupabaseClient, orgId: string): Pro
     { key: "reply_to_email", value: "office@riversideacademy.example" },
     { key: "sender_name", value: "Riverside Academy" },
     { key: "sender_email", value: "office@riversideacademy.example" },
-    // Not read by lib/settings.ts's KEY_MAP — read by lib/org.ts's isDemoOrg().
+    // Not read by lib/settings.ts's KEY_MAP — read by lib/org.ts's sendsAreSimulated().
     // Blocks real SMS/email/WhatsApp sends for this org; see lib/org.ts.
-    { key: "demo_mode", value: "true" },
+    { key: "simulate_sends", value: "true" },
   ].map((r) => ({ org_id: orgId, ...r }));
 
   const { error } = await supabase.from("settings").upsert(rows, { onConflict: "org_id,key" });
@@ -654,7 +654,7 @@ export async function seedRiverside(supabase: SupabaseClient, orgId: string): Pr
   console.log(`[seedRiverside] clearing existing tenant data for org ${orgId}...`);
   await clearOrgData(supabase, orgId);
 
-  console.log(`[seedRiverside] writing branding + demo_mode settings...`);
+  console.log(`[seedRiverside] writing branding + simulate_sends settings...`);
   await seedSettings(supabase, orgId);
 
   console.log(`[seedRiverside] seeding families...`);
