@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 /* ─── KESHER DESIGN SYSTEM ───────────────────────────────────────────────────
- * Hallmark · warm editorial · cream + charcoal + amber-bronze
- * Paper: oklch(97.5% 0.006 80) · Accent: oklch(52% 0.13 52)
+ * Hallmark · warm editorial · cream + charcoal + deep-teal/emerald
+ * Paper: oklch(97.5% 0.006 80) · Accent: oklch(58% 0.135 162)
  * ─────────────────────────────────────────────────────────────────────────── */
 
 :root {
@@ -20,12 +20,23 @@
   --text-secondary: oklch(42.0% 0.010 260);  /* secondary labels             */
   --text-muted:     oklch(63.0% 0.008 255);  /* placeholder / captions       */
 
-  /* ── Accent — restrained warm amber-bronze ───────────────────────────── */
-  --accent:         oklch(52.0% 0.130 52);   /* primary CTA / brand          */
-  --accent-hover:   oklch(46.0% 0.125 52);   /* accent on hover              */
+  /* ── Accent — deep-teal / emerald brand system ───────────────────────── */
+  --accent:         oklch(58.0% 0.135 162);  /* primary CTA / brand (emerald) */
+  --accent-hover:   oklch(51.0% 0.130 162);  /* accent on hover              */
   --accent-fg:      oklch(98.0% 0.004 80);   /* text on accent bg            */
-  --accent-tint:    oklch(95.5% 0.028 58);   /* subtle accent fill           */
-  --accent-border:  oklch(87.0% 0.042 56);   /* accent-tinted border         */
+  --accent-tint:    oklch(94.5% 0.045 160);  /* subtle accent fill           */
+  --accent-border:  oklch(84.0% 0.070 160);  /* accent-tinted border         */
+
+  /* ── Deep teal — closing CTA / footer / analytics bands ──────────────── */
+  --ink-teal:       oklch(27.0% 0.035 200);  /* deep teal section bg         */
+  --ink-teal-2:     oklch(32.0% 0.038 198);  /* teal card / raised surface   */
+  --ink-teal-border: oklch(38.0% 0.040 198); /* border on teal               */
+  --ink-teal-fg:    oklch(97.0% 0.010 95);   /* warm-white text on teal      */
+  --ink-teal-fg-muted: oklch(78.0% 0.020 130); /* muted text on teal         */
+
+  /* ── Sage — soft alt section band (connected-audience, etc.) ─────────── */
+  --surface-sage:        oklch(94.5% 0.020 155);
+  --surface-sage-border: oklch(88.0% 0.025 155);
 
   /* ── Sidebar (interior app) ──────────────────────────────────────────── */
   --sidebar-bg:     oklch(96.0% 0.008 78);
@@ -96,10 +107,96 @@
   --color-background: var(--bg);
   --color-foreground: var(--text-primary);
   --color-surface:    var(--surface);
+  --color-surface-2:  var(--surface-2);
   --color-border:     var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
   --color-accent:     var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg:  var(--accent-fg);
+  --color-accent-tint: var(--accent-tint);
+  --color-accent-border: var(--accent-border);
+  --color-ink-teal:   var(--ink-teal);
+  --color-ink-teal-2: var(--ink-teal-2);
+  --color-ink-teal-border: var(--ink-teal-border);
+  --color-ink-teal-fg: var(--ink-teal-fg);
+  --color-ink-teal-fg-muted: var(--ink-teal-fg-muted);
+  --color-surface-sage: var(--surface-sage);
+  --color-surface-sage-border: var(--surface-sage-border);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
+
+/* ─── Kesher landing theme ────────────────────────────────────────────────────
+ * Scoped override for the marketing site only (Qarin-inspired: bright warm
+ * white, deep navy type, electric blue accent, emerald reserved for delivery
+ * success states). Every token below is inherited by descendants of
+ * `.kesher-landing`, so the rest of the app — including the real product
+ * screens the landing page depicts — keeps its own teal/emerald identity.
+ * ─────────────────────────────────────────────────────────────────────────── */
+.kesher-landing {
+  --bg:             oklch(98.8% 0.003 85);
+  --surface:        oklch(99.6% 0.002 90);
+  --surface-2:      oklch(96.2% 0.009 250);
+
+  --border:         oklch(90.0% 0.012 255);
+  --border-subtle:  oklch(94.2% 0.007 252);
+
+  --text-primary:   oklch(19.0% 0.035 264);   /* deep navy / near-black */
+  --text-secondary: oklch(41.0% 0.045 262);
+  --text-muted:     oklch(60.0% 0.028 260);
+
+  --accent:         oklch(58.0% 0.205 260);   /* electric Kesher blue */
+  --accent-hover:   oklch(51.0% 0.205 260);
+  --accent-fg:      oklch(99.0% 0.004 260);
+  --accent-tint:    oklch(94.0% 0.045 258);
+  --accent-border:  oklch(83.5% 0.085 258);
+
+  /* Deep navy — final CTA band, footer */
+  --ink-teal:          oklch(19.5% 0.050 264);
+  --ink-teal-2:        oklch(23.5% 0.055 262);
+  --ink-teal-border:   oklch(30.0% 0.060 260);
+  --ink-teal-fg:       oklch(98.0% 0.006 260);
+  --ink-teal-fg-muted: oklch(72.0% 0.035 258);
+
+  /* Soft blue/lavender — alt section bands */
+  --surface-sage:        oklch(95.5% 0.028 275);
+  --surface-sage-border: oklch(87.5% 0.038 275);
+
+  /* Landing-only decorative tokens */
+  --landing-glow-a: oklch(85% 0.09 255 / 0.55);
+  --landing-glow-b: oklch(88% 0.06 300 / 0.40);
+  --landing-grid-line: oklch(58% 0.16 260 / 0.09);
+  --landing-grid-line-strong: oklch(55% 0.18 260 / 0.16);
+}
+
+.kesher-grid-field {
+  background-image:
+    linear-gradient(to right, var(--landing-grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--landing-grid-line) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(65% 60% at 50% 20%, black 0%, transparent 78%);
+          mask-image: radial-gradient(65% 60% at 50% 20%, black 0%, transparent 78%);
+}
+
+.kesher-grid-field-dark {
+  background-image:
+    linear-gradient(to right, oklch(70% 0.10 258 / 0.14) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(70% 0.10 258 / 0.14) 1px, transparent 1px);
+  background-size: 40px 40px;
+  -webkit-mask-image: radial-gradient(70% 85% at 50% 30%, black 0%, transparent 85%);
+          mask-image: radial-gradient(70% 85% at 50% 30%, black 0%, transparent 85%);
+}
+
+@keyframes grid-drift {
+  from { background-position: 0 0; }
+  to   { background-position: 44px 44px; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .kesher-grid-animate { animation: grid-drift 18s linear infinite; }
 }
 
 html {
