@@ -4,6 +4,8 @@ import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getOrgId } from "@/lib/org";
 import { getBrandingSettings } from "@/lib/settings";
+import { isDemoWorkspaceLoaded } from "@/lib/demoWorkspace";
+import { DemoWorkspaceControl } from "@/app/components/DemoWorkspaceControl";
 import {
   Users,
   Send,
@@ -133,12 +135,14 @@ export default async function OverviewPage() {
   // ── Phase 1 (parallel) ──────────────────────────────────────────────────────
   const [
     branding,
+    demoLoaded,
     { count: rawContactCount },
     { data: rawPeople },
     { data: rawMessages },
     { data: rawImports },
   ] = await Promise.all([
     getBrandingSettings(),
+    isDemoWorkspaceLoaded(supabase, orgId),
     supabase.from("people").select("*", { count: "exact", head: true }).eq("org_id", orgId),
     supabase.from("people").select("categories").eq("org_id", orgId),
     supabase
@@ -249,22 +253,28 @@ export default async function OverviewPage() {
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-10 border-b border-[#e7e7e7] bg-white/95 backdrop-blur-sm px-6 py-3.5">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
             <h1 className="text-[13px] font-semibold text-[#0f0f0f]">Overview</h1>
             <p className="text-[11px] text-[#a1a1aa] mt-px">{branding.schoolName || "Your Organization"}</p>
           </div>
-          <Link
-            href="/messages/new"
-            className="inline-flex items-center gap-1.5 rounded-md bg-[#0f0f0f] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#27272a]"
-          >
-            <PenLine size={12} strokeWidth={2} />
-            Compose
-          </Link>
+          <div className="flex items-center gap-3 shrink-0">
+            {demoLoaded && <DemoWorkspaceControl mode="remove" />}
+            <Link
+              href="/messages/new"
+              className="inline-flex items-center gap-1.5 rounded-md bg-[#0f0f0f] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#27272a]"
+            >
+              <PenLine size={12} strokeWidth={2} />
+              Compose
+            </Link>
+          </div>
         </div>
       </header>
 
       <div className="px-6 py-6 space-y-6 max-w-7xl">
+
+        {/* ── Load demo workspace (only ever shown when the workspace is empty) ── */}
+        {contacts === 0 && !demoLoaded && <DemoWorkspaceControl mode="load" />}
 
         {/* ── Section 1 — Hero KPIs ────────────────────────────────────────── */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

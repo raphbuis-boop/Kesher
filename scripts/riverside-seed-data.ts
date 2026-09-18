@@ -143,8 +143,33 @@ export async function clearOrgData(supabase: SupabaseClient, orgId: string): Pro
 
 // ─── Branding / settings ────────────────────────────────────────────────────────
 
-export async function seedSettings(supabase: SupabaseClient, orgId: string): Promise<void> {
-  const rows: { org_id: string; key: string; value: string }[] = [
+export type SeedOptions = {
+  /**
+   * Only write a branding key if it's currently blank/unset. Default false
+   * (always overwrite), which is what setup_riverside_demo.ts and
+   * reset_riverside_demo.ts rely on — those scripts operate on a dedicated
+   * always-fake org, so overwriting is intentional there. The user-facing
+   * "Load demo workspace" flow (lib/demoWorkspace.ts) passes true, so it
+   * never clobbers a real school name / sender identity a user already set
+   * during onboarding.
+   */
+  settingsOnlyIfBlank?: boolean;
+  /**
+   * Whether to also write simulate_sends=true. Default true (existing
+   * script behavior). The user-facing demo flow passes false and instead
+   * relies on the seed data itself being harmless (guaranteed-fake
+   * @example.com / 555-01XX contacts) rather than changing the org's
+   * real send behavior going forward.
+   */
+  setSimulateSends?: boolean;
+};
+
+export async function seedSettings(
+  supabase: SupabaseClient,
+  orgId: string,
+  options: SeedOptions = {}
+): Promise<{ keysSet: string[] }> {
+  const desired: { key: string; value: string }[] = [
     { key: "school_name", value: "Riverside Academy" },
     { key: "school_logo_url", value: "" }, // none set — app renders a clean "RA" initials mark
     { key: "primary_color", value: "#1b4332" }, // forest green — generic, professional, distinct from Heichal's navy
@@ -153,13 +178,30 @@ export async function seedSettings(supabase: SupabaseClient, orgId: string): Pro
     { key: "reply_to_email", value: "office@riversideacademy.example" },
     { key: "sender_name", value: "Riverside Academy" },
     { key: "sender_email", value: "office@riversideacademy.example" },
+  ];
+  if (options.setSimulateSends !== false) {
     // Not read by lib/settings.ts's KEY_MAP — read by lib/org.ts's sendsAreSimulated().
     // Blocks real SMS/email/WhatsApp sends for this org; see lib/org.ts.
-    { key: "simulate_sends", value: "true" },
-  ].map((r) => ({ org_id: orgId, ...r }));
+    desired.push({ key: "simulate_sends", value: "true" });
+  }
 
+  let toWrite = desired;
+  if (options.settingsOnlyIfBlank) {
+    const { data: existing } = await supabase
+      .from("settings")
+      .select("key, value")
+      .eq("org_id", orgId)
+      .in("key", desired.map((d) => d.key));
+    const existingMap = new Map((existing ?? []).map((r) => [r.key as string, r.value as string]));
+    toWrite = desired.filter((d) => !existingMap.get(d.key)?.trim());
+  }
+
+  if (toWrite.length === 0) return { keysSet: [] };
+
+  const rows = toWrite.map((r) => ({ org_id: orgId, ...r }));
   const { error } = await supabase.from("settings").upsert(rows, { onConflict: "org_id,key" });
   if (error) throw new Error(`seedSettings failed: ${error.message}`);
+  return { keysSet: toWrite.map((r) => r.key) };
 }
 
 // ─── People + families ──────────────────────────────────────────────────────────
@@ -648,14 +690,14 @@ async function seedMessages(
 
 // ─── Top-level orchestrator ─────────────────────────────────────────────────────
 
-export async function seedRiverside(supabase: SupabaseClient, orgId: string): Promise<{
-  familyCount: number; peopleCount: number; relationshipCount: number; messageCount: number;
+export async function seedRiverside(supabase: SupabaseClient, orgId: string, options: SeedOptions = {}): Promise<{
+  familyCount: number; peopleCount: number; relationshipCount: number; messageCount: number; settingsKeysSet: string[];
 }> {
   console.log(`[seedRiverside] clearing existing tenant data for org ${orgId}...`);
   await clearOrgData(supabase, orgId);
 
-  console.log(`[seedRiverside] writing branding + simulate_sends settings...`);
-  await seedSettings(supabase, orgId);
+  console.log(`[seedRiverside] writing branding settings...`);
+  const { keysSet: settingsKeysSet } = await seedSettings(supabase, orgId, options);
 
   console.log(`[seedRiverside] seeding families...`);
   const families = await seedFamilies(supabase, orgId, 22);
@@ -678,5 +720,11 @@ export async function seedRiverside(supabase: SupabaseClient, orgId: string): Pr
 
   console.log(`[seedRiverside] done. families=${families.length} people=${peopleCount} relationships=${relCount}`);
 
-  return { familyCount: families.length, peopleCount, relationshipCount: relCount, messageCount: MESSAGE_TEMPLATES.length };
+  return {
+    familyCount: families.length,
+    peopleCount,
+    relationshipCount: relCount,
+    messageCount: MESSAGE_TEMPLATES.length,
+    settingsKeysSet,
+  };
 }

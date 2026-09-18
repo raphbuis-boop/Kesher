@@ -3,6 +3,8 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getOrgId } from "@/lib/org";
+import { isDemoWorkspaceLoaded } from "@/lib/demoWorkspace";
+import { DemoWorkspaceControl } from "@/app/components/DemoWorkspaceControl";
 import { resolveGroupMemberIds, type GroupRow } from "@/lib/audienceMembers";
 import { AddGroupButton } from "@/app/groups/AddGroupButton";
 import { Plus, Users, ArrowRight } from "lucide-react";
@@ -24,13 +26,14 @@ const SYSTEM_AUDIENCES = [
 export default async function AudiencesPage() {
   const supabase = await createSupabaseServerClient();
   const orgId = await getOrgId();
-  const [peopleResult, groupsResult] = await Promise.all([
+  const [peopleResult, groupsResult, demoLoaded] = await Promise.all([
     supabase.from("people").select("id, categories").eq("org_id", orgId),
     supabase
       .from("groups")
       .select("id, name, description, is_dynamic, filter_config, group_tags ( tag_id )")
       .eq("org_id", orgId)
       .order("name"),
+    isDemoWorkspaceLoaded(supabase, orgId),
   ]);
 
   const people = (peopleResult.data ?? []) as unknown as PersonRow[];
@@ -56,20 +59,23 @@ export default async function AudiencesPage() {
     <div className="min-h-screen bg-[#fafafa]">
       {/* Sticky header */}
       <header className="sticky top-0 z-10 border-b border-[#e7e7e7] bg-white/95 backdrop-blur-sm px-6 py-3.5">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
             <h1 className="text-[13px] font-semibold text-[#0f0f0f]">Audiences</h1>
             <p className="text-[11px] text-[#a1a1aa] mt-px">
               {SYSTEM_AUDIENCES.length} system · {customAudiences.length} custom
             </p>
           </div>
-          <Link
-            href="/messages/new"
-            className="inline-flex items-center gap-1.5 rounded-md bg-[#0f0f0f] px-3 py-1.5 text-[12px] font-medium text-white transition-colors duration-150 hover:bg-[#27272a] active:bg-black"
-          >
-            <Plus size={12} strokeWidth={2.5} />
-            Compose
-          </Link>
+          <div className="flex items-center gap-3 shrink-0">
+            {demoLoaded && <DemoWorkspaceControl mode="remove" />}
+            <Link
+              href="/messages/new"
+              className="inline-flex items-center gap-1.5 rounded-md bg-[#0f0f0f] px-3 py-1.5 text-[12px] font-medium text-white transition-colors duration-150 hover:bg-[#27272a] active:bg-black"
+            >
+              <Plus size={12} strokeWidth={2.5} />
+              Compose
+            </Link>
+          </div>
         </div>
       </header>
 

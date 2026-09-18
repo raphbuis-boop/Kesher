@@ -2,6 +2,8 @@ export const dynamic = "force-dynamic";
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getOrgId } from "@/lib/org";
+import { isDemoWorkspaceLoaded } from "@/lib/demoWorkspace";
+import { DemoWorkspaceControl } from "@/app/components/DemoWorkspaceControl";
 import { AddPersonButton, type Tag } from "./AddPersonButton";
 import { PeopleClient } from "./PeopleClient";
 
@@ -22,7 +24,7 @@ export default async function PeoplePage() {
   const supabase = await createSupabaseServerClient();
   const orgId = await getOrgId();
 
-  const [peopleResult, tagsResult] = await Promise.all([
+  const [peopleResult, tagsResult, demoLoaded] = await Promise.all([
     supabase
       .from("people")
       .select(
@@ -31,6 +33,7 @@ export default async function PeoplePage() {
       .eq("org_id", orgId)
       .order("last_name"),
     supabase.from("tags").select("id, name").eq("org_id", orgId).order("name"),
+    isDemoWorkspaceLoaded(supabase, orgId),
   ]);
 
   if (peopleResult.error) throw new Error(peopleResult.error.message);
@@ -42,14 +45,17 @@ export default async function PeoplePage() {
     <div className="min-h-screen bg-[#fafafa]">
       {/* Sticky page header */}
       <header className="sticky top-0 z-10 border-b border-[#e7e7e7] bg-white/95 backdrop-blur-sm px-6 py-3.5">
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
             <h1 className="text-[13px] font-semibold text-[#0f0f0f]">People</h1>
             <p className="text-[11px] text-[#a1a1aa] mt-px">
               {people.length.toLocaleString()} contacts
             </p>
           </div>
-          <AddPersonButton tags={tags} />
+          <div className="flex items-center gap-3 shrink-0">
+            {demoLoaded && <DemoWorkspaceControl mode="remove" />}
+            <AddPersonButton tags={tags} />
+          </div>
         </div>
       </header>
 

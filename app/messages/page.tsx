@@ -3,6 +3,8 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getOrgId } from "@/lib/org";
+import { isDemoWorkspaceLoaded } from "@/lib/demoWorkspace";
+import { DemoWorkspaceControl } from "@/app/components/DemoWorkspaceControl";
 import { Plus, Mail, Smartphone, MessageSquare, Send } from "lucide-react";
 
 type Message = {
@@ -59,11 +61,14 @@ export default async function MessagesPage({
 
   const supabase = await createSupabaseServerClient();
   const orgId = await getOrgId();
-  const { data } = await supabase
-    .from("messages")
-    .select("id, subject, body, channel, audience_label, recipient_count, sent_count, failed_count, status, sent_at, created_at")
-    .eq("org_id", orgId)
-    .order("created_at", { ascending: false });
+  const [{ data }, demoLoaded] = await Promise.all([
+    supabase
+      .from("messages")
+      .select("id, subject, body, channel, audience_label, recipient_count, sent_count, failed_count, status, sent_at, created_at")
+      .eq("org_id", orgId)
+      .order("created_at", { ascending: false }),
+    isDemoWorkspaceLoaded(supabase, orgId),
+  ]);
 
   const messages = (data ?? []) as Message[];
 
@@ -79,18 +84,21 @@ export default async function MessagesPage({
       {/* Sticky header */}
       <header className="sticky top-0 z-10 border-b border-[#e7e7e7] bg-white/95 backdrop-blur-sm">
         <div className="px-6 py-3.5">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
               <h1 className="text-[13px] font-semibold text-[#0f0f0f]">Messages</h1>
               <p className="text-[11px] text-[#a1a1aa] mt-px">{messages.length.toLocaleString()} sent</p>
             </div>
-            <Link
-              href="/messages/new"
-              className="inline-flex items-center gap-1.5 rounded-md bg-[#0f0f0f] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#27272a]"
-            >
-              <Plus size={12} strokeWidth={2.5} />
-              Compose
-            </Link>
+            <div className="flex items-center gap-3 shrink-0">
+              {demoLoaded && <DemoWorkspaceControl mode="remove" />}
+              <Link
+                href="/messages/new"
+                className="inline-flex items-center gap-1.5 rounded-md bg-[#0f0f0f] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#27272a]"
+              >
+                <Plus size={12} strokeWidth={2.5} />
+                Compose
+              </Link>
+            </div>
           </div>
         </div>
 
