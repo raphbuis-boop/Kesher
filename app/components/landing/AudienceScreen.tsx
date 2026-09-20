@@ -42,7 +42,7 @@ export function AudienceScreen() {
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-border-subtle">
           <div>
             <p className="text-[12px] font-semibold text-text-primary">Audiences</p>
-            <p className="text-[10px] text-text-muted mt-px">Heichal HaTorah</p>
+            <p className="text-[10px] text-text-muted mt-px">Your School</p>
           </div>
           <div className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[10px] font-medium text-text-secondary">
             <Filter size={11} strokeWidth={1.75} />

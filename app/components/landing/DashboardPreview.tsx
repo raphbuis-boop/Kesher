@@ -83,7 +83,7 @@ export function DashboardPreview() {
           <div className="sticky top-0 border-b border-[#e7e7e7] bg-white/95 px-5 py-3 flex items-center justify-between">
             <div>
               <p className="text-[11px] font-semibold text-[#0b1120]">Overview</p>
-              <p className="text-[9px] text-[#a1a1aa] mt-px">Heichal HaTorah</p>
+              <p className="text-[9px] text-[#a1a1aa] mt-px">Your School</p>
             </div>
             <div className="flex items-center gap-1.5 rounded-md bg-[#0b1120] px-2.5 py-1">
               <PenLine size={10} strokeWidth={2} className="text-white" />

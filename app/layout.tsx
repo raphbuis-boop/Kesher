@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Kesher",
-  description: "Communications CRM for Heichal HaTorah",
+  description: "School communications platform for email, SMS, and WhatsApp.",
 };
 
 export default function RootLayout({
