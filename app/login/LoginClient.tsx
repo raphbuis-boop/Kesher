@@ -64,6 +64,7 @@ export function LoginClient({ next }: { next?: string }) {
             <button
               key={t}
               type="button"
+              aria-pressed={tab === t}
               onClick={() => switchTab(t)}
               className={[
                 "flex-1 py-3.5 text-[13px] font-medium transition-colors",

@@ -176,7 +176,7 @@ export default async function AudiencePage({
                 <ArrowLeft size={13} strokeWidth={2} />
                 Audiences
               </Link>
-              <span className="text-text-faint">/</span>
+              <span aria-hidden className="text-text-faint">/</span>
               <h1 className="text-[13px] font-semibold text-text-primary truncate">{audienceLabel}</h1>
               <span className="shrink-0 rounded-full bg-surface-2 px-2 py-0.5 text-[11px] font-medium tabular-nums text-text-muted">
                 {people.length.toLocaleString()}
@@ -195,6 +195,7 @@ export default async function AudiencePage({
               </Link>
               {isSystem && (
                 <AddPersonButton
+                  variant="secondary"
                   tags={allTags}
                   defaultCategories={defaultCategory ? [defaultCategory] : []}
                 />
@@ -236,6 +237,7 @@ export default async function AudiencePage({
                   return (
                     <Link
                       key={tag.id}
+                      aria-current={isActive ? "true" : undefined}
                       href={isActive ? filterLink({ tag: null }) : filterLink({ tag: tag.name })}
                       className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
                         isActive
@@ -249,7 +251,7 @@ export default async function AudiencePage({
                 })}
 
                 {gradesInAudience.length > 0 && tagsInAudience.length > 0 && (
-                  <span className="text-text-faint select-none px-0.5">|</span>
+                  <span aria-hidden className="text-text-faint select-none px-0.5">|</span>
                 )}
 
                 {gradesInAudience.map((grade) => {
@@ -257,6 +259,7 @@ export default async function AudiencePage({
                   return (
                     <Link
                       key={grade}
+                      aria-current={isActive ? "true" : undefined}
                       href={isActive ? filterLink({ grade: null }) : filterLink({ grade })}
                       className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
                         isActive
@@ -324,7 +327,7 @@ export default async function AudiencePage({
                   <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-text-subtle uppercase tracking-wide">Phone</th>
                   <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-text-subtle uppercase tracking-wide">Audiences</th>
                   <th className="pl-3 pr-4 py-2.5 text-left text-[11px] font-semibold text-text-subtle uppercase tracking-wide">Tags</th>
-                  {!isSystem && !isDynamicGroup && <th className="pl-3 pr-4 py-2.5" />}
+                  {!isSystem && !isDynamicGroup && <th className="pl-3 pr-4 py-2.5"><span className="sr-only">Actions</span></th>}
                 </tr>
               </thead>
               <tbody>
@@ -404,9 +407,9 @@ export default async function AudiencePage({
                           <form action={removeContactFromGroup.bind(null, slug, person.id)}>
                             <button
                               type="submit"
-                              className="rounded px-2 py-1 text-[11px] font-medium text-text-subtle opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all hover:bg-danger-tint hover:text-danger"
+                              className="rounded px-2 py-1 text-[11px] font-medium text-text-subtle transition-colors hover:bg-danger-tint hover:text-danger"
                             >
-                              Remove
+                              Remove<span className="sr-only"> {person.first_name} {person.last_name}</span>
                             </button>
                           </form>
                         </td>

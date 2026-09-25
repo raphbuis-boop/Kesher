@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { ComposeAction } from "@/app/api/ai-compose/route";
+import { useDialogFocus } from "@/app/components/useDialogFocus";
 
 type ActionResult =
   | { type: "draft"; subject: string; body: string }
@@ -26,7 +27,7 @@ type ActionDef = {
 };
 
 const SparkleIcon = () => (
-  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+  <svg aria-hidden className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
   </svg>
 );
@@ -58,6 +59,8 @@ export function AIAssist({
   const promptRef = useRef<HTMLTextAreaElement>(null);
 
   const handleClose = useCallback(() => setOpen(false), []);
+  const panelRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(open, panelRef);
 
   useEffect(() => {
     if (open && promptRef.current) {
@@ -142,6 +145,7 @@ export function AIAssist({
 
           {/* Panel */}
           <div
+            ref={panelRef}
             role="dialog"
             aria-modal="true"
             aria-label="AI Assist"
@@ -161,7 +165,7 @@ export function AIAssist({
                 aria-label="Close"
                 className="rounded-md p-1 text-text-subtle transition-colors hover:bg-surface-2 hover:text-text-secondary"
               >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg aria-hidden className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -197,7 +201,7 @@ export function AIAssist({
                     >
                       {loading && activeAction === "draft" ? (
                         <>
-                          <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
+                          <svg aria-hidden className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                           </svg>
@@ -237,7 +241,7 @@ export function AIAssist({
                         }
                       >
                         {isLoading ? (
-                          <svg className="h-3.5 w-3.5 flex-shrink-0 animate-spin text-cat-violet" viewBox="0 0 24 24" fill="none">
+                          <svg aria-hidden className="h-3.5 w-3.5 flex-shrink-0 animate-spin text-cat-violet" viewBox="0 0 24 24" fill="none">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                           </svg>
@@ -329,7 +333,7 @@ export function AIAssist({
                             className="flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left text-sm text-text-primary transition-colors hover:bg-cat-violet-border"
                           >
                             <span className="mt-0.5 flex-shrink-0 text-cat-violet">
-                              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <svg aria-hidden className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                               </svg>
                             </span>

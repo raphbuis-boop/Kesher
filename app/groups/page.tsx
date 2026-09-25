@@ -65,7 +65,7 @@ export default async function GroupsPage() {
               Tag-based groups — committees, classes, or any custom segment.
             </p>
           </div>
-          <AddGroupButton />
+          <AddGroupButton variant="primary" />
         </div>
       </header>
 
@@ -90,7 +90,7 @@ export default async function GroupsPage() {
                   <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-text-subtle uppercase tracking-wide">Tags</th>
                   <th className="px-3 py-2.5 text-right text-[10px] font-semibold text-text-subtle uppercase tracking-wide">Contacts</th>
                   <th className="pl-3 pr-4 py-2.5 text-left text-[10px] font-semibold text-text-subtle uppercase tracking-wide">Created</th>
-                  <th className="pl-3 pr-4 py-2.5" />
+                  <th className="pl-3 pr-4 py-2.5"><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -105,7 +105,7 @@ export default async function GroupsPage() {
                       <td className="py-3.5 pl-4 pr-3">
                         <Link
                           href={`/audiences/${group.id}`}
-                          className="text-[13px] font-medium text-text-primary transition-colors hover:text-text-muted"
+                          className="text-[13px] font-medium text-text-primary hover:underline underline-offset-2"
                         >
                           {group.name}
                         </Link>
@@ -142,9 +142,9 @@ export default async function GroupsPage() {
                       <td className="pl-3 pr-4 py-3.5 text-right">
                         <Link
                           href={`/messages/new?audiences=${group.id}`}
-                          className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1.5 text-[11px] font-medium text-primary-fg transition-colors hover:bg-primary-hover"
+                          className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] font-medium text-text-secondary transition-colors hover:border-border-strong hover:text-text-primary"
                         >
-                          Message
+                          Message<span className="sr-only"> {group.name}</span>
                         </Link>
                       </td>
                     </tr>

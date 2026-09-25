@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   Search, X, ChevronLeft, ChevronRight, Mail, Phone,
@@ -10,6 +10,7 @@ import {
 import type { PersonRow } from "./page";
 import type { Tag } from "./AddPersonButton";
 import { CATEGORY_BADGE, CATEGORY_BADGE_FALLBACK } from "@/lib/categoryStyles";
+import { useDialogFocus } from "@/app/components/useDialogFocus";
 
 // ─── constants ───────────────────────────────────────────────────────────────
 
@@ -78,15 +79,18 @@ function Checkbox({
   checked,
   indeterminate = false,
   onChange,
+  label,
 }: {
   checked: boolean;
   indeterminate?: boolean;
   onChange: () => void;
+  label: string;
 }) {
   return (
     <button
       type="button"
       role="checkbox"
+      aria-label={label}
       aria-checked={indeterminate ? "mixed" : checked}
       onClick={(e) => { e.stopPropagation(); onChange(); }}
       className={[
@@ -142,22 +146,30 @@ function PersonDrawer({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  const panelRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(true, panelRef);
+
   const cats = person.categories ?? [];
   const ini = initials(person.first_name, person.last_name);
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-overlay backdrop-blur-[2px] animate-backdrop" onClick={onClose} />
-      <div className="animate-slide-right relative flex w-full max-w-[340px] flex-col bg-surface border-l border-border shadow-2xl shadow-black/10 overflow-hidden">
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="person-drawer-title"
+        className="animate-slide-right relative flex w-full max-w-[340px] flex-col bg-surface border-l border-border shadow-2xl shadow-black/10 overflow-hidden">
         {/* Header */}
         <div className="flex items-start gap-3 border-b border-border-subtle px-5 py-5 flex-shrink-0">
           <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-surface-3 text-[13px] font-semibold text-text-muted">
             {ini}
           </div>
           <div className="flex-1 min-w-0 pt-0.5">
-            <p className="text-[15px] font-semibold text-text-primary leading-tight">
+            <h2 id="person-drawer-title" className="text-[15px] font-semibold text-text-primary leading-tight">
               {person.first_name} {person.last_name}
-            </p>
+            </h2>
             {cats.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1">
                 {cats.map((c) => <CategoryBadge key={c} value={c} />)}
@@ -312,7 +324,7 @@ function BulkToolbar({
 
   return (
     <div className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 animate-fade-up">
-      <div className="flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3 shadow-lg shadow-black/8 ring-1 ring-black/[0.04]">
+      <div className="flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3 shadow-lg shadow-black/8 ring-1 ring-border">
         <span className="text-[12px] font-semibold text-text-primary">
           {count} selected
         </span>
@@ -489,16 +501,18 @@ export function PeopleClient({
       <div className="border-b border-border bg-surface">
         <div className="flex items-center gap-0 overflow-x-auto px-6 py-3">
           <button
+            type="button"
+            aria-pressed={categoryFilter === null}
             onClick={() => handleCategoryFilter(null)}
             className={[
               "mr-2 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium whitespace-nowrap transition-all duration-100",
               categoryFilter === null
-                ? "bg-primary text-primary-fg"
+                ? "bg-accent-tint text-accent"
                 : "text-text-muted hover:bg-surface-2 hover:text-text-primary",
             ].join(" ")}
           >
             All
-            <span className={`text-[10px] tabular-nums ${categoryFilter === null ? "opacity-60" : "text-text-subtle"}`}>
+            <span className={`text-[10px] tabular-nums ${categoryFilter === null ? "text-accent" : "text-text-subtle"}`}>
               {people.length}
             </span>
           </button>
@@ -508,6 +522,8 @@ export function PeopleClient({
             return (
               <button
                 key={def.value}
+                type="button"
+                aria-pressed={isActive}
                 onClick={() => handleCategoryFilter(isActive ? null : def.value as CategoryValue)}
                 className={[
                   "mr-2 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium whitespace-nowrap transition-all duration-100",
@@ -517,7 +533,7 @@ export function PeopleClient({
                 ].join(" ")}
               >
                 {def.plural}
-                <span className={`text-[10px] tabular-nums ${isActive ? "text-accent opacity-70" : "text-text-subtle"}`}>
+                <span className={`text-[10px] tabular-nums ${isActive ? "text-accent" : "text-text-subtle"}`}>
                   {categoryCounts[def.value]}
                 </span>
               </button>
@@ -596,9 +612,13 @@ export function PeopleClient({
                       checked={allPageSelected}
                       indeterminate={somePageSelected}
                       onChange={toggleSelectAll}
+                      label="Select all contacts on this page"
                     />
                   </th>
-                  <th className="py-2.5 pr-3 text-left">
+                  <th
+                    className="py-2.5 pr-3 text-left"
+                    aria-sort={sortKey === "name" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
+                  >
                     <SortBtn
                       active={sortKey === "name"}
                       dir={sortDir}
@@ -616,7 +636,10 @@ export function PeopleClient({
                   <th className="pl-3 pr-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-text-subtle">
                     Tags
                   </th>
-                  <th className="pl-3 pr-4 py-2.5 text-right">
+                  <th
+                    className="pl-3 pr-4 py-2.5 text-right"
+                    aria-sort={sortKey === "created_at" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
+                  >
                     <SortBtn
                       active={sortKey === "created_at"}
                       dir={sortDir}
@@ -657,6 +680,7 @@ export function PeopleClient({
                         <Checkbox
                           checked={isSelected}
                           onChange={() => toggleSelect(person.id)}
+                          label={`Select ${person.first_name} ${person.last_name}`}
                         />
                       </td>
 
@@ -674,9 +698,13 @@ export function PeopleClient({
                             {initials(person.first_name, person.last_name)}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-[13px] font-medium text-text-primary leading-tight">
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setDrawerPerson(person); }}
+                              className="text-left text-[13px] font-medium text-text-primary leading-tight hover:underline underline-offset-2"
+                            >
                               {person.first_name} {person.last_name}
-                            </p>
+                            </button>
                             {subline && (
                               <p className="mt-0.5 text-[11px] text-text-subtle leading-tight">
                                 {subline}
@@ -756,11 +784,13 @@ export function PeopleClient({
                 </span>
                 <div className="flex items-center gap-1">
                   <button
+                    type="button"
+                    aria-label="Previous page"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={clampedPage === 1}
                     className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-surface text-text-muted hover:bg-surface-2 hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                   >
-                    <ChevronLeft size={13} strokeWidth={2} />
+                    <ChevronLeft aria-hidden size={13} strokeWidth={2} />
                   </button>
                   <div className="flex items-center gap-0.5 px-1">
                     {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
@@ -768,6 +798,9 @@ export function PeopleClient({
                       return (
                         <button
                           key={p}
+                          type="button"
+                          aria-label={`Page ${p}`}
+                          aria-current={clampedPage === p ? "page" : undefined}
                           onClick={() => setPage(p)}
                           className={[
                             "flex h-7 w-7 items-center justify-center rounded-md text-[11px] font-medium transition-all",
@@ -785,11 +818,13 @@ export function PeopleClient({
                     )}
                   </div>
                   <button
+                    type="button"
+                    aria-label="Next page"
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={clampedPage === totalPages}
                     className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-surface text-text-muted hover:bg-surface-2 hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                   >
-                    <ChevronRight size={13} strokeWidth={2} />
+                    <ChevronRight aria-hidden size={13} strokeWidth={2} />
                   </button>
                 </div>
               </div>

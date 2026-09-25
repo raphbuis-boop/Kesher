@@ -238,9 +238,10 @@ function FilterBuilder({
               <button
                 type="button"
                 onClick={() => removeCondition(cond.id)}
+                aria-label="Remove condition"
                 className="ml-auto rounded p-1 text-text-subtle transition-colors hover:bg-surface-2 hover:text-text-secondary"
               >
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg aria-hidden className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -381,7 +382,7 @@ function AddGroupForm({
         >
           {isPending ? (
             <>
-              <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+              <svg aria-hidden className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
               </svg>
@@ -398,7 +399,7 @@ function AddGroupForm({
 
 // ─── Button + modal ────────────────────────────────────────────────────────────
 
-export function AddGroupButton() {
+export function AddGroupButton({ variant = "secondary" }: { variant?: "primary" | "secondary" }) {
   const [open, setOpen] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -418,7 +419,11 @@ export function AddGroupButton() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-[12px] font-medium text-text-primary transition-colors hover:border-border-strong hover:bg-surface-hover"
+        className={
+          variant === "primary"
+            ? "inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-fg transition-colors hover:bg-primary-hover"
+            : "inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-[12px] font-medium text-text-primary transition-colors hover:border-border-strong hover:bg-surface-hover"
+        }
       >
         <svg aria-hidden className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -448,7 +453,7 @@ export function AddGroupButton() {
                 aria-label="Close"
                 className="rounded-md p-1 text-text-subtle transition-colors hover:bg-surface-2 hover:text-text-secondary"
               >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg aria-hidden className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
                 </svg>
               </button>

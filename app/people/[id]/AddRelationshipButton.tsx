@@ -198,7 +198,7 @@ function AddRelationshipForm({
         >
           {isPending ? (
             <>
-              <svg
+              <svg aria-hidden
                 className="h-3.5 w-3.5 animate-spin"
                 viewBox="0 0 24 24"
                 fill="none"
@@ -261,7 +261,7 @@ export function AddRelationshipButton({
         onClick={() => setOpen(true)}
         className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-surface-hover hover:border-border-strong"
       >
-        <svg
+        <svg aria-hidden
           className="h-3.5 w-3.5"
           fill="none"
           viewBox="0 0 24 24"
@@ -303,7 +303,7 @@ export function AddRelationshipButton({
                 className="rounded-md p-1 text-text-subtle transition-colors hover:bg-surface-2 hover:text-text-secondary"
                 aria-label="Close"
               >
-                <svg
+                <svg aria-hidden
                   className="h-4 w-4"
                   fill="none"
                   viewBox="0 0 24 24"

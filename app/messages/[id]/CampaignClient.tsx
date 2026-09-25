@@ -9,7 +9,6 @@ import {
   Smartphone,
   MessageSquare,
   Download,
-  Copy,
   RotateCcw,
   Search,
   X,
@@ -25,6 +24,7 @@ import {
   Activity,
 } from "lucide-react";
 import type { CampaignMessage, CampaignRecipient, ChartBucket } from "./page";
+import { useDialogFocus } from "@/app/components/useDialogFocus";
 
 // ─── types ──────────────────────────────────────────────────────────────────
 
@@ -771,22 +771,29 @@ function RecipientDrawer({
     .sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
 
   const initials = recipient.name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(true, panelRef);
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-overlay backdrop-blur-[2px] animate-backdrop" onClick={onClose} />
-      <div className="animate-slide-right relative flex w-full max-w-[360px] flex-col bg-surface border-l border-border shadow-2xl shadow-black/10 overflow-hidden">
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="recipient-drawer-title"
+        className="animate-slide-right relative flex w-full max-w-[360px] flex-col bg-surface border-l border-border shadow-2xl shadow-black/10 overflow-hidden">
         <div className="flex items-center justify-between border-b border-border-subtle px-5 py-4 flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-surface-3 text-[12px] font-semibold text-text-muted">
               {initials}
             </div>
             <div className="min-w-0">
-              <p className="text-[13px] font-semibold text-text-primary truncate">{recipient.name}</p>
+              <h2 id="recipient-drawer-title" className="text-[13px] font-semibold text-text-primary truncate">{recipient.name}</h2>
               <p className="text-[11px] text-text-subtle font-mono truncate">{recipient.contact_value}</p>
             </div>
           </div>
-          <button onClick={onClose} aria-label="Close" className="ml-2 flex-shrink-0 rounded-lg p-1.5 text-text-subtle hover:bg-surface-2 hover:text-text-primary">
+          <button type="button" onClick={onClose} aria-label="Close" className="ml-2 flex-shrink-0 rounded-lg p-1.5 text-text-subtle hover:bg-surface-2 hover:text-text-primary">
             <X size={14} strokeWidth={2} />
           </button>
         </div>
@@ -1022,7 +1029,7 @@ export function CampaignClient({
               <ArrowLeft size={13} strokeWidth={2} />
               Messages
             </Link>
-            <span className="text-text-faint text-[13px]">/</span>
+            <span aria-hidden className="text-text-faint text-[13px]">/</span>
             <h1 className="truncate text-[13px] font-semibold text-text-primary">
               {message.subject ?? message.body.slice(0, 55) + (message.body.length > 55 ? "…" : "")}
             </h1>
@@ -1034,25 +1041,19 @@ export function CampaignClient({
 
           <div className="flex items-center gap-2 shrink-0">
             <button
+              type="button"
               onClick={() => exportCSV(recipients, message.subject, message.channel)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-[12px] font-medium text-text-muted hover:bg-surface-hover hover:text-text-primary hover:border-border-strong"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-[12px] font-medium text-text-secondary hover:border-border-strong hover:text-text-primary transition-colors"
             >
-              <Download size={11} strokeWidth={2} />
-              Export
+              <Download aria-hidden size={11} strokeWidth={2} />
+              Export CSV
             </button>
             <Link
               href={`/messages/new?audiences=${message.audience_slug}`}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-[12px] font-medium text-text-muted hover:bg-surface-hover hover:text-text-primary hover:border-border-strong"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-fg hover:bg-primary-hover transition-colors"
             >
-              <RotateCcw size={11} strokeWidth={2} />
-              Resend
-            </Link>
-            <Link
-              href="/messages/new"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-fg hover:bg-primary-hover"
-            >
-              <Copy size={11} strokeWidth={2} />
-              Duplicate
+              <RotateCcw aria-hidden size={11} strokeWidth={2} />
+              Message this audience
             </Link>
           </div>
         </div>
@@ -1213,7 +1214,13 @@ export function CampaignClient({
                           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-3 text-[10px] font-semibold text-text-muted">
                             {r.name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()}
                           </div>
-                          <span className="text-[13px] font-medium text-text-primary">{r.name}</span>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); setSelected(r); }}
+                            className="text-left text-[13px] font-medium text-text-primary hover:underline underline-offset-2"
+                          >
+                            {r.name}
+                          </button>
                         </div>
                       </td>
                       <td className="px-3 py-3">

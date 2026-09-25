@@ -93,7 +93,6 @@ const AUDIENCE_LABELS: Record<string, string> = {
 };
 
 const QUICK_ACTIONS = [
-  { href: "/messages/new", Icon: PenLine,  label: "Compose Message",   sub: "Send to any audience"   },
   { href: "/imports",      Icon: Upload,   label: "Import Contacts",   sub: "Upload a CSV file"      },
   { href: "/people",       Icon: UserPlus, label: "Add Contact",        sub: "Add a single person"    },
   { href: "/audiences",    Icon: Layers,   label: "Manage Audiences",  sub: "View and create groups" },
@@ -290,7 +289,7 @@ export default async function OverviewPage() {
             </p>
             <p className="mt-2 flex items-center justify-between text-[11px] text-text-subtle">
               <span>in directory</span>
-              <ArrowRight size={10} className="text-text-faint group-hover:text-text-subtle transition-colors" />
+              <ArrowRight aria-hidden size={10} className="text-text-faint group-hover:text-text-subtle transition-colors" />
             </p>
           </Link>
 
@@ -305,7 +304,7 @@ export default async function OverviewPage() {
             </p>
             <p className="mt-2 flex items-center justify-between text-[11px] text-text-subtle">
               <span>campaigns sent</span>
-              <ArrowRight size={10} className="text-text-faint group-hover:text-text-subtle transition-colors" />
+              <ArrowRight aria-hidden size={10} className="text-text-faint group-hover:text-text-subtle transition-colors" />
             </p>
           </Link>
 
@@ -347,7 +346,7 @@ export default async function OverviewPage() {
                 href="/activity"
                 className="inline-flex items-center gap-1 text-[11px] font-medium text-text-subtle hover:text-text-muted transition-colors"
               >
-                View all <ArrowRight size={10} />
+                View all<span className="sr-only"> activity</span> <ArrowRight aria-hidden size={10} />
               </Link>
             </div>
 
@@ -425,7 +424,7 @@ export default async function OverviewPage() {
                             {item.subject}
                           </p>
                           <span
-                            className={`shrink-0 inline-flex items-center gap-[3px] rounded-full px-1.5 py-px text-[9px] font-semibold ${meta.bg} ${meta.color}`}
+                            className={`shrink-0 inline-flex items-center gap-[3px] rounded-full px-1.5 py-px text-[10px] font-semibold ${meta.bg} ${meta.color}`}
                           >
                             <CIcon size={8} strokeWidth={2.5} />
                             {meta.label}
@@ -496,7 +495,7 @@ export default async function OverviewPage() {
                   href="/people"
                   className="inline-flex items-center gap-1 text-[11px] font-medium text-text-subtle hover:text-text-muted transition-colors"
                 >
-                  View all <ArrowRight size={10} />
+                  View all<span className="sr-only"> contacts</span> <ArrowRight aria-hidden size={10} />
                 </Link>
               </div>
 

@@ -1,6 +1,6 @@
 /**
  * Hero section rendered at the top of every legal page.
- * Shows brand identity, page title, and effective/updated dates.
+ * Shows the page title and effective/updated dates (PublicHeader carries the brand).
  */
 
 interface LegalPageHeaderProps {
@@ -12,19 +12,6 @@ interface LegalPageHeaderProps {
 export function LegalPageHeader({ title, effectiveDate, lastUpdated }: LegalPageHeaderProps) {
   return (
     <div className="border-b border-border-subtle pb-10 mb-12">
-
-      {/* Brand identity */}
-      <div className="flex items-center gap-2.5 mb-8">
-        <div className="flex h-7 w-7 items-center justify-center rounded-[7px] bg-primary shrink-0">
-          <span className="text-[11px] font-bold text-primary-fg tracking-tight select-none">K</span>
-        </div>
-        <div>
-          <p className="text-[13px] font-semibold text-text-primary leading-tight">Kesher</p>
-          <p className="text-[11px] text-text-subtle leading-tight mt-0.5">
-            The modern communications platform for schools.
-          </p>
-        </div>
-      </div>
 
       {/* Page title + dates */}
       <h1 className="text-3xl font-semibold text-text-primary tracking-tight mb-3">
