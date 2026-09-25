@@ -103,7 +103,7 @@ export function HeroDashboard() {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ delay: reduceMotion ? 0 : 0.82, type: "spring", stiffness: 260, damping: 20 }}
         >
-          <FloatingCard icon={<CheckCircle2 size={13} className="text-emerald-500" strokeWidth={2} />} label="Delivered" value="97.6%" />
+          <FloatingCard icon={<CheckCircle2 size={13} className="text-success" strokeWidth={2} />} label="Delivered" value="97.6%" />
         </motion.div>
 
         {/* Floating card — message status notification */}

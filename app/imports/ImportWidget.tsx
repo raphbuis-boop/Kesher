@@ -340,33 +340,33 @@ function DropZone({ onFile, error, onClearError }: {
         onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
         onDrop={(e) => { e.preventDefault(); setIsDragging(false); const f = e.dataTransfer.files[0]; if (f) processFile(f); }}
         className={
-          "cursor-pointer select-none rounded-lg border-2 border-dashed px-8 py-14 text-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 " +
-          (isDragging ? "border-zinc-400 bg-zinc-50" : "border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50")
+          "cursor-pointer select-none rounded-lg border-2 border-dashed px-8 py-14 text-center transition-colors focus-visible:ring-2 focus-visible:ring-border-strong " +
+          (isDragging ? "border-border-strong bg-background" : "border-border hover:border-border-strong hover:bg-surface-hover")
         }
       >
         <div className="flex flex-col items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-100">
-            <svg className="h-5 w-5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-2">
+            <svg className="h-5 w-5 text-text-subtle" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
             </svg>
           </div>
           <div>
-            <p className="text-sm font-medium text-zinc-900">
+            <p className="text-sm font-medium text-text-primary">
               Drop a CSV here, or <span className="underline underline-offset-2">browse</span>
             </p>
-            <p className="mt-1 text-xs text-zinc-400">
+            <p className="mt-1 text-xs text-text-subtle">
               Review and confirm contacts before they're added to your directory.
             </p>
           </div>
         </div>
       </div>
-      <p className="text-xs text-zinc-400">
-        <a href="/sample-contacts.csv" download className="underline underline-offset-2 hover:text-zinc-600 transition-colors">
+      <p className="text-xs text-text-subtle">
+        <a href="/sample-contacts.csv" download className="underline underline-offset-2 hover:text-text-secondary transition-colors">
           Download sample CSV
         </a>{" "}
         to see the expected format.
       </p>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p role="alert" className="text-sm text-danger">{error}</p>}
       <input ref={inputRef} type="file" accept=".csv" className="hidden"
         onChange={(e) => { const f = e.target.files?.[0]; if (f) processFile(f); e.target.value = ""; }}
       />
@@ -378,9 +378,9 @@ function DropZone({ onFile, error, onClearError }: {
 
 const CELL = "px-2 py-0 text-xs";
 const INPUT_BASE =
-  "w-full rounded border-0 bg-transparent px-1 py-1.5 text-xs text-zinc-900 outline-none focus:bg-zinc-50 focus:ring-1 focus:ring-zinc-300 transition-colors";
+  "w-full rounded border-0 bg-transparent px-1 py-1.5 text-xs text-text-primary focus:bg-surface-hover focus:ring-1 focus:ring-border-strong transition-colors";
 const SELECT_BASE =
-  "w-full rounded border-0 bg-transparent px-1 py-1.5 text-xs text-zinc-900 outline-none focus:bg-zinc-50 focus:ring-1 focus:ring-zinc-300 transition-colors appearance-none cursor-pointer";
+  "w-full rounded border-0 bg-transparent px-1 py-1.5 text-xs text-text-primary focus:bg-surface-hover focus:ring-1 focus:ring-border-strong transition-colors appearance-none cursor-pointer";
 
 // Plain-English chips shown per flagged row
 function flagChips(reason: string): string[] {
@@ -425,63 +425,63 @@ function PreviewTable({
   return (
     <div className="space-y-3">
       {actionItems.length > 0 && (
-        <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5">
-          <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <div className="flex items-start gap-2 rounded-md border border-warning-border bg-warning-tint px-3 py-2.5">
+          <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
           </svg>
           <div className="space-y-0.5">
-            <p className="text-xs font-semibold text-amber-700">Please review before continuing:</p>
+            <p className="text-xs font-semibold text-warning">Please review before continuing:</p>
             {actionItems.map((s) => (
-              <p key={s} className="text-xs text-amber-600">{s}</p>
+              <p key={s} className="text-xs text-warning">{s}</p>
             ))}
           </div>
         </div>
       )}
       {noEmail > 0 && (
-        <div className="flex items-start gap-2 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2.5">
-          <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <div className="flex items-start gap-2 rounded-md border border-border bg-background px-3 py-2.5">
+          <svg className="mt-0.5 h-4 w-4 flex-shrink-0 text-text-subtle" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
           </svg>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-text-muted">
             {noEmail === 1 ? "1 contact doesn't" : `${noEmail} contacts don't`} have an email address.
             {" "}These contacts can still receive SMS and WhatsApp messages.
           </p>
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-lg border border-zinc-200">
+      <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full border-collapse text-xs" style={{ minWidth: "1020px" }}>
           <thead>
-            <tr className="border-b border-zinc-200 bg-zinc-50">
+            <tr className="border-b border-border bg-background">
               <th className="w-6 py-2.5 pl-3 pr-1" />
-              <th className="px-2 py-2.5 text-left font-medium uppercase tracking-wide text-zinc-500 min-w-[160px]" />
-              <th className="px-2 py-2.5 text-left font-medium uppercase tracking-wide text-zinc-500">Title</th>
-              <th className="px-2 py-2.5 text-left font-medium uppercase tracking-wide text-zinc-500">First Name</th>
-              <th className="px-2 py-2.5 text-left font-medium uppercase tracking-wide text-zinc-500">Last Name</th>
-              <th className="px-2 py-2.5 text-left font-medium uppercase tracking-wide text-zinc-500">Email</th>
-              <th className="px-2 py-2.5 text-left font-medium uppercase tracking-wide text-zinc-500">Phone</th>
-              <th className="px-2 py-2.5 text-left font-medium uppercase tracking-wide text-zinc-500">Audience</th>
-              <th className="px-2 py-2.5 text-left font-medium uppercase tracking-wide text-zinc-500">Class Year</th>
-              <th className="px-2 py-2.5 text-left font-medium uppercase tracking-wide text-zinc-500">Gender</th>
-              <th className="px-2 py-2.5 pr-3 text-left font-medium uppercase tracking-wide text-zinc-500 whitespace-nowrap">Parent</th>
+              <th className="px-2 py-2.5 text-left font-medium uppercase tracking-wide text-text-muted min-w-[160px]" />
+              <th className="px-2 py-2.5 text-left font-medium uppercase tracking-wide text-text-muted">Title</th>
+              <th className="px-2 py-2.5 text-left font-medium uppercase tracking-wide text-text-muted">First Name</th>
+              <th className="px-2 py-2.5 text-left font-medium uppercase tracking-wide text-text-muted">Last Name</th>
+              <th className="px-2 py-2.5 text-left font-medium uppercase tracking-wide text-text-muted">Email</th>
+              <th className="px-2 py-2.5 text-left font-medium uppercase tracking-wide text-text-muted">Phone</th>
+              <th className="px-2 py-2.5 text-left font-medium uppercase tracking-wide text-text-muted">Audience</th>
+              <th className="px-2 py-2.5 text-left font-medium uppercase tracking-wide text-text-muted">Class Year</th>
+              <th className="px-2 py-2.5 text-left font-medium uppercase tracking-wide text-text-muted">Gender</th>
+              <th className="px-2 py-2.5 pr-3 text-left font-medium uppercase tracking-wide text-text-muted whitespace-nowrap">Parent</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-100 bg-white">
+          <tbody className="divide-y divide-border-subtle bg-surface">
             {sorted.map(({ r: row, i: idx }, sortIdx) => (
               <tr
                 key={idx}
                 className={
                   row.flagged
-                    ? "border-l-2 border-l-amber-400 bg-amber-50/40"
+                    ? "border-l-2 border-l-warning-solid bg-warning-tint/40"
                     : sortIdx > 0 && sorted[sortIdx - 1].r.flagged
-                    ? "border-t-2 border-t-zinc-200" // visual separator after flagged section
+                    ? "border-t-2 border-t-border" // visual separator after flagged section
                     : ""
                 }
               >
                 {/* Review indicator */}
                 <td className="pl-3 pr-1 py-1 text-center">
                   {row.flagged && (
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-400" />
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-warning-solid" />
                   )}
                 </td>
                 {/* Notes column — chips where actionable, blank otherwise */}
@@ -491,7 +491,7 @@ function PreviewTable({
                     return chips.length > 0 ? (
                       <div className="flex flex-wrap gap-1">
                         {chips.map((chip) => (
-                          <span key={chip} className="inline-block rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                          <span key={chip} className="inline-block rounded bg-warning-tint px-1.5 py-0.5 text-[10px] font-medium text-warning">
                             {chip}
                           </span>
                         ))}
@@ -500,31 +500,32 @@ function PreviewTable({
                   })()}
                 </td>
                 <td className={CELL}>
-                  <input className={INPUT_BASE} style={{ width: "80px" }} value={row.salutation}
+                  <input aria-label={`Salutation, row ${idx + 1}`} className={INPUT_BASE} style={{ width: "80px" }} value={row.salutation}
                     onChange={(e) => onChange(idx, "salutation", e.target.value)} />
                 </td>
                 <td className={CELL}>
-                  <input className={INPUT_BASE} style={{ width: "100px" }} value={row.first_name}
+                  <input aria-label={`First name, row ${idx + 1}`} className={INPUT_BASE} style={{ width: "100px" }} value={row.first_name}
                     onChange={(e) => onChange(idx, "first_name", e.target.value)} />
                 </td>
                 <td className={CELL}>
-                  <input className={INPUT_BASE} style={{ width: "100px" }} value={row.last_name}
+                  <input aria-label={`Last name, row ${idx + 1}`} className={INPUT_BASE} style={{ width: "100px" }} value={row.last_name}
                     onChange={(e) => onChange(idx, "last_name", e.target.value)} />
                 </td>
                 <td className={CELL}>
                   <input
-                    className={INPUT_BASE + (row.flag_reason.includes("invalid_email") ? " ring-1 ring-amber-300" : "")}
+                    aria-label={`Email, row ${idx + 1}`}
+                    className={INPUT_BASE + (row.flag_reason.includes("invalid_email") ? " ring-1 ring-warning-border" : "")}
                     style={{ width: "180px" }}
                     value={row.email}
                     onChange={(e) => onChange(idx, "email", e.target.value)}
                   />
                 </td>
                 <td className={CELL}>
-                  <input className={INPUT_BASE} style={{ width: "120px" }} value={row.phone}
+                  <input aria-label={`Phone, row ${idx + 1}`} className={INPUT_BASE} style={{ width: "120px" }} value={row.phone}
                     onChange={(e) => onChange(idx, "phone", e.target.value)} />
                 </td>
                 <td className={CELL}>
-                  <select className={SELECT_BASE} style={{ width: "110px" }}
+                  <select aria-label={`Audience, row ${idx + 1}`} className={SELECT_BASE} style={{ width: "110px" }}
                     value={row.categories[0] ?? ""}
                     onChange={(e) => {
                       const v = e.target.value;
@@ -537,7 +538,7 @@ function PreviewTable({
                   </select>
                 </td>
                 <td className={CELL}>
-                  <input className={INPUT_BASE} style={{ width: "80px" }} type="number" min={1900} max={2100}
+                  <input aria-label={`Graduation year, row ${idx + 1}`} className={INPUT_BASE} style={{ width: "80px" }} type="number" min={1900} max={2100}
                     value={row.graduation_year ?? ""}
                     onChange={(e) => {
                       const n = parseInt(e.target.value, 10);
@@ -546,7 +547,8 @@ function PreviewTable({
                 </td>
                 <td className={CELL}>
                   <select
-                    className={SELECT_BASE + (row.flag_reason.includes("gender_uncertain") ? " ring-1 ring-amber-300" : "")}
+                    aria-label={`Gender, row ${idx + 1}`}
+                    className={SELECT_BASE + (row.flag_reason.includes("gender_uncertain") ? " ring-1 ring-warning-border" : "")}
                     style={{ width: "90px" }}
                     value={row.gender}
                     onChange={(e) => onChange(idx, "gender", e.target.value as EnrichedRow["gender"])}
@@ -557,7 +559,7 @@ function PreviewTable({
                   </select>
                 </td>
                 <td className={CELL + " pr-3"}>
-                  <select className={SELECT_BASE} style={{ width: "80px" }}
+                  <select aria-label={`Parent role, row ${idx + 1}`} className={SELECT_BASE} style={{ width: "80px" }}
                     value={row.parent_role ?? ""}
                     onChange={(e) => {
                       const v = e.target.value;
@@ -680,14 +682,14 @@ export function ImportWidget() {
   // ── Parsing ───────────────────────────────────────────────────────────────
   if (stage.type === "parsing") {
     return (
-      <div className="flex flex-col items-center gap-4 rounded-lg border border-zinc-200 bg-white py-16 text-center">
-        <svg className="h-6 w-6 animate-spin text-zinc-400" viewBox="0 0 24 24" fill="none">
+      <div className="flex flex-col items-center gap-4 rounded-lg border border-border bg-surface py-16 text-center">
+        <svg className="h-6 w-6 animate-spin text-text-subtle" viewBox="0 0 24 24" fill="none">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
         </svg>
         <div>
-          <p className="text-sm font-medium text-zinc-900">Reading your contacts…</p>
-          <p className="mt-0.5 text-xs text-zinc-400">This will only take a moment.</p>
+          <p className="text-sm font-medium text-text-primary">Reading your contacts…</p>
+          <p className="mt-0.5 text-xs text-text-subtle">This will only take a moment.</p>
         </div>
       </div>
     );
@@ -696,10 +698,10 @@ export function ImportWidget() {
   // ── Error ─────────────────────────────────────────────────────────────────
   if (stage.type === "error") {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 px-6 py-8 text-center">
-        <p className="text-sm font-medium text-red-700">Something went wrong</p>
-        <p className="mt-1 text-sm text-red-600">Please check your file and try again.</p>
-        <button onClick={reset} className="mt-4 rounded-md border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-50">
+      <div className="rounded-lg border border-danger-border bg-danger-tint px-6 py-8 text-center">
+        <p className="text-sm font-medium text-danger">Something went wrong</p>
+        <p className="mt-1 text-sm text-danger">Please check your file and try again.</p>
+        <button onClick={reset} className="mt-4 rounded-md border border-danger-border bg-surface px-4 py-2 text-sm font-medium text-danger transition-colors hover:bg-danger-tint">
           Try Again
         </button>
       </div>
@@ -710,31 +712,31 @@ export function ImportWidget() {
   if (stage.type === "done") {
     const reallyWorked = stage.countAfter > stage.countBefore;
     return (
-      <div className="rounded-lg border border-zinc-200 bg-white px-6 py-10 text-center">
-        <div className={`flex h-10 w-10 mx-auto items-center justify-center rounded-full ${reallyWorked ? "bg-zinc-900" : "bg-red-500"}`}>
-          <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      <div className="rounded-lg border border-border bg-surface px-6 py-10 text-center">
+        <div className={`flex h-10 w-10 mx-auto items-center justify-center rounded-full ${reallyWorked ? "bg-primary" : "bg-danger-solid"}`}>
+          <svg className="h-5 w-5 text-primary-fg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             {reallyWorked
               ? <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
               : <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />}
           </svg>
         </div>
-        <p className="mt-3 text-sm font-semibold text-zinc-900">
+        <p className="mt-3 text-sm font-semibold text-text-primary">
           {reallyWorked
             ? `${stage.imported.toLocaleString()} ${stage.imported === 1 ? "contact" : "contacts"} added successfully`
             : "Import did not save any contacts"}
         </p>
 
         {stage.failed > 0 && (
-          <p className="mt-3 text-sm text-zinc-500">
+          <p className="mt-3 text-sm text-text-muted">
             {stage.failed} {stage.failed === 1 ? "contact" : "contacts"} could not be added.
           </p>
         )}
 
         <div className="mt-5 flex items-center justify-center gap-3">
-          <a href="/people" className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700">
+          <a href="/people" className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-fg transition-colors hover:bg-primary-hover">
             View Contacts
           </a>
-          <button onClick={reset} className="rounded-md border border-zinc-200 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50">
+          <button onClick={reset} className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-surface-hover">
             Import Another File
           </button>
         </div>
@@ -752,33 +754,34 @@ export function ImportWidget() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <svg className="h-4 w-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <svg className="h-4 w-4 text-text-subtle" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
           </svg>
-          <span className="text-sm font-medium text-zinc-900">
+          <span className="text-sm font-medium text-text-primary">
             {stage.type === "preview" ? stage.fileName : ""}
           </span>
-          <span className="text-sm text-zinc-400">{rows.length} contacts</span>
+          <span className="text-sm text-text-subtle">{rows.length} contacts</span>
         </div>
-        <button onClick={reset} className="text-sm text-zinc-500 transition-colors hover:text-zinc-700">
+        <button onClick={reset} className="text-sm text-text-muted transition-colors hover:text-text-secondary">
           Choose different file
         </button>
       </div>
 
       {/* Bulk audience picker — shown when any contact has no audience */}
       {noAudienceCount > 0 && (
-        <div className="flex items-center gap-3 rounded-md border border-zinc-200 bg-zinc-50 px-4 py-3">
-          <svg className="h-4 w-4 shrink-0 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <div className="flex items-center gap-3 rounded-md border border-border bg-background px-4 py-3">
+          <svg className="h-4 w-4 shrink-0 text-text-subtle" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
           </svg>
-          <p className="text-sm text-zinc-700 shrink-0">
+          <p className="text-sm text-text-secondary shrink-0">
             {noAudienceCount === rows.length
               ? "What type of contacts are these?"
               : `${noAudienceCount} contacts don't have an audience. Apply one to all:`}
           </p>
           <select
+            aria-label="Apply an audience to all contacts"
             defaultValue=""
-            className="rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-zinc-400"
+            className="rounded-md border border-border-input bg-surface px-2 py-1.5 text-sm text-text-primary"
             onChange={(e) => { if (e.target.value) applyDefaultAudience(e.target.value); }}
           >
             <option value="" disabled>Select…</option>
@@ -793,8 +796,8 @@ export function ImportWidget() {
       <PreviewTable rows={rows} onChange={updateRow} />
 
       {/* Commit bar */}
-      <div className="flex items-center justify-between border-t border-zinc-100 pt-4">
-        <p className="text-xs text-zinc-400">
+      <div className="flex items-center justify-between border-t border-border-subtle pt-4">
+        <p className="text-xs text-text-subtle">
           {noAudienceCount > 0
             ? "Choose an audience above to continue."
             : rows.filter((r) => r.flagged).length > 0
@@ -804,7 +807,7 @@ export function ImportWidget() {
         <button
           onClick={handleCommit}
           disabled={isPending || !canCommit}
-          className="inline-flex items-center gap-2 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-fg transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isPending ? (
             <>

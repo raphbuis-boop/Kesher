@@ -47,9 +47,9 @@ const CHANNEL_META: Record<
   string,
   { label: string; icon: React.FC<{ size?: number; strokeWidth?: number; className?: string }>; color: string; bg: string }
 > = {
-  email:    { label: "Email",    icon: Mail,          color: "text-zinc-500",    bg: "bg-[#f5f5f5]"   },
-  sms:      { label: "SMS",      icon: Smartphone,    color: "text-blue-500",    bg: "bg-blue-50"      },
-  whatsapp: { label: "WhatsApp", icon: MessageSquare, color: "text-emerald-500", bg: "bg-emerald-50"   },
+  email:    { label: "Email",    icon: Mail,          color: "text-text-muted",    bg: "bg-surface-2"   },
+  sms:      { label: "SMS",      icon: Smartphone,    color: "text-info",    bg: "bg-info-tint"      },
+  whatsapp: { label: "WhatsApp", icon: MessageSquare, color: "text-success", bg: "bg-success-tint"   },
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -71,24 +71,24 @@ function recipientStatus(r: CampaignRecipient): RecipientStatus {
 }
 
 const STATUS_META: Record<RecipientStatus, { label: string; textColor: string; bg: string; dot: string }> = {
-  replied:   { label: "Replied",   textColor: "text-violet-700",  bg: "bg-violet-50",  dot: "bg-violet-500"  },
-  read:      { label: "Read",      textColor: "text-blue-700",    bg: "bg-blue-50",    dot: "bg-blue-500"    },
-  opened:    { label: "Opened",    textColor: "text-sky-700",     bg: "bg-sky-50",     dot: "bg-sky-500"     },
-  delivered: { label: "Delivered", textColor: "text-emerald-700", bg: "bg-emerald-50", dot: "bg-emerald-500" },
-  bounced:   { label: "Bounced",   textColor: "text-amber-700",   bg: "bg-amber-50",   dot: "bg-amber-500"   },
-  complained:{ label: "Spam",      textColor: "text-orange-700",  bg: "bg-orange-50",  dot: "bg-orange-500"  },
-  failed:    { label: "Failed",    textColor: "text-red-600",     bg: "bg-red-50",     dot: "bg-red-500"     },
-  opted_out: { label: "Opted out", textColor: "text-rose-700",    bg: "bg-rose-50",    dot: "bg-rose-500"    },
-  sent:      { label: "Sent",      textColor: "text-[#71717a]",   bg: "bg-[#f5f5f5]", dot: "bg-[#a1a1aa]"  },
+  replied:   { label: "Replied",   textColor: "text-cat-violet",  bg: "bg-cat-violet-tint",  dot: "bg-cat-violet-solid"  },
+  read:      { label: "Read",      textColor: "text-cat-blue",    bg: "bg-cat-blue-tint",    dot: "bg-cat-blue-solid"    },
+  opened:    { label: "Opened",    textColor: "text-info",     bg: "bg-info-tint",     dot: "bg-info-solid"     },
+  delivered: { label: "Delivered", textColor: "text-success", bg: "bg-success-tint", dot: "bg-success-solid" },
+  bounced:   { label: "Bounced",   textColor: "text-warning",   bg: "bg-warning-tint",   dot: "bg-warning-solid"   },
+  complained:{ label: "Spam",      textColor: "text-cat-orange",  bg: "bg-cat-orange-tint",  dot: "bg-cat-orange-solid"  },
+  failed:    { label: "Failed",    textColor: "text-danger",     bg: "bg-danger-tint",     dot: "bg-danger-solid"     },
+  opted_out: { label: "Opted out", textColor: "text-cat-rose",    bg: "bg-cat-rose-tint",    dot: "bg-cat-rose-solid"    },
+  sent:      { label: "Sent",      textColor: "text-text-muted",   bg: "bg-surface-2", dot: "bg-text-faint"  },
 };
 
 const ACCENT: Record<string, string> = {
-  emerald: "border-t-2 border-t-emerald-500",
-  blue:    "border-t-2 border-t-blue-500",
-  sky:     "border-t-2 border-t-sky-500",
-  violet:  "border-t-2 border-t-violet-500",
-  red:     "border-t-2 border-t-red-500",
-  amber:   "border-t-2 border-t-amber-500",
+  emerald: "border-t-2 border-t-success-solid",
+  blue:    "border-t-2 border-t-cat-blue-solid",
+  sky:     "border-t-2 border-t-info-solid",
+  violet:  "border-t-2 border-t-cat-violet-solid",
+  red:     "border-t-2 border-t-danger-solid",
+  amber:   "border-t-2 border-t-warning-solid",
 };
 
 function fmt(ts: string | null, opts?: Intl.DateTimeFormatOptions) {
@@ -231,16 +231,16 @@ function KPICard({
   return (
     <div
       className={[
-        "rounded-xl border border-[#e7e7e7] bg-white px-4 py-4 transition-all duration-200 hover:shadow-sm hover:border-[#d4d4d8] animate-fade-up",
+        "rounded-xl border border-border bg-surface px-4 py-4 transition-all duration-200 hover:shadow-sm hover:border-border-strong animate-fade-up",
         accent ?? "",
       ].filter(Boolean).join(" ")}
       style={{ animationDelay: `${index * 50}ms` }}
     >
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">{label}</p>
-      <p className="mt-2.5 text-[30px] font-semibold tracking-tight tabular-nums leading-none text-[#0f0f0f]">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-text-subtle">{label}</p>
+      <p className="mt-2.5 text-[30px] font-semibold tracking-tight tabular-nums leading-none text-text-primary">
         {count.toLocaleString()}
       </p>
-      {sub && <p className="mt-2 text-[11px] text-[#a1a1aa] leading-tight">{sub}</p>}
+      {sub && <p className="mt-2 text-[11px] text-text-subtle leading-tight">{sub}</p>}
     </div>
   );
 }
@@ -332,30 +332,30 @@ function LiveProgressBanner({ message, stats }: { message: CampaignMessage; stat
   const engLabel = isEmail ? "opened" : isWA ? "read" : "replied";
 
   return (
-    <div className="rounded-xl border border-[#e7e7e7] bg-white px-5 py-4 animate-fade-up" style={{ animationDelay: "0ms" }}>
+    <div className="rounded-xl border border-border bg-surface px-5 py-4 animate-fade-up" style={{ animationDelay: "0ms" }}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2.5">
           {isComplete ? (
-            <CheckCircle2 size={14} className="text-emerald-500 flex-shrink-0" strokeWidth={2} />
+            <CheckCircle2 size={14} className="text-success flex-shrink-0" strokeWidth={2} />
           ) : (
             <span className="relative flex h-2 w-2 flex-shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success-solid opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-success-solid" />
             </span>
           )}
-          <span className="text-[13px] font-semibold text-[#0f0f0f]">
+          <span className="text-[13px] font-semibold text-text-primary">
             {isComplete ? "Campaign delivered" : "Sending in progress"}
           </span>
           {!isComplete && (
-            <span className="text-[11px] text-[#a1a1aa]">· updates every 10s</span>
+            <span className="text-[11px] text-text-subtle">· updates every 10s</span>
           )}
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-[12px] tabular-nums font-medium text-[#0f0f0f]">{barPct}%</span>
+          <span className="text-[12px] tabular-nums font-medium text-text-primary">{barPct}%</span>
           {isComplete && (
             <button
               onClick={() => setDismissed(true)}
-              className="rounded p-0.5 text-[#a1a1aa] hover:text-[#0f0f0f]"
+              className="rounded p-0.5 text-text-subtle hover:text-text-primary"
               aria-label="Dismiss"
             >
               <X size={12} strokeWidth={2} />
@@ -364,35 +364,35 @@ function LiveProgressBanner({ message, stats }: { message: CampaignMessage; stat
         </div>
       </div>
 
-      <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-[#f0f0f0]">
+      <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-surface-3">
         <div
-          className="h-full rounded-full bg-emerald-500 transition-all duration-700 ease-out"
+          className="h-full rounded-full bg-success-solid transition-all duration-700 ease-out"
           style={{ width: `${barPct}%` }}
         />
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1">
         <div className="flex items-center gap-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          <span className="text-[11px] text-[#71717a]">
-            <span className="tabular-nums font-semibold text-[#0f0f0f]">{stats.delivered.toLocaleString()}</span>
+          <span className="h-1.5 w-1.5 rounded-full bg-success-solid" />
+          <span className="text-[11px] text-text-muted">
+            <span className="tabular-nums font-semibold text-text-primary">{stats.delivered.toLocaleString()}</span>
             {" / "}{stats.total.toLocaleString()} delivered
           </span>
         </div>
         {engCount > 0 && (
           <div className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-sky-400" />
-            <span className="text-[11px] text-[#71717a]">
-              <span className="tabular-nums font-semibold text-[#0f0f0f]">{engCount.toLocaleString()}</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-info-solid" />
+            <span className="text-[11px] text-text-muted">
+              <span className="tabular-nums font-semibold text-text-primary">{engCount.toLocaleString()}</span>
               {" "}{engLabel}
             </span>
           </div>
         )}
         {stats.failed > 0 && (
           <div className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
-            <span className="text-[11px] text-[#71717a]">
-              <span className="tabular-nums font-semibold text-red-600">{stats.failed.toLocaleString()}</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-danger-solid" />
+            <span className="text-[11px] text-text-muted">
+              <span className="tabular-nums font-semibold text-danger">{stats.failed.toLocaleString()}</span>
               {" "}failed
             </span>
           </div>
@@ -426,21 +426,21 @@ function ActivityFeed({
     for (const r of recipients) {
       const name = r.name.split(" ")[0];
       if (r.replied_at && r.status === "opted_out") {
-        evs.push({ label: `${name} opted out (replied STOP)`, time: r.replied_at, color: "text-rose-600", bg: "bg-rose-50", icon: XCircle });
+        evs.push({ label: `${name} opted out (replied STOP)`, time: r.replied_at, color: "text-cat-rose", bg: "bg-cat-rose-tint", icon: XCircle });
       } else if (r.replied_at) {
-        evs.push({ label: `${name} replied`, time: r.replied_at, color: "text-violet-600", bg: "bg-violet-50", icon: Reply });
+        evs.push({ label: `${name} replied`, time: r.replied_at, color: "text-cat-violet", bg: "bg-cat-violet-tint", icon: Reply });
       }
       if (isEmail && r.opened_at) {
-        evs.push({ label: `${name} opened the email`, time: r.opened_at, color: "text-sky-600", bg: "bg-sky-50", icon: Eye });
+        evs.push({ label: `${name} opened the email`, time: r.opened_at, color: "text-info", bg: "bg-info-tint", icon: Eye });
       }
       if (isWhatsApp && r.read_at) {
-        evs.push({ label: `${name} read the message`, time: r.read_at, color: "text-blue-600", bg: "bg-blue-50", icon: BookOpen });
+        evs.push({ label: `${name} read the message`, time: r.read_at, color: "text-cat-blue", bg: "bg-cat-blue-tint", icon: BookOpen });
       }
       if (r.bounced_at) {
-        evs.push({ label: `${name}'s message bounced`, time: r.bounced_at, color: "text-amber-600", bg: "bg-amber-50", icon: AlertCircle });
+        evs.push({ label: `${name}'s message bounced`, time: r.bounced_at, color: "text-warning", bg: "bg-warning-tint", icon: AlertCircle });
       }
       if (r.complained_at) {
-        evs.push({ label: `${name} marked as spam`, time: r.complained_at, color: "text-orange-600", bg: "bg-orange-50", icon: XCircle });
+        evs.push({ label: `${name} marked as spam`, time: r.complained_at, color: "text-cat-orange", bg: "bg-cat-orange-tint", icon: XCircle });
       }
     }
 
@@ -450,19 +450,19 @@ function ActivityFeed({
   }, [recipients, isEmail, isWhatsApp]);
 
   return (
-    <div className="rounded-xl border border-[#e7e7e7] bg-white px-5 py-5 flex flex-col animate-fade-up" style={{ animationDelay: "280ms" }}>
+    <div className="rounded-xl border border-border bg-surface px-5 py-5 flex flex-col animate-fade-up" style={{ animationDelay: "280ms" }}>
       <div className="mb-4 flex-shrink-0">
-        <h2 className="text-[13px] font-semibold text-[#0f0f0f]">Activity</h2>
-        <p className="mt-0.5 text-[11px] text-[#a1a1aa]">Most recent engagement events</p>
+        <h2 className="text-[13px] font-semibold text-text-primary">Activity</h2>
+        <p className="mt-0.5 text-[11px] text-text-subtle">Most recent engagement events</p>
       </div>
 
       {events.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center py-10 text-center">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e7e7e7] bg-[#fafafa] mb-3">
-            <Activity size={15} className="text-[#d4d4d8]" strokeWidth={1.5} />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background mb-3">
+            <Activity size={15} className="text-text-faint" strokeWidth={1.5} />
           </div>
-          <p className="text-[12px] font-medium text-[#71717a]">Waiting for activity</p>
-          <p className="mt-0.5 text-[11px] text-[#a1a1aa]">
+          <p className="text-[12px] font-medium text-text-muted">Waiting for activity</p>
+          <p className="mt-0.5 text-[11px] text-text-subtle">
             {isEmail
               ? "Opens and bounces will appear here."
               : isWhatsApp
@@ -471,7 +471,7 @@ function ActivityFeed({
           </p>
         </div>
       ) : (
-        <div className="flex-1 overflow-y-auto divide-y divide-[#f5f5f5]" style={{ maxHeight: 220 }}>
+        <div className="flex-1 overflow-y-auto divide-y divide-border-subtle" style={{ maxHeight: 220 }}>
           {events.map((ev, i) => {
             const Icon = ev.icon;
             return (
@@ -480,8 +480,8 @@ function ActivityFeed({
                   <Icon size={11} strokeWidth={2} className={ev.color} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[12px] text-[#0f0f0f] leading-snug">{ev.label}</p>
-                  <p className="mt-0.5 text-[10px] text-[#a1a1aa]">{fmtRelative(ev.time)}</p>
+                  <p className="text-[12px] text-text-primary leading-snug">{ev.label}</p>
+                  <p className="mt-0.5 text-[10px] text-text-subtle">{fmtRelative(ev.time)}</p>
                 </div>
               </div>
             );
@@ -511,12 +511,12 @@ function TimelineChart({ data, channel }: { data: ChartBucket[]; channel: string
   if (!hasDelivered) {
     return (
       <div className="flex h-[160px] flex-col items-center justify-center gap-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#e7e7e7] bg-[#fafafa]">
-          <Clock size={18} className="text-[#d4d4d8]" strokeWidth={1.5} />
+        <div className="flex h-12 w-12 items-center justify-center rounded-full border border-border bg-background">
+          <Clock size={18} className="text-text-faint" strokeWidth={1.5} />
         </div>
         <div className="text-center">
-          <p className="text-[13px] font-medium text-[#0f0f0f]">Awaiting delivery events</p>
-          <p className="mt-0.5 text-[12px] text-[#a1a1aa]">Events will appear as recipients receive the message.</p>
+          <p className="text-[13px] font-medium text-text-primary">Awaiting delivery events</p>
+          <p className="mt-0.5 text-[12px] text-text-subtle">Events will appear as recipients receive the message.</p>
         </div>
       </div>
     );
@@ -570,46 +570,45 @@ function TimelineChart({ data, channel }: { data: ChartBucket[]; channel: string
       <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 160 }} aria-hidden>
         <defs>
           <linearGradient id="grad-del" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%"   stopColor="#10b981" stopOpacity="0.15" />
-            <stop offset="100%" stopColor="#10b981" stopOpacity="0.01" />
+            <stop offset="0%"   stopColor="var(--success-solid)" stopOpacity="0.15" />
+            <stop offset="100%" stopColor="var(--success-solid)" stopOpacity="0.01" />
           </linearGradient>
           <clipPath id="chart-reveal">
             <rect x={PAD.left} y={0} width={clipW} height={H} />
           </clipPath>
           <filter id="tt-shadow" x="-5%" y="-10%" width="110%" height="130%">
-            <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#00000012" />
+            <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="rgb(0 0 0 / 0.07)" />
           </filter>
         </defs>
 
         {/* Grid lines */}
         {yTicks.map((v, i) => (
-          <line key={`grid-${i}-${v}`} x1={PAD.left} x2={W - PAD.right} y1={yS(v)} y2={yS(v)}
-            stroke="#f0f0f0" strokeWidth="1" />
+          <line className="stroke-border-subtle" key={`grid-${i}-${v}`} x1={PAD.left} x2={W - PAD.right} y1={yS(v)} y2={yS(v)} strokeWidth="1" />
         ))}
 
         {/* Animated chart paths */}
         <g clipPath="url(#chart-reveal)">
           <path d={areaPath("delivered")} fill="url(#grad-del)" />
-          <path d={linePath("delivered")} fill="none" stroke="#10b981" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+          <path className="stroke-success-solid" d={linePath("delivered")} fill="none" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
           {hasOpened && (
-            <path d={linePath("opened")} fill="none" stroke="#0ea5e9" strokeWidth="1.75" strokeLinejoin="round" strokeLinecap="round" />
+            <path className="stroke-info-solid" d={linePath("opened")} fill="none" strokeWidth="1.75" strokeLinejoin="round" strokeLinecap="round" />
           )}
           {hasRead && (
-            <path d={linePath("read")} fill="none" stroke="#3b82f6" strokeWidth="1.75" strokeLinejoin="round" strokeLinecap="round" />
+            <path className="stroke-cat-blue-solid" d={linePath("read")} fill="none" strokeWidth="1.75" strokeLinejoin="round" strokeLinecap="round" />
           )}
           {hasReplied && (
-            <path d={linePath("replied")} fill="none" stroke="#8b5cf6" strokeWidth="1.75" strokeLinejoin="round" strokeLinecap="round" />
+            <path className="stroke-cat-violet-solid" d={linePath("replied")} fill="none" strokeWidth="1.75" strokeLinejoin="round" strokeLinecap="round" />
           )}
         </g>
 
         {/* Axes */}
         {xTicks.map((i) => (
-          <text key={i} x={xS(i)} y={H - 8} textAnchor="middle" fontSize="9" fill="#a1a1aa">
+          <text className="fill-text-subtle" key={i} x={xS(i)} y={H - 8} textAnchor="middle" fontSize="9">
             {i === 0 ? "0h" : i === 23 ? "24h" : `${i}h`}
           </text>
         ))}
         {yTicks.filter((v) => v > 0).map((v, i) => (
-          <text key={`ytick-${i}-${v}`} x={PAD.left - 7} y={yS(v) + 3} textAnchor="end" fontSize="9" fill="#a1a1aa">
+          <text className="fill-text-subtle" key={`ytick-${i}-${v}`} x={PAD.left - 7} y={yS(v) + 3} textAnchor="end" fontSize="9">
             {v}
           </text>
         ))}
@@ -625,38 +624,37 @@ function TimelineChart({ data, channel }: { data: ChartBucket[]; channel: string
           let ttLine = 27;
           return (
             <g>
-              <line x1={cx} y1={PAD.top} x2={cx} y2={PAD.top + iH}
-                stroke="#d4d4d8" strokeWidth="1" strokeDasharray="3,2" />
-              <circle cx={cx} cy={yS(hBucket.delivered)} r="4" fill="white" stroke="#10b981" strokeWidth="2" />
+              <line className="stroke-border-strong" x1={cx} y1={PAD.top} x2={cx} y2={PAD.top + iH} strokeWidth="1" strokeDasharray="3,2" />
+              <circle className="stroke-success-solid fill-surface" cx={cx} cy={yS(hBucket.delivered)} r="4" strokeWidth="2" />
               {hasOpened && hBucket.opened > 0 && (
-                <circle cx={cx} cy={yS(hBucket.opened)} r="4" fill="white" stroke="#0ea5e9" strokeWidth="2" />
+                <circle className="stroke-info-solid fill-surface" cx={cx} cy={yS(hBucket.opened)} r="4" strokeWidth="2" />
               )}
               {hasRead && hBucket.read > 0 && (
-                <circle cx={cx} cy={yS(hBucket.read)} r="4" fill="white" stroke="#3b82f6" strokeWidth="2" />
+                <circle className="stroke-cat-blue-solid fill-surface" cx={cx} cy={yS(hBucket.read)} r="4" strokeWidth="2" />
               )}
               {hasReplied && hBucket.replied > 0 && (
-                <circle cx={cx} cy={yS(hBucket.replied)} r="4" fill="white" stroke="#8b5cf6" strokeWidth="2" />
+                <circle className="stroke-cat-violet-solid fill-surface" cx={cx} cy={yS(hBucket.replied)} r="4" strokeWidth="2" />
               )}
-              <rect x={ttX} y={ttY} width={ttW} height={ttH}
-                rx="6" fill="white" stroke="#e7e7e7" strokeWidth="1" filter="url(#tt-shadow)" />
-              <text x={ttX + 10} y={ttY + 13} fontSize="9" fontWeight="600" fill="#a1a1aa">
+              <rect className="stroke-border fill-surface" x={ttX} y={ttY} width={ttW} height={ttH}
+                rx="6" strokeWidth="1" filter="url(#tt-shadow)" />
+              <text className="fill-text-subtle" x={ttX + 10} y={ttY + 13} fontSize="9" fontWeight="600">
                 {hoverIdx === 0 ? "At send" : `${hoverIdx}h after send`}
               </text>
-              <text x={ttX + 10} y={ttY + ttLine} fontSize="9.5" fill="#10b981" fontWeight="500">
+              <text className="fill-success" x={ttX + 10} y={ttY + ttLine} fontSize="9.5" fontWeight="500">
                 {hBucket.delivered.toLocaleString()} delivered
               </text>
               {hasOpened && (() => { ttLine += 14; return (
-                <text key="o" x={ttX + 10} y={ttY + ttLine} fontSize="9.5" fill="#0ea5e9" fontWeight="500">
+                <text className="fill-info" key="o" x={ttX + 10} y={ttY + ttLine} fontSize="9.5" fontWeight="500">
                   {hBucket.opened.toLocaleString()} opened
                 </text>
               ); })()}
               {hasRead && (() => { ttLine += 14; return (
-                <text key="r" x={ttX + 10} y={ttY + ttLine} fontSize="9.5" fill="#3b82f6" fontWeight="500">
+                <text className="fill-cat-blue" key="r" x={ttX + 10} y={ttY + ttLine} fontSize="9.5" fontWeight="500">
                   {hBucket.read.toLocaleString()} read
                 </text>
               ); })()}
               {hasReplied && (() => { ttLine += 14; return (
-                <text key="p" x={ttX + 10} y={ttY + ttLine} fontSize="9.5" fill="#8b5cf6" fontWeight="500">
+                <text className="fill-cat-violet" key="p" x={ttX + 10} y={ttY + ttLine} fontSize="9.5" fontWeight="500">
                   {hBucket.replied.toLocaleString()} replied
                 </text>
               ); })()}
@@ -667,25 +665,25 @@ function TimelineChart({ data, channel }: { data: ChartBucket[]; channel: string
 
       <div className="mt-3 flex flex-wrap items-center gap-5">
         <div className="flex items-center gap-1.5">
-          <span className="h-[2px] w-5 rounded-full bg-emerald-500" />
-          <span className="text-[11px] text-[#71717a]">Delivered</span>
+          <span className="h-[2px] w-5 rounded-full bg-success-solid" />
+          <span className="text-[11px] text-text-muted">Delivered</span>
         </div>
         {hasOpened && (
           <div className="flex items-center gap-1.5">
-            <span className="h-[2px] w-5 rounded-full bg-sky-500" />
-            <span className="text-[11px] text-[#71717a]">Opened</span>
+            <span className="h-[2px] w-5 rounded-full bg-info-solid" />
+            <span className="text-[11px] text-text-muted">Opened</span>
           </div>
         )}
         {hasRead && (
           <div className="flex items-center gap-1.5">
-            <span className="h-[2px] w-5 rounded-full bg-blue-500" />
-            <span className="text-[11px] text-[#71717a]">Read</span>
+            <span className="h-[2px] w-5 rounded-full bg-cat-blue-solid" />
+            <span className="text-[11px] text-text-muted">Read</span>
           </div>
         )}
         {hasReplied && (
           <div className="flex items-center gap-1.5">
-            <span className="h-[2px] w-5 rounded-full bg-violet-500" />
-            <span className="text-[11px] text-[#71717a]">Replied</span>
+            <span className="h-[2px] w-5 rounded-full bg-cat-violet-solid" />
+            <span className="text-[11px] text-text-muted">Replied</span>
           </div>
         )}
       </div>
@@ -712,10 +710,10 @@ function StatusBadge({ status, tooltip }: { status: RecipientStatus; tooltip?: s
     <span className="group/sb relative inline-flex">
       {badge}
       <span
-        className="pointer-events-none absolute bottom-[calc(100%+5px)] left-1/2 -translate-x-1/2 z-[60] whitespace-nowrap rounded-md bg-[#0f0f0f] px-2 py-1 text-[10px] font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/sb:opacity-100"
+        className="pointer-events-none absolute bottom-[calc(100%+5px)] left-1/2 -translate-x-1/2 z-[60] whitespace-nowrap rounded-md bg-primary px-2 py-1 text-[10px] font-medium text-primary-fg opacity-0 shadow-lg transition-opacity duration-150 group-hover/sb:opacity-100"
       >
         {tooltip}
-        <span className="absolute top-full left-1/2 -translate-x-1/2 border-[3px] border-transparent border-t-[#0f0f0f]" />
+        <span className="absolute top-full left-1/2 -translate-x-1/2 border-[3px] border-transparent border-t-primary" />
       </span>
     </span>
   );
@@ -745,28 +743,28 @@ function RecipientDrawer({
     color: string; bg: string;
   }> = [
     message.sent_at
-      ? { label: "Sent", time: message.sent_at, icon: Send, color: "text-[#71717a]", bg: "bg-[#f5f5f5]" }
+      ? { label: "Sent", time: message.sent_at, icon: Send, color: "text-text-muted", bg: "bg-surface-2" }
       : null,
     recipient.delivered_at
-      ? { label: "Delivered", time: recipient.delivered_at, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50" }
+      ? { label: "Delivered", time: recipient.delivered_at, icon: CheckCircle2, color: "text-success", bg: "bg-success-tint" }
       : null,
     isEmail && recipient.opened_at
-      ? { label: "Opened", time: recipient.opened_at, icon: Eye, color: "text-sky-600", bg: "bg-sky-50" }
+      ? { label: "Opened", time: recipient.opened_at, icon: Eye, color: "text-info", bg: "bg-info-tint" }
       : null,
     isWhatsApp && recipient.read_at
-      ? { label: "Read", time: recipient.read_at, icon: BookOpen, color: "text-blue-600", bg: "bg-blue-50" }
+      ? { label: "Read", time: recipient.read_at, icon: BookOpen, color: "text-cat-blue", bg: "bg-cat-blue-tint" }
       : null,
     !isEmail && recipient.replied_at && recipient.status !== "opted_out"
-      ? { label: "Replied", time: recipient.replied_at, icon: Reply, color: "text-violet-600", bg: "bg-violet-50" }
+      ? { label: "Replied", time: recipient.replied_at, icon: Reply, color: "text-cat-violet", bg: "bg-cat-violet-tint" }
       : null,
     !isEmail && recipient.replied_at && recipient.status === "opted_out"
-      ? { label: "Opted out (replied STOP)", time: recipient.replied_at, icon: XCircle, color: "text-rose-600", bg: "bg-rose-50" }
+      ? { label: "Opted out (replied STOP)", time: recipient.replied_at, icon: XCircle, color: "text-cat-rose", bg: "bg-cat-rose-tint" }
       : null,
     recipient.bounced_at
-      ? { label: `Bounced${recipient.bounce_type ? ` (${recipient.bounce_type})` : ""}`, time: recipient.bounced_at, icon: AlertCircle, color: "text-amber-600", bg: "bg-amber-50" }
+      ? { label: `Bounced${recipient.bounce_type ? ` (${recipient.bounce_type})` : ""}`, time: recipient.bounced_at, icon: AlertCircle, color: "text-warning", bg: "bg-warning-tint" }
       : null,
     recipient.complained_at
-      ? { label: "Marked as spam", time: recipient.complained_at, icon: XCircle, color: "text-orange-600", bg: "bg-orange-50" }
+      ? { label: "Marked as spam", time: recipient.complained_at, icon: XCircle, color: "text-cat-orange", bg: "bg-cat-orange-tint" }
       : null,
   ]
     .filter((e): e is NonNullable<typeof e> => e !== null)
@@ -776,46 +774,46 @@ function RecipientDrawer({
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="absolute inset-0 bg-black/[0.08] backdrop-blur-[2px] animate-backdrop" onClick={onClose} />
-      <div className="animate-slide-right relative flex w-full max-w-[360px] flex-col bg-white border-l border-[#e7e7e7] shadow-2xl shadow-black/10 overflow-hidden">
-        <div className="flex items-center justify-between border-b border-[#f0f0f0] px-5 py-4 flex-shrink-0">
+      <div className="absolute inset-0 bg-overlay backdrop-blur-[2px] animate-backdrop" onClick={onClose} />
+      <div className="animate-slide-right relative flex w-full max-w-[360px] flex-col bg-surface border-l border-border shadow-2xl shadow-black/10 overflow-hidden">
+        <div className="flex items-center justify-between border-b border-border-subtle px-5 py-4 flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#f0f0f0] text-[12px] font-semibold text-[#71717a]">
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-surface-3 text-[12px] font-semibold text-text-muted">
               {initials}
             </div>
             <div className="min-w-0">
-              <p className="text-[13px] font-semibold text-[#0f0f0f] truncate">{recipient.name}</p>
-              <p className="text-[11px] text-[#a1a1aa] font-mono truncate">{recipient.contact_value}</p>
+              <p className="text-[13px] font-semibold text-text-primary truncate">{recipient.name}</p>
+              <p className="text-[11px] text-text-subtle font-mono truncate">{recipient.contact_value}</p>
             </div>
           </div>
-          <button onClick={onClose} aria-label="Close" className="ml-2 flex-shrink-0 rounded-lg p-1.5 text-[#a1a1aa] hover:bg-[#f5f5f5] hover:text-[#0f0f0f]">
+          <button onClick={onClose} aria-label="Close" className="ml-2 flex-shrink-0 rounded-lg p-1.5 text-text-subtle hover:bg-surface-2 hover:text-text-primary">
             <X size={14} strokeWidth={2} />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
           <div>
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">Delivery Status</p>
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-text-subtle">Delivery Status</p>
             <StatusBadge status={status} />
           </div>
 
           <div>
-            <p className="mb-2.5 text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">Contact</p>
-            <div className="rounded-xl border border-[#e7e7e7] divide-y divide-[#f5f5f5]">
+            <p className="mb-2.5 text-[10px] font-semibold uppercase tracking-wider text-text-subtle">Contact</p>
+            <div className="rounded-xl border border-border divide-y divide-border-subtle">
               <div className="px-4 py-3">
-                <p className="text-[10px] text-[#a1a1aa]">Name</p>
-                <p className="mt-0.5 text-[13px] text-[#0f0f0f]">{recipient.name}</p>
+                <p className="text-[10px] text-text-subtle">Name</p>
+                <p className="mt-0.5 text-[13px] text-text-primary">{recipient.name}</p>
               </div>
               <div className="px-4 py-3">
-                <p className="text-[10px] text-[#a1a1aa]">{isEmail ? "Email" : "Phone"}</p>
-                <p className="mt-0.5 font-mono text-[12px] text-[#0f0f0f]">{recipient.contact_value}</p>
+                <p className="text-[10px] text-text-subtle">{isEmail ? "Email" : "Phone"}</p>
+                <p className="mt-0.5 font-mono text-[12px] text-text-primary">{recipient.contact_value}</p>
               </div>
               {person?.categories && person.categories.length > 0 && (
                 <div className="px-4 py-3">
-                  <p className="text-[10px] text-[#a1a1aa]">Audiences</p>
+                  <p className="text-[10px] text-text-subtle">Audiences</p>
                   <div className="mt-1.5 flex flex-wrap gap-1">
                     {person.categories.map((c) => (
-                      <span key={c} className="rounded-full bg-[#f0f0f0] px-2 py-0.5 text-[10px] font-medium text-[#71717a]">
+                      <span key={c} className="rounded-full bg-surface-3 px-2 py-0.5 text-[10px] font-medium text-text-muted">
                         {CATEGORY_LABELS[c] ?? c}
                       </span>
                     ))}
@@ -826,11 +824,11 @@ function RecipientDrawer({
           </div>
 
           <div>
-            <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">Activity Timeline</p>
+            <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-text-subtle">Activity Timeline</p>
             {events.length === 0 ? (
-              <div className="flex flex-col items-center py-6 text-center rounded-xl border border-dashed border-[#e7e7e7]">
-                <Clock size={16} className="text-[#d4d4d8]" strokeWidth={1.5} />
-                <p className="mt-2 text-[12px] text-[#a1a1aa]">No events recorded yet.</p>
+              <div className="flex flex-col items-center py-6 text-center rounded-xl border border-dashed border-border">
+                <Clock size={16} className="text-text-faint" strokeWidth={1.5} />
+                <p className="mt-2 text-[12px] text-text-subtle">No events recorded yet.</p>
               </div>
             ) : (
               <div>
@@ -843,11 +841,11 @@ function RecipientDrawer({
                         <div className={`flex h-7 w-7 items-center justify-center rounded-full ${ev.bg} ${ev.color}`}>
                           <Icon size={12} strokeWidth={2} />
                         </div>
-                        {!isLast && <div className="mt-0.5 h-6 w-px bg-[#f0f0f0]" />}
+                        {!isLast && <div className="mt-0.5 h-6 w-px bg-surface-3" />}
                       </div>
                       <div className={isLast ? "pb-0" : "pb-3"}>
-                        <p className="text-[13px] font-medium text-[#0f0f0f] leading-tight">{ev.label}</p>
-                        <p className="mt-0.5 text-[11px] text-[#a1a1aa]">{fmt(ev.time) ?? ""}</p>
+                        <p className="text-[13px] font-medium text-text-primary leading-tight">{ev.label}</p>
+                        <p className="mt-0.5 text-[11px] text-text-subtle">{fmt(ev.time) ?? ""}</p>
                       </div>
                     </div>
                   );
@@ -857,12 +855,12 @@ function RecipientDrawer({
           </div>
 
           {status === "bounced" && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5">
-              <p className="text-[11px] font-semibold text-amber-700">Bounce Type</p>
-              <p className="mt-0.5 text-[13px] capitalize text-amber-600">
+            <div className="rounded-xl border border-warning-border bg-warning-tint px-4 py-3.5">
+              <p className="text-[11px] font-semibold text-warning">Bounce Type</p>
+              <p className="mt-0.5 text-[13px] capitalize text-warning">
                 {recipient.bounce_type ? `${recipient.bounce_type} bounce` : "Unknown"}
               </p>
-              <p className="mt-1.5 text-[11px] text-amber-500 leading-relaxed">
+              <p className="mt-1.5 text-[11px] text-warning leading-relaxed">
                 {recipient.bounce_type === "hard"
                   ? "This address is invalid or does not accept email. Consider removing it from your list."
                   : "This was a temporary delivery failure. The recipient may receive future messages."}
@@ -870,17 +868,17 @@ function RecipientDrawer({
             </div>
           )}
           {status === "failed" && (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3.5">
-              <p className="text-[11px] font-semibold text-red-600">Delivery Failed</p>
-              <p className="mt-0.5 text-[12px] text-red-500">
+            <div className="rounded-xl border border-danger-border bg-danger-tint px-4 py-3.5">
+              <p className="text-[11px] font-semibold text-danger">Delivery Failed</p>
+              <p className="mt-0.5 text-[12px] text-danger">
                 {recipient.bounce_type ? `Error code: ${recipient.bounce_type}` : "The message could not be delivered."}
               </p>
             </div>
           )}
           {status === "opted_out" && (
-            <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3.5">
-              <p className="text-[11px] font-semibold text-rose-700">SMS Opt-Out</p>
-              <p className="mt-0.5 text-[12px] text-rose-500 leading-relaxed">
+            <div className="rounded-xl border border-cat-rose-border bg-cat-rose-tint px-4 py-3.5">
+              <p className="text-[11px] font-semibold text-cat-rose">SMS Opt-Out</p>
+              <p className="mt-0.5 text-[12px] text-cat-rose leading-relaxed">
                 This recipient replied STOP and is opted out of future messages.
               </p>
             </div>
@@ -888,10 +886,10 @@ function RecipientDrawer({
         </div>
 
         {person && (
-          <div className="border-t border-[#f0f0f0] px-5 py-4 flex-shrink-0">
+          <div className="border-t border-border-subtle px-5 py-4 flex-shrink-0">
             <Link
               href={`/people/${person.id}`}
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#e7e7e7] bg-[#fafafa] px-4 py-2.5 text-[12px] font-medium text-[#71717a] hover:bg-white hover:text-[#0f0f0f] hover:shadow-sm transition-all duration-150"
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 py-2.5 text-[12px] font-medium text-text-muted hover:bg-surface hover:text-text-primary hover:shadow-sm transition-all duration-150"
             >
               <Users size={12} strokeWidth={2} />
               View full profile
@@ -924,15 +922,15 @@ function EmptyState({ filter, search, channel, onClear }: {
 
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#e7e7e7] bg-[#fafafa] mb-4">
-        <Users size={18} className="text-[#d4d4d8]" strokeWidth={1.5} />
+      <div className="flex h-12 w-12 items-center justify-center rounded-full border border-border bg-background mb-4">
+        <Users size={18} className="text-text-faint" strokeWidth={1.5} />
       </div>
-      <p className="text-[13px] font-semibold text-[#0f0f0f]">{cfg.title}</p>
-      <p className="mt-1 text-[12px] text-[#a1a1aa] max-w-xs">{cfg.body}</p>
+      <p className="text-[13px] font-semibold text-text-primary">{cfg.title}</p>
+      <p className="mt-1 text-[12px] text-text-subtle max-w-xs">{cfg.body}</p>
       {search && (
         <button
           onClick={onClear}
-          className="mt-4 rounded-md border border-[#e7e7e7] bg-white px-3 py-1.5 text-[12px] font-medium text-[#71717a] hover:bg-[#fafafa] hover:text-[#0f0f0f] transition-all"
+          className="mt-4 rounded-md border border-border bg-surface px-3 py-1.5 text-[12px] font-medium text-text-muted hover:bg-surface-hover hover:text-text-primary transition-all"
         >
           Clear search
         </button>
@@ -1015,17 +1013,17 @@ export function CampaignClient({
   }, [FILTERS, filter]);
 
   return (
-    <div className="min-h-screen bg-[#fafafa]">
+    <div className="min-h-screen bg-background">
       {/* ── Sticky header ────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-10 border-b border-[#e7e7e7] bg-white/95 backdrop-blur-sm">
+      <header className="sticky top-0 z-10 border-b border-border bg-surface/95 backdrop-blur-sm">
         <div className="flex items-center justify-between gap-4 px-6 py-3.5">
           <div className="flex items-center gap-3 min-w-0">
-            <Link href="/messages" className="inline-flex items-center gap-1.5 shrink-0 text-[12px] font-medium text-[#a1a1aa] hover:text-[#71717a]">
+            <Link href="/messages" className="inline-flex items-center gap-1.5 shrink-0 text-[12px] font-medium text-text-subtle hover:text-text-muted">
               <ArrowLeft size={13} strokeWidth={2} />
               Messages
             </Link>
-            <span className="text-[#e0e0e0] text-[13px]">/</span>
-            <h1 className="truncate text-[13px] font-semibold text-[#0f0f0f]">
+            <span className="text-text-faint text-[13px]">/</span>
+            <h1 className="truncate text-[13px] font-semibold text-text-primary">
               {message.subject ?? message.body.slice(0, 55) + (message.body.length > 55 ? "…" : "")}
             </h1>
             <span className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${channelMeta.bg} ${channelMeta.color}`}>
@@ -1037,21 +1035,21 @@ export function CampaignClient({
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => exportCSV(recipients, message.subject, message.channel)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[#e7e7e7] bg-white px-3 py-1.5 text-[12px] font-medium text-[#71717a] hover:bg-[#fafafa] hover:text-[#0f0f0f] hover:border-[#d4d4d8]"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-[12px] font-medium text-text-muted hover:bg-surface-hover hover:text-text-primary hover:border-border-strong"
             >
               <Download size={11} strokeWidth={2} />
               Export
             </button>
             <Link
               href={`/messages/new?audiences=${message.audience_slug}`}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[#e7e7e7] bg-white px-3 py-1.5 text-[12px] font-medium text-[#71717a] hover:bg-[#fafafa] hover:text-[#0f0f0f] hover:border-[#d4d4d8]"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-[12px] font-medium text-text-muted hover:bg-surface-hover hover:text-text-primary hover:border-border-strong"
             >
               <RotateCcw size={11} strokeWidth={2} />
               Resend
             </Link>
             <Link
               href="/messages/new"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#0f0f0f] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#27272a]"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-fg hover:bg-primary-hover"
             >
               <Copy size={11} strokeWidth={2} />
               Duplicate
@@ -1059,15 +1057,15 @@ export function CampaignClient({
           </div>
         </div>
 
-        <div className="flex items-center gap-3 px-6 pb-3 text-[11px] text-[#a1a1aa]">
+        <div className="flex items-center gap-3 px-6 pb-3 text-[11px] text-text-subtle">
           <span>{message.audience_label}</span>
-          <span className="text-[#e7e7e7]">·</span>
+          <span className="text-text-faint">·</span>
           <span>{fmtDate(sentAt)}</span>
           {message.status === "sent" && (
             <>
-              <span className="text-[#e7e7e7]">·</span>
-              <span className="inline-flex items-center gap-1.5 text-emerald-600">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              <span className="text-text-faint">·</span>
+              <span className="inline-flex items-center gap-1.5 text-success">
+                <span className="h-1.5 w-1.5 rounded-full bg-success-solid" />
                 Sent
               </span>
             </>
@@ -1086,10 +1084,10 @@ export function CampaignClient({
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-5">
           {/* Chart — 3/5 width */}
           <div className="lg:col-span-3">
-            <div className="rounded-xl border border-[#e7e7e7] bg-white px-5 py-5 h-full animate-fade-up" style={{ animationDelay: "260ms" }}>
+            <div className="rounded-xl border border-border bg-surface px-5 py-5 h-full animate-fade-up" style={{ animationDelay: "260ms" }}>
               <div className="mb-5">
-                <h2 className="text-[13px] font-semibold text-[#0f0f0f]">Delivery Timeline</h2>
-                <p className="mt-0.5 text-[11px] text-[#a1a1aa]">
+                <h2 className="text-[13px] font-semibold text-text-primary">Delivery Timeline</h2>
+                <p className="mt-0.5 text-[11px] text-text-subtle">
                   Cumulative events over the first 24 hours · hover for details
                 </p>
               </div>
@@ -1104,32 +1102,33 @@ export function CampaignClient({
         </div>
 
         {/* ── Recipients table ──────────────────────────────────────────────── */}
-        <div className="rounded-xl border border-[#e7e7e7] bg-white animate-fade-up" style={{ animationDelay: "300ms" }}>
+        <div className="rounded-xl border border-border bg-surface animate-fade-up" style={{ animationDelay: "300ms" }}>
           <div className="px-5 pt-5 pb-0">
             <div className="flex items-center justify-between gap-4 mb-4">
-              <h2 className="text-[13px] font-semibold text-[#0f0f0f]">
+              <h2 className="text-[13px] font-semibold text-text-primary">
                 Recipients
                 {filtered.length !== recipients.length && (
-                  <span className="ml-2 text-[11px] font-normal text-[#a1a1aa]">
+                  <span className="ml-2 text-[11px] font-normal text-text-subtle">
                     {filtered.length.toLocaleString()} of {recipients.length.toLocaleString()}
                   </span>
                 )}
               </h2>
 
               <div className="relative">
-                <Search size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#a1a1aa]" strokeWidth={2} />
+                <Search size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle" strokeWidth={2} />
                 <input
+                  aria-label="Search recipients"
                   type="text"
                   placeholder="Search recipients…"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-56 rounded-lg border border-[#e7e7e7] bg-[#fafafa] py-1.5 pl-8 pr-8 text-[12px] text-[#0f0f0f] placeholder-[#d4d4d8] outline-none transition-all focus:border-[#a1a1aa] focus:bg-white focus:shadow-sm"
+                  className="w-56 rounded-lg border border-border-input bg-background py-1.5 pl-8 pr-8 text-[12px] text-text-primary placeholder-text-subtle transition-all focus:border-focus-ring focus:bg-surface focus:shadow-sm"
                 />
                 {search && (
                   <button
                     onClick={() => setSearch("")}
                     aria-label="Clear search"
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-[#a1a1aa] hover:text-[#0f0f0f]"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-text-subtle hover:text-text-primary"
                   >
                     <X size={11} strokeWidth={2} />
                   </button>
@@ -1138,7 +1137,7 @@ export function CampaignClient({
             </div>
 
             {/* Filter tabs */}
-            <div className="flex items-center gap-0 border-b border-[#f0f0f0] -mx-5 px-5">
+            <div className="flex items-center gap-0 border-b border-border-subtle -mx-5 px-5">
               {FILTERS.map((f) => {
                 const count = filterCounts[f.key];
                 const isActive = filter === f.key;
@@ -1149,13 +1148,13 @@ export function CampaignClient({
                     className={[
                       "inline-flex items-center gap-1.5 border-b-[1.5px] pb-3 pt-0.5 mr-5 text-[12px] font-medium transition-all duration-100",
                       isActive
-                        ? "border-[#0f0f0f] text-[#0f0f0f]"
-                        : "border-transparent text-[#a1a1aa] hover:text-[#71717a]",
+                        ? "border-primary text-text-primary"
+                        : "border-transparent text-text-subtle hover:text-text-muted",
                     ].join(" ")}
                   >
                     {f.label}
                     {count > 0 && (
-                      <span className={`text-[10px] tabular-nums font-normal ${isActive ? "text-[#71717a]" : "text-[#d4d4d8]"}`}>
+                      <span className={`text-[10px] tabular-nums font-normal ${isActive ? "text-text-muted" : "text-text-subtle"}`}>
                         {count}
                       </span>
                     )}
@@ -1170,24 +1169,24 @@ export function CampaignClient({
           ) : (
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[#f0f0f0] bg-[#fafafa]">
-                  <th className="py-2.5 pl-5 pr-3 text-left text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">Name</th>
-                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">
+                <tr className="border-b border-border-subtle bg-background">
+                  <th className="py-2.5 pl-5 pr-3 text-left text-[10px] font-semibold uppercase tracking-wide text-text-subtle">Name</th>
+                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-text-subtle">
                     {isEmail ? "Email" : "Phone"}
                   </th>
-                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">Audience</th>
-                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">Status</th>
-                  <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">Delivered</th>
+                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-text-subtle">Audience</th>
+                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-text-subtle">Status</th>
+                  <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wide text-text-subtle">Delivered</th>
                   {isEmail && (
-                    <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">Opened</th>
+                    <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wide text-text-subtle">Opened</th>
                   )}
                   {isWhatsApp && (
-                    <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">Read</th>
+                    <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wide text-text-subtle">Read</th>
                   )}
                   {!isEmail && (
-                    <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">Replied</th>
+                    <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wide text-text-subtle">Replied</th>
                   )}
-                  <th className="pl-3 pr-5 py-2.5 text-right text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">
+                  <th className="pl-3 pr-5 py-2.5 text-right text-[10px] font-semibold uppercase tracking-wide text-text-subtle">
                     Last Activity
                   </th>
                 </tr>
@@ -1205,28 +1204,28 @@ export function CampaignClient({
                       key={r.id}
                       onClick={() => setSelected(r)}
                       className={[
-                        "group cursor-pointer transition-colors duration-100 hover:bg-[#fafafa]",
-                        !isLast ? "border-b border-[#f5f5f5]" : "",
+                        "group cursor-pointer transition-colors duration-100 hover:bg-surface-hover",
+                        !isLast ? "border-b border-border-subtle" : "",
                       ].join(" ")}
                     >
                       <td className="py-3 pl-5 pr-3">
                         <div className="flex items-center gap-2.5">
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#f0f0f0] text-[10px] font-semibold text-[#71717a]">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-3 text-[10px] font-semibold text-text-muted">
                             {r.name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()}
                           </div>
-                          <span className="text-[13px] font-medium text-[#0f0f0f]">{r.name}</span>
+                          <span className="text-[13px] font-medium text-text-primary">{r.name}</span>
                         </div>
                       </td>
                       <td className="px-3 py-3">
-                        <span className="font-mono text-[11px] text-[#71717a]">{r.contact_value}</span>
+                        <span className="font-mono text-[11px] text-text-muted">{r.contact_value}</span>
                       </td>
                       <td className="px-3 py-3">
                         {person?.categories && person.categories.length > 0 ? (
-                          <span className="text-[12px] text-[#71717a]">
+                          <span className="text-[12px] text-text-muted">
                             {CATEGORY_LABELS[person.categories[0]] ?? person.categories[0]}
                           </span>
                         ) : (
-                          <span className="text-[#d4d4d8]">—</span>
+                          <span className="text-text-subtle">—</span>
                         )}
                       </td>
                       <td className="px-3 py-3">
@@ -1235,20 +1234,20 @@ export function CampaignClient({
                       <td className="px-3 py-3 text-center">
                         {r.delivered_at ? (
                           <span title={fmt(r.delivered_at) ?? ""} className="inline-flex justify-center cursor-default">
-                            <CheckCircle2 size={14} className="text-emerald-500" strokeWidth={1.75} />
+                            <CheckCircle2 aria-hidden size={14} className="text-success" strokeWidth={1.75} /><span className="sr-only">Yes</span>
                           </span>
                         ) : (
-                          <span className="text-[#d4d4d8]">—</span>
+                          <span className="text-text-subtle">—</span>
                         )}
                       </td>
                       {isEmail && (
                         <td className="px-3 py-3 text-center">
                           {r.opened_at ? (
                             <span title={fmt(r.opened_at) ?? ""} className="inline-flex justify-center cursor-default">
-                              <CheckCircle2 size={14} className="text-sky-500" strokeWidth={1.75} />
+                              <CheckCircle2 aria-hidden size={14} className="text-info" strokeWidth={1.75} /><span className="sr-only">Yes</span>
                             </span>
                           ) : (
-                            <span className="text-[#d4d4d8]">—</span>
+                            <span className="text-text-subtle">—</span>
                           )}
                         </td>
                       )}
@@ -1256,10 +1255,10 @@ export function CampaignClient({
                         <td className="px-3 py-3 text-center">
                           {r.read_at ? (
                             <span title={fmt(r.read_at) ?? ""} className="inline-flex justify-center cursor-default">
-                              <CheckCircle2 size={14} className="text-blue-500" strokeWidth={1.75} />
+                              <CheckCircle2 aria-hidden size={14} className="text-cat-blue" strokeWidth={1.75} /><span className="sr-only">Yes</span>
                             </span>
                           ) : (
-                            <span className="text-[#d4d4d8]">—</span>
+                            <span className="text-text-subtle">—</span>
                           )}
                         </td>
                       )}
@@ -1267,15 +1266,15 @@ export function CampaignClient({
                         <td className="px-3 py-3 text-center">
                           {r.replied_at ? (
                             <span title={fmt(r.replied_at) ?? ""} className="inline-flex justify-center cursor-default">
-                              <CheckCircle2 size={14} className="text-violet-500" strokeWidth={1.75} />
+                              <CheckCircle2 aria-hidden size={14} className="text-cat-violet" strokeWidth={1.75} /><span className="sr-only">Yes</span>
                             </span>
                           ) : (
-                            <span className="text-[#d4d4d8]">—</span>
+                            <span className="text-text-subtle">—</span>
                           )}
                         </td>
                       )}
                       <td className="pl-3 pr-5 py-3 text-right">
-                        <span className="text-[11px] tabular-nums text-[#a1a1aa]">
+                        <span className="text-[11px] tabular-nums text-text-subtle">
                           {la ? fmt(la, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "—"}
                         </span>
                       </td>
@@ -1287,8 +1286,8 @@ export function CampaignClient({
           )}
 
           {filtered.length > 0 && (
-            <div className="border-t border-[#f5f5f5] px-5 py-3">
-              <p className="text-[11px] text-[#a1a1aa]">
+            <div className="border-t border-border-subtle px-5 py-3">
+              <p className="text-[11px] text-text-subtle">
                 {filtered.length.toLocaleString()} recipient{filtered.length !== 1 ? "s" : ""}
                 {" · click any row to inspect"}
               </p>

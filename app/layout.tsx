@@ -31,9 +31,15 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable}`}
     >
-      <body className="flex bg-[#fafafa] text-[#0f0f0f]">
+      <body className="flex bg-background text-text-primary">
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-md focus:bg-surface focus:px-3 focus:py-2 focus:text-[13px] focus:font-medium focus:text-text-primary focus:shadow-md"
+        >
+          Skip to content
+        </a>
         <AppShell>
-          <main className="flex-1 min-w-0 flex flex-col min-h-screen">
+          <main id="main" className="flex-1 min-w-0 flex flex-col min-h-screen">
             {children}
             <AppFooter />
           </main>

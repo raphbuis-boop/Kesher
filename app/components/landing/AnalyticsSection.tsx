@@ -32,9 +32,9 @@ const ACTIVITY = [
 ];
 
 const STATUS_META = {
-  delivered: { label: "Delivered", Icon: CheckCircle2, className: "text-emerald-600 bg-emerald-50" },
+  delivered: { label: "Delivered", Icon: CheckCircle2, className: "text-success bg-success-tint" },
   opened: { label: "Opened", Icon: MailOpen, className: "text-accent bg-accent-tint" },
-  failed: { label: "Failed", Icon: XCircle, className: "text-red-500 bg-red-50" },
+  failed: { label: "Failed", Icon: XCircle, className: "text-danger bg-danger-tint" },
 };
 
 export function AnalyticsSection() {
