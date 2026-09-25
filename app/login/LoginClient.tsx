@@ -43,33 +43,34 @@ export function LoginClient({ next }: { next?: string }) {
   }
 
   const inputClass =
-    "w-full rounded-lg border border-[#e7e7e7] bg-[#fafafa] px-3 py-2.5 text-[13px] text-[#0f0f0f] placeholder-[#a1a1aa] outline-none transition-all focus:border-[#a1a1aa] focus:bg-white focus:shadow-[0_0_0_3px_rgba(0,0,0,0.04)]";
+    "w-full rounded-lg border border-border-input bg-background px-3 py-2.5 text-[13px] text-text-primary placeholder-text-subtle transition-all focus:border-focus-ring focus:bg-surface focus:shadow-[0_0_0_3px_rgba(0,0,0,0.04)]";
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#fafafa] px-4 py-16">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-16">
       {/* Wordmark */}
       <div className="mb-8 flex flex-col items-center gap-2">
-        <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#0f0f0f]">
-          <span className="text-[15px] font-bold text-white tracking-tight select-none">K</span>
+        <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-primary">
+          <span className="text-[15px] font-bold text-primary-fg tracking-tight select-none">K</span>
         </div>
-        <h1 className="text-[22px] font-semibold tracking-tight text-[#0f0f0f]">Kesher</h1>
-        <p className="text-[13px] text-[#71717a]">School Communications</p>
+        <h1 className="text-[22px] font-semibold tracking-tight text-text-primary">Kesher</h1>
+        <p className="text-[13px] text-text-muted">School Communications</p>
       </div>
 
       {/* Card */}
-      <div className="w-full max-w-sm rounded-xl border border-[#e7e7e7] bg-white shadow-[0_2px_16px_rgba(0,0,0,0.06)]">
+      <div className="w-full max-w-sm rounded-xl border border-border bg-surface shadow-[0_2px_16px_rgba(0,0,0,0.06)]">
         {/* Tab switcher */}
-        <div className="flex border-b border-[#f0f0f0]">
+        <div className="flex border-b border-border-subtle">
           {(["signin", "signup"] as Tab[]).map((t) => (
             <button
               key={t}
               type="button"
+              aria-pressed={tab === t}
               onClick={() => switchTab(t)}
               className={[
                 "flex-1 py-3.5 text-[13px] font-medium transition-colors",
                 tab === t
-                  ? "text-[#0f0f0f] border-b-2 border-[#0f0f0f] -mb-px"
-                  : "text-[#a1a1aa] hover:text-[#71717a]",
+                  ? "text-text-primary border-b-2 border-primary -mb-px"
+                  : "text-text-subtle hover:text-text-muted",
               ].join(" ")}
             >
               {t === "signin" ? "Sign in" : "Sign up"}
@@ -80,14 +81,14 @@ export function LoginClient({ next }: { next?: string }) {
         <div className="px-6 py-6">
           {/* Error banner */}
           {error && (
-            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3.5 py-2.5 text-[12px] text-red-700 leading-relaxed">
+            <div role="alert" className="mb-4 rounded-lg border border-danger-border bg-danger-tint px-3.5 py-2.5 text-[12px] text-danger leading-relaxed">
               {error}
             </div>
           )}
 
           {/* Success banner */}
           {success && (
-            <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-[12px] text-emerald-700 leading-relaxed">
+            <div className="mb-4 rounded-lg border border-success-border bg-success-tint px-3.5 py-2.5 text-[12px] text-success leading-relaxed">
               {success}
             </div>
           )}
@@ -98,7 +99,7 @@ export function LoginClient({ next }: { next?: string }) {
               <input type="hidden" name="next" value={next ?? "/dashboard"} />
 
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="signin-email" className="text-[11px] font-semibold uppercase tracking-wider text-[#a1a1aa]">
+                <label htmlFor="signin-email" className="text-[11px] font-semibold uppercase tracking-wider text-text-subtle">
                   Email
                 </label>
                 <input
@@ -114,12 +115,12 @@ export function LoginClient({ next }: { next?: string }) {
 
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="signin-password" className="text-[11px] font-semibold uppercase tracking-wider text-[#a1a1aa]">
+                  <label htmlFor="signin-password" className="text-[11px] font-semibold uppercase tracking-wider text-text-subtle">
                     Password
                   </label>
                   <a
                     href="/forgot-password"
-                    className="text-[11px] font-medium text-[#71717a] hover:text-[#0f0f0f] transition-colors"
+                    className="text-[11px] font-medium text-text-muted hover:text-text-primary transition-colors"
                   >
                     Forgot password?
                   </a>
@@ -137,7 +138,7 @@ export function LoginClient({ next }: { next?: string }) {
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#a1a1aa] hover:text-[#71717a] transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-subtle hover:text-text-muted transition-colors"
                     tabIndex={-1}
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
@@ -151,7 +152,7 @@ export function LoginClient({ next }: { next?: string }) {
               <button
                 type="submit"
                 disabled={isPending}
-                className="mt-1 flex w-full items-center justify-center gap-2 rounded-lg bg-[#0f0f0f] px-4 py-2.5 text-[13px] font-medium text-white transition-colors hover:bg-[#27272a] disabled:opacity-60 disabled:cursor-not-allowed"
+                className="mt-1 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-[13px] font-medium text-primary-fg transition-colors hover:bg-primary-hover disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {isPending ? (
                   <>
@@ -169,7 +170,7 @@ export function LoginClient({ next }: { next?: string }) {
           {tab === "signup" && !success && (
             <form onSubmit={handleSignUp} className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="signup-email" className="text-[11px] font-semibold uppercase tracking-wider text-[#a1a1aa]">
+                <label htmlFor="signup-email" className="text-[11px] font-semibold uppercase tracking-wider text-text-subtle">
                   Email
                 </label>
                 <input
@@ -184,7 +185,7 @@ export function LoginClient({ next }: { next?: string }) {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="signup-password" className="text-[11px] font-semibold uppercase tracking-wider text-[#a1a1aa]">
+                <label htmlFor="signup-password" className="text-[11px] font-semibold uppercase tracking-wider text-text-subtle">
                   Password
                 </label>
                 <div className="relative">
@@ -201,7 +202,7 @@ export function LoginClient({ next }: { next?: string }) {
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#a1a1aa] hover:text-[#71717a] transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-subtle hover:text-text-muted transition-colors"
                     tabIndex={-1}
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
@@ -215,7 +216,7 @@ export function LoginClient({ next }: { next?: string }) {
               <button
                 type="submit"
                 disabled={isPending}
-                className="mt-1 flex w-full items-center justify-center gap-2 rounded-lg bg-[#0f0f0f] px-4 py-2.5 text-[13px] font-medium text-white transition-colors hover:bg-[#27272a] disabled:opacity-60 disabled:cursor-not-allowed"
+                className="mt-1 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-[13px] font-medium text-primary-fg transition-colors hover:bg-primary-hover disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {isPending ? (
                   <>
@@ -234,7 +235,7 @@ export function LoginClient({ next }: { next?: string }) {
             <button
               type="button"
               onClick={() => switchTab("signin")}
-              className="mt-2 w-full rounded-lg border border-[#e7e7e7] bg-[#fafafa] px-4 py-2.5 text-[13px] font-medium text-[#71717a] hover:bg-white hover:text-[#0f0f0f] transition-all"
+              className="mt-2 w-full rounded-lg border border-border bg-background px-4 py-2.5 text-[13px] font-medium text-text-muted hover:bg-surface hover:text-text-primary transition-all"
             >
               Back to sign in
             </button>
@@ -243,13 +244,13 @@ export function LoginClient({ next }: { next?: string }) {
       </div>
 
       {/* Legal note */}
-      <p className="mt-6 text-center text-[11px] text-[#a1a1aa] max-w-xs leading-relaxed">
+      <p className="mt-6 text-center text-[11px] text-text-subtle max-w-xs leading-relaxed">
         By continuing you agree to our{" "}
-        <a href="/terms" className="underline underline-offset-2 hover:text-[#71717a] transition-colors">
+        <a href="/terms" className="underline underline-offset-2 hover:text-text-muted transition-colors">
           Terms of Service
         </a>{" "}
         and{" "}
-        <a href="/privacy" className="underline underline-offset-2 hover:text-[#71717a] transition-colors">
+        <a href="/privacy" className="underline underline-offset-2 hover:text-text-muted transition-colors">
           Privacy Policy
         </a>
         .

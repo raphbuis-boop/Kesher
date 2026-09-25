@@ -253,7 +253,7 @@ function SendStatusLabel({ status }: { status: SendStatus }) {
   if (status === "preparing") return <span className="text-[12px] text-text-muted">Preparing…</span>;
   if (status === "sending") return <span className="text-[12px] text-text-muted">Sending…</span>;
   return (
-    <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-emerald-600">
+    <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-success">
       <CheckCircle2 size={13} strokeWidth={2} />
       Delivered
     </span>

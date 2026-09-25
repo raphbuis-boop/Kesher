@@ -8,6 +8,7 @@ import { EditPersonButton, type Tag } from "./EditPersonButton";
 import { AddRelationshipButton, type PersonOption } from "./AddRelationshipButton";
 import { gradYearLabel } from "@/lib/gradYear";
 import { Mail, Smartphone, MessageSquare, ArrowLeft, Hash } from "lucide-react";
+import { CATEGORY_BADGE, CATEGORY_BADGE_FALLBACK } from "@/lib/categoryStyles";
 
 const CATEGORY_LABELS: Record<string, string> = {
   parent: "Parents",
@@ -33,22 +34,10 @@ const CATEGORY_SLUGS: Record<string, string> = {
   prospect: "prospects",
 };
 
-const CATEGORY_COLORS: Record<string, string> = {
-  parent: "bg-violet-50 text-violet-700",
-  student: "bg-blue-50 text-blue-700",
-  grandparent: "bg-purple-50 text-purple-700",
-  alumni: "bg-indigo-50 text-indigo-700",
-  faculty: "bg-amber-50 text-amber-700",
-  staff: "bg-orange-50 text-orange-700",
-  board: "bg-rose-50 text-rose-700",
-  donor: "bg-emerald-50 text-emerald-700",
-  prospect: "bg-teal-50 text-teal-700",
-};
-
 const CHANNEL_META: Record<string, { label: string; color: string; icon: React.FC<{ size?: number; strokeWidth?: number; className?: string }> }> = {
-  email: { label: "Email", color: "text-zinc-500", icon: Mail },
-  sms: { label: "SMS", color: "text-blue-500", icon: Smartphone },
-  whatsapp: { label: "WhatsApp", color: "text-emerald-500", icon: MessageSquare },
+  email: { label: "Email", color: "text-text-muted", icon: Mail },
+  sms: { label: "SMS", color: "text-info", icon: Smartphone },
+  whatsapp: { label: "WhatsApp", color: "text-success", icon: MessageSquare },
 };
 
 type Person = {
@@ -92,12 +81,12 @@ function SectionCard({ title, count, children, action }: {
   action?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-[#e7e7e7] bg-white">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-[#f0f0f0]">
+    <div className="rounded-xl border border-border bg-surface">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle">
         <div className="flex items-center gap-2">
-          <h2 className="text-[13px] font-semibold text-[#0f0f0f]">{title}</h2>
+          <h2 className="text-[13px] font-semibold text-text-primary">{title}</h2>
           {count != null && count > 0 && (
-            <span className="rounded-full bg-[#f5f5f5] px-2 py-0.5 text-[10px] font-medium tabular-nums text-[#71717a]">
+            <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[10px] font-medium tabular-nums text-text-muted">
               {count}
             </span>
           )}
@@ -112,12 +101,12 @@ function SectionCard({ title, count, children, action }: {
 function Field({ label, value, mono }: { label: string; value: string | number | null; mono?: boolean }) {
   return (
     <div>
-      <dt className="text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">{label}</dt>
-      <dd className={`mt-1 text-[13px] ${mono ? "font-mono" : ""} text-[#0f0f0f]`}>
+      <dt className="text-[10px] font-semibold uppercase tracking-wider text-text-subtle">{label}</dt>
+      <dd className={`mt-1 text-[13px] ${mono ? "font-mono" : ""} text-text-primary`}>
         {value !== null && value !== "" ? (
           String(value)
         ) : (
-          <span className="text-[#d4d4d8]">—</span>
+          <span className="text-text-subtle">—</span>
         )}
       </dd>
     </div>
@@ -182,13 +171,13 @@ export default async function PersonPage({
   const initials = `${person.first_name[0] ?? ""}${person.last_name[0] ?? ""}`.toUpperCase();
 
   return (
-    <div className="min-h-screen bg-[#fafafa]">
+    <div className="min-h-screen bg-background">
       {/* Sticky header */}
-      <header className="sticky top-0 z-10 border-b border-[#e7e7e7] bg-white/95 backdrop-blur-sm px-6 py-3.5">
+      <header className="sticky top-0 z-10 border-b border-border bg-surface/95 backdrop-blur-sm px-6 py-3.5">
         <div className="flex items-center justify-between max-w-3xl mx-auto">
           <Link
             href="/people"
-            className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#a1a1aa] hover:text-[#71717a] transition-colors"
+            className="inline-flex items-center gap-1.5 text-[12px] font-medium text-text-subtle hover:text-text-muted transition-colors"
           >
             <ArrowLeft size={13} strokeWidth={2} />
             People
@@ -216,16 +205,16 @@ export default async function PersonPage({
 
       <div className="mx-auto max-w-3xl px-6 py-6 space-y-4">
         {/* Profile header */}
-        <div className="rounded-xl border border-[#e7e7e7] bg-white px-5 py-5">
+        <div className="rounded-xl border border-border bg-surface px-5 py-5">
           <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#f0f0f0] text-[13px] font-semibold text-[#71717a]">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-surface-3 text-[13px] font-semibold text-text-muted">
               {initials}
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-[18px] font-semibold text-[#0f0f0f] tracking-tight leading-tight">
+              <h1 className="text-[18px] font-semibold text-text-primary tracking-tight leading-tight">
                 {person.first_name} {person.last_name}
               </h1>
-              <p className="mt-0.5 text-[11px] text-[#a1a1aa]">
+              <p className="mt-0.5 text-[11px] text-text-subtle">
                 Added {formatDate(person.created_at)}
               </p>
               {(currentCategories.length > 0 || isOptedOut) && (
@@ -234,14 +223,14 @@ export default async function PersonPage({
                     <Link
                       key={cat}
                       href={`/audiences/${CATEGORY_SLUGS[cat] ?? cat}`}
-                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-colors ${CATEGORY_COLORS[cat] ?? "bg-[#f5f5f5] text-[#71717a]"}`}
+                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-colors ${CATEGORY_BADGE[cat] ?? CATEGORY_BADGE_FALLBACK}`}
                     >
                       {CATEGORY_LABELS[cat] ?? cat}
                     </Link>
                   ))}
                   {isOptedOut && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-0.5 text-[11px] font-medium text-rose-700">
-                      <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+                    <span className="inline-flex items-center gap-1 rounded-full bg-cat-rose-tint px-2.5 py-0.5 text-[11px] font-medium text-cat-rose">
+                      <span className="h-1.5 w-1.5 rounded-full bg-cat-rose-solid" />
                       SMS opted out
                     </span>
                   )}
@@ -270,7 +259,7 @@ export default async function PersonPage({
         {/* Communication History */}
         <SectionCard title="Communication History" count={messageHistory.length}>
           {messageHistory.length > 0 ? (
-            <div className="divide-y divide-[#f5f5f5]">
+            <div className="divide-y divide-border-subtle">
               {messageHistory.map((item: any) => {
                 const msg = item.messages;
                 const date = item.sent_at ?? msg?.sent_at;
@@ -280,12 +269,12 @@ export default async function PersonPage({
                 const title = msg?.subject ?? (msg?.body ? msg.body.slice(0, 60) + (msg.body.length > 60 ? "…" : "") : "—");
                 return (
                   <div key={item.id} className="flex items-start gap-3 py-3.5 first:pt-0 last:pb-0">
-                    <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#fafafa] border border-[#f0f0f0]">
+                    <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-background border border-border-subtle">
                       <ChannelIcon size={12} className={meta.color} strokeWidth={1.75} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-medium text-[#0f0f0f] truncate">{title}</p>
-                      <p className="mt-0.5 text-[11px] text-[#a1a1aa]">
+                      <p className="text-[13px] font-medium text-text-primary truncate">{title}</p>
+                      <p className="mt-0.5 text-[11px] text-text-subtle">
                         {meta.label}
                         {msg?.audience_label ? ` · ${msg.audience_label}` : ""}
                         {date ? ` · ${formatDate(date)}` : ""}
@@ -293,19 +282,19 @@ export default async function PersonPage({
                     </div>
                     <div className="shrink-0">
                       {item.status === "sent" || item.status === "delivered" ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
-                          <span className="h-1 w-1 rounded-full bg-emerald-500" />Delivered
+                        <span className="inline-flex items-center gap-1 rounded-full bg-success-tint px-1.5 py-0.5 text-[10px] font-medium text-success">
+                          <span className="h-1 w-1 rounded-full bg-success-solid" />Delivered
                         </span>
                       ) : item.status === "failed" ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-600">
-                          <span className="h-1 w-1 rounded-full bg-red-500" />Failed
+                        <span className="inline-flex items-center gap-1 rounded-full bg-danger-tint px-1.5 py-0.5 text-[10px] font-medium text-danger">
+                          <span className="h-1 w-1 rounded-full bg-danger-solid" />Failed
                         </span>
                       ) : item.status === "opted_out" ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-1.5 py-0.5 text-[10px] font-medium text-rose-700">
-                          <span className="h-1 w-1 rounded-full bg-rose-500" />Opted out
+                        <span className="inline-flex items-center gap-1 rounded-full bg-cat-rose-tint px-1.5 py-0.5 text-[10px] font-medium text-cat-rose">
+                          <span className="h-1 w-1 rounded-full bg-cat-rose-solid" />Opted out
                         </span>
                       ) : (
-                        <span className="inline-flex items-center rounded-full bg-[#f5f5f5] px-1.5 py-0.5 text-[10px] font-medium text-[#71717a]">
+                        <span className="inline-flex items-center rounded-full bg-surface-2 px-1.5 py-0.5 text-[10px] font-medium text-text-muted">
                           {item.status}
                         </span>
                       )}
@@ -316,10 +305,10 @@ export default async function PersonPage({
             </div>
           ) : (
             <div className="flex flex-col items-center py-8 text-center">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#fafafa] border border-[#e7e7e7] mb-3">
-                <Mail size={16} className="text-[#d4d4d8]" strokeWidth={1.5} />
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-background border border-border mb-3">
+                <Mail size={16} className="text-text-faint" strokeWidth={1.5} />
               </div>
-              <p className="text-[12px] text-[#a1a1aa]">No messages sent to this person yet.</p>
+              <p className="text-[12px] text-text-subtle">No messages sent to this person yet.</p>
             </div>
           )}
         </SectionCard>
@@ -331,15 +320,15 @@ export default async function PersonPage({
               {person.person_tags.map((pt) => (
                 <span
                   key={pt.tag_id}
-                  className="inline-flex items-center gap-1 rounded-full bg-[#f5f5f5] px-2.5 py-1 text-[12px] font-medium text-[#71717a]"
+                  className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2.5 py-1 text-[12px] font-medium text-text-muted"
                 >
-                  <Hash size={10} className="text-[#a1a1aa]" strokeWidth={2} />
+                  <Hash size={10} className="text-text-subtle" strokeWidth={2} />
                   {pt.tags.name}
                 </span>
               ))}
             </div>
           ) : (
-            <p className="text-[12px] text-[#a1a1aa]">No tags assigned.</p>
+            <p className="text-[12px] text-text-subtle">No tags assigned.</p>
           )}
         </SectionCard>
 
@@ -350,18 +339,18 @@ export default async function PersonPage({
           action={<AddRelationshipButton personId={person.id} allPeople={allPeople} />}
         >
           {relationships.length > 0 ? (
-            <div className="divide-y divide-[#f5f5f5]">
+            <div className="divide-y divide-border-subtle">
               {relationships.map((rel) => {
                 const related = peopleById.get(rel.related_person_id);
                 if (!related) return null;
                 return (
                   <div key={rel.id} className="flex items-center gap-4 py-3 first:pt-0 last:pb-0">
-                    <span className="w-28 flex-shrink-0 text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">
+                    <span className="w-28 flex-shrink-0 text-[10px] font-semibold uppercase tracking-wider text-text-subtle">
                       {rel.relationship_type}
                     </span>
                     <Link
                       href={`/people/${related.id}`}
-                      className="text-[13px] font-medium text-[#0f0f0f] hover:text-[#71717a] transition-colors"
+                      className="text-[13px] font-medium text-text-primary hover:text-text-muted transition-colors"
                     >
                       {related.first_name} {related.last_name}
                     </Link>
@@ -370,18 +359,18 @@ export default async function PersonPage({
               })}
             </div>
           ) : (
-            <p className="text-[12px] text-[#a1a1aa]">No relationships added yet.</p>
+            <p className="text-[12px] text-text-subtle">No relationships added yet.</p>
           )}
         </SectionCard>
 
         {/* Notes */}
         <SectionCard title="Notes">
           {person.notes ? (
-            <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-[#71717a]">
+            <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-text-muted">
               {person.notes}
             </p>
           ) : (
-            <p className="text-[12px] text-[#a1a1aa]">No notes yet.</p>
+            <p className="text-[12px] text-text-subtle">No notes yet.</p>
           )}
         </SectionCard>
       </div>

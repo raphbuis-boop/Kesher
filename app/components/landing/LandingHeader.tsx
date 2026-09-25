@@ -36,8 +36,8 @@ export function LandingHeader({ demoMailto }: { demoMailto: string }) {
         <div className="h-13 sm:h-14 flex items-center justify-between gap-4">
           {/* Wordmark */}
           <Link href="/" className="flex items-center gap-2 group shrink-0 pl-1.5" aria-label="Kesher home">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0b1120] group-hover:bg-accent transition-colors">
-              <span className="text-[11px] font-bold text-white tracking-tight select-none">K</span>
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary group-hover:bg-accent transition-colors">
+              <span className="text-[11px] font-bold text-primary-fg tracking-tight select-none">K</span>
             </div>
             <span className="text-[13px] font-semibold text-text-primary tracking-tight">Kesher</span>
           </Link>
@@ -65,7 +65,7 @@ export function LandingHeader({ demoMailto }: { demoMailto: string }) {
             </Link>
             <a
               href={demoMailto}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#0b1120] px-4 py-2 text-[13px] font-medium text-white hover:bg-accent transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-[13px] font-medium text-primary-fg hover:bg-accent transition-colors"
             >
               Book a demo
             </a>
@@ -114,7 +114,7 @@ export function LandingHeader({ demoMailto }: { demoMailto: string }) {
             <a
               href={demoMailto}
               onClick={() => setOpen(false)}
-              className="inline-flex items-center justify-center gap-1.5 min-h-[44px] rounded-full bg-[#0b1120] px-4 text-[14px] font-medium text-white"
+              className="inline-flex items-center justify-center gap-1.5 min-h-[44px] rounded-full bg-primary px-4 text-[14px] font-medium text-primary-fg"
             >
               Book a demo
             </a>

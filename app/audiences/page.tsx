@@ -7,7 +7,7 @@ import { isDemoWorkspaceLoaded } from "@/lib/demoWorkspace";
 import { DemoWorkspaceControl } from "@/app/components/DemoWorkspaceControl";
 import { resolveGroupMemberIds, type GroupRow } from "@/lib/audienceMembers";
 import { AddGroupButton } from "@/app/groups/AddGroupButton";
-import { Plus, Users, ArrowRight } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 
 type PersonRow = { id: string; categories: string[] | null };
 
@@ -56,21 +56,21 @@ export default async function AudiencesPage() {
   const totalInSystem = people.length;
 
   return (
-    <div className="min-h-screen bg-[#fafafa]">
+    <div className="min-h-screen bg-background">
       {/* Sticky header */}
-      <header className="sticky top-0 z-10 border-b border-[#e7e7e7] bg-white/95 backdrop-blur-sm px-6 py-3.5">
+      <header className="sticky top-0 z-10 border-b border-border bg-surface/95 backdrop-blur-sm px-6 py-3.5">
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-[13px] font-semibold text-[#0f0f0f]">Audiences</h1>
-            <p className="text-[11px] text-[#a1a1aa] mt-px">
+            <h1 className="text-[13px] font-semibold text-text-primary">Audiences</h1>
+            <p className="text-[11px] text-text-subtle mt-px">
               {SYSTEM_AUDIENCES.length} system · {customAudiences.length} custom
             </p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
-            {demoLoaded && <DemoWorkspaceControl mode="remove" />}
+            {demoLoaded && <DemoWorkspaceControl mode="badge" />}
             <Link
               href="/messages/new"
-              className="inline-flex items-center gap-1.5 rounded-md bg-[#0f0f0f] px-3 py-1.5 text-[12px] font-medium text-white transition-colors duration-150 hover:bg-[#27272a] active:bg-black"
+              className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-fg transition-colors duration-150 hover:bg-primary-hover active:bg-primary-hover"
             >
               <Plus size={12} strokeWidth={2.5} />
               Compose
@@ -83,16 +83,16 @@ export default async function AudiencesPage() {
         {/* System Audiences */}
         <section>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-[11px] font-semibold text-[#a1a1aa] uppercase tracking-wider">System audiences</h2>
-            <span className="text-[11px] text-[#a1a1aa]">{totalInSystem.toLocaleString()} total contacts</span>
+            <h2 className="text-[11px] font-semibold text-text-subtle uppercase tracking-wider">System audiences</h2>
+            <span className="text-[11px] text-text-subtle">{totalInSystem.toLocaleString()} total contacts</span>
           </div>
-          <div className="overflow-hidden rounded-xl border border-[#e7e7e7] bg-white">
+          <div className="overflow-hidden rounded-xl border border-border bg-surface">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[#f0f0f0] bg-[#fafafa]">
-                  <th className="py-2.5 pl-4 pr-3 text-left text-[11px] font-semibold text-[#a1a1aa] uppercase tracking-wide">Audience</th>
-                  <th className="px-3 py-2.5 text-right text-[11px] font-semibold text-[#a1a1aa] uppercase tracking-wide">Members</th>
-                  <th className="pl-3 pr-4 py-2.5 text-right text-[11px] font-semibold text-[#a1a1aa] uppercase tracking-wide">Actions</th>
+                <tr className="border-b border-border-subtle bg-background">
+                  <th className="py-2.5 pl-4 pr-3 text-left text-[11px] font-semibold text-text-subtle uppercase tracking-wide">Audience</th>
+                  <th className="px-3 py-2.5 text-right text-[11px] font-semibold text-text-subtle uppercase tracking-wide">Members</th>
+                  <th className="pl-3 pr-4 py-2.5 text-right text-[11px] font-semibold text-text-subtle uppercase tracking-wide"><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -101,39 +101,33 @@ export default async function AudiencesPage() {
                   return (
                     <tr
                       key={a.slug}
-                      className={`group hover:bg-[#fafafa] transition-colors duration-100 ${!isLast ? "border-b border-[#f5f5f5]" : ""}`}
+                      className={`group hover:bg-surface-hover transition-colors duration-100 ${!isLast ? "border-b border-border-subtle" : ""}`}
                     >
                       <td className="py-3 pl-4 pr-3">
                         <div className="flex items-center gap-2.5">
-                          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-[#f5f5f5] border border-[#f0f0f0]">
-                            <Users size={11} className="text-[#a1a1aa]" strokeWidth={1.75} />
+                          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-surface-2 border border-border-subtle">
+                            <Users size={11} className="text-text-subtle" strokeWidth={1.75} />
                           </div>
                           <Link
                             href={`/audiences/${a.slug}`}
-                            className="text-[13px] font-medium text-[#0f0f0f] hover:text-[#71717a] transition-colors"
+                            className="text-[13px] font-medium text-text-primary hover:underline underline-offset-2"
                           >
                             {a.label}
                           </Link>
                         </div>
                       </td>
                       <td className="px-3 py-3 text-right">
-                        <span className={`text-[13px] tabular-nums font-medium ${a.count === 0 ? "text-[#d4d4d8]" : "text-[#0f0f0f]"}`}>
+                        <span className={`text-[13px] tabular-nums font-medium ${a.count === 0 ? "text-text-subtle" : "text-text-primary"}`}>
                           {a.count.toLocaleString()}
                         </span>
                       </td>
                       <td className="pl-3 pr-4 py-3">
-                        <div className="flex items-center justify-end gap-3">
+                        <div className="flex items-center justify-end">
                           <Link
                             href={`/messages/new?audiences=${a.slug}`}
-                            className="text-[11px] font-medium text-[#a1a1aa] hover:text-[#0f0f0f] transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                            className="rounded-md border border-border px-2 py-1 text-[11px] font-medium text-text-secondary hover:border-border-strong hover:text-text-primary transition-colors"
                           >
-                            Message
-                          </Link>
-                          <Link
-                            href={`/audiences/${a.slug}`}
-                            className="inline-flex items-center gap-1 text-[11px] font-medium text-[#a1a1aa] hover:text-[#71717a] transition-colors"
-                          >
-                            View <ArrowRight size={10} />
+                            Message<span className="sr-only"> {a.label}</span>
                           </Link>
                         </div>
                       </td>
@@ -148,29 +142,29 @@ export default async function AudiencesPage() {
         {/* Custom Audiences */}
         <section>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-[11px] font-semibold text-[#a1a1aa] uppercase tracking-wider">Custom audiences</h2>
+            <h2 className="text-[11px] font-semibold text-text-subtle uppercase tracking-wider">Custom audiences</h2>
             <AddGroupButton />
           </div>
 
           {customAudiences.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#e7e7e7] py-16 text-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white border border-[#e7e7e7] mb-4">
-                <Users size={18} className="text-[#d4d4d8]" strokeWidth={1.5} />
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface border border-border mb-4">
+                <Users size={18} className="text-text-faint" strokeWidth={1.5} />
               </div>
-              <p className="text-[13px] font-semibold text-[#0f0f0f]">No custom audiences</p>
-              <p className="text-[12px] text-[#a1a1aa] mt-1 max-w-xs">
+              <p className="text-[13px] font-semibold text-text-primary">No custom audiences</p>
+              <p className="text-[12px] text-text-subtle mt-1 max-w-xs">
                 Create tag-based or rule-based groups — dinner committees, graduating classes, volunteers.
               </p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-xl border border-[#e7e7e7] bg-white">
+            <div className="overflow-hidden rounded-xl border border-border bg-surface">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-[#f0f0f0] bg-[#fafafa]">
-                    <th className="py-2.5 pl-4 pr-3 text-left text-[11px] font-semibold text-[#a1a1aa] uppercase tracking-wide">Name</th>
-                    <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-[#a1a1aa] uppercase tracking-wide">Description</th>
-                    <th className="px-3 py-2.5 text-right text-[11px] font-semibold text-[#a1a1aa] uppercase tracking-wide">Members</th>
-                    <th className="pl-3 pr-4 py-2.5 text-right text-[11px] font-semibold text-[#a1a1aa] uppercase tracking-wide">Actions</th>
+                  <tr className="border-b border-border-subtle bg-background">
+                    <th className="py-2.5 pl-4 pr-3 text-left text-[11px] font-semibold text-text-subtle uppercase tracking-wide">Name</th>
+                    <th className="px-3 py-2.5 text-left text-[11px] font-semibold text-text-subtle uppercase tracking-wide">Description</th>
+                    <th className="px-3 py-2.5 text-right text-[11px] font-semibold text-text-subtle uppercase tracking-wide">Members</th>
+                    <th className="pl-3 pr-4 py-2.5 text-right text-[11px] font-semibold text-text-subtle uppercase tracking-wide"><span className="sr-only">Actions</span></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -179,41 +173,35 @@ export default async function AudiencesPage() {
                     return (
                       <tr
                         key={g.id}
-                        className={`group hover:bg-[#fafafa] transition-colors duration-100 ${!isLast ? "border-b border-[#f5f5f5]" : ""}`}
+                        className={`group hover:bg-surface-hover transition-colors duration-100 ${!isLast ? "border-b border-border-subtle" : ""}`}
                       >
                         <td className="py-3 pl-4 pr-3">
                           <Link
                             href={`/audiences/${g.id}`}
-                            className="text-[13px] font-medium text-[#0f0f0f] hover:text-[#71717a] transition-colors"
+                            className="text-[13px] font-medium text-text-primary hover:underline underline-offset-2"
                           >
                             {g.name}
                           </Link>
                         </td>
                         <td className="px-3 py-3 max-w-xs">
                           {g.description ? (
-                            <span className="text-[12px] text-[#a1a1aa] line-clamp-1">{g.description}</span>
+                            <span className="text-[12px] text-text-subtle line-clamp-1">{g.description}</span>
                           ) : (
-                            <span className="text-[#d4d4d8] text-[12px]">—</span>
+                            <span className="text-text-subtle text-[12px]">—</span>
                           )}
                         </td>
                         <td className="px-3 py-3 text-right">
-                          <span className={`text-[13px] tabular-nums font-medium ${g.count === 0 ? "text-[#d4d4d8]" : "text-[#0f0f0f]"}`}>
+                          <span className={`text-[13px] tabular-nums font-medium ${g.count === 0 ? "text-text-subtle" : "text-text-primary"}`}>
                             {g.count.toLocaleString()}
                           </span>
                         </td>
                         <td className="pl-3 pr-4 py-3">
-                          <div className="flex items-center justify-end gap-3">
+                          <div className="flex items-center justify-end">
                             <Link
                               href={`/messages/new?audiences=${g.id}`}
-                              className="text-[11px] font-medium text-[#a1a1aa] hover:text-[#0f0f0f] transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                              className="rounded-md border border-border px-2 py-1 text-[11px] font-medium text-text-secondary hover:border-border-strong hover:text-text-primary transition-colors"
                             >
-                              Message
-                            </Link>
-                            <Link
-                              href={`/audiences/${g.id}`}
-                              className="inline-flex items-center gap-1 text-[11px] font-medium text-[#a1a1aa] hover:text-[#71717a] transition-colors"
-                            >
-                              View <ArrowRight size={10} />
+                              Message<span className="sr-only"> {g.name}</span>
                             </Link>
                           </div>
                         </td>
