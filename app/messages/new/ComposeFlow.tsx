@@ -11,6 +11,7 @@ export type AudienceOption = {
   totalCount: number;
   emailCount: number;
   phoneCount: number;
+  whatsappCount: number;
 };
 
 type Attachment = {
@@ -31,6 +32,7 @@ const PREVIEW_PERSON = {
 
 function recipientCount(audiences: AudienceOption[], channel: Channel): number {
   if (channel === "email") return audiences.reduce((s, a) => s + a.emailCount, 0);
+  if (channel === "whatsapp") return audiences.reduce((s, a) => s + a.whatsappCount, 0);
   return audiences.reduce((s, a) => s + a.phoneCount, 0);
 }
 
@@ -501,6 +503,7 @@ export function ComposeFlow({
   const totalCount = selectedAudiences.reduce((s, a) => s + a.totalCount, 0);
   const emailCount = selectedAudiences.reduce((s, a) => s + a.emailCount, 0);
   const phoneCount = selectedAudiences.reduce((s, a) => s + a.phoneCount, 0);
+  const whatsappCount = selectedAudiences.reduce((s, a) => s + a.whatsappCount, 0);
   const eligible = recipientCount(selectedAudiences, channel);
   const missing = totalCount - eligible;
 
@@ -607,7 +610,7 @@ export function ComposeFlow({
           <div className="flex-1">
             <div className="flex gap-2">
               {(["email", "sms", "whatsapp"] as Channel[]).map((c) => {
-                const count = c === "email" ? emailCount : phoneCount;
+                const count = c === "email" ? emailCount : c === "whatsapp" ? whatsappCount : phoneCount;
                 const isSelected = channel === c;
                 return (
                   <button

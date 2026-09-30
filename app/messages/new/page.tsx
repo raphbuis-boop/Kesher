@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getOrgId } from "@/lib/org";
-import { resolveGroupMemberIds, type GroupRow } from "@/lib/audienceMembers";
+import { getGroupMembers, type GroupRow } from "@/lib/audienceMembers";
 import { ComposeFlow, type AudienceOption } from "./ComposeFlow";
 
 const SYSTEM_AUDIENCES: { slug: string; label: string; category: string }[] = [
@@ -28,10 +28,10 @@ export default async function NewMessagePage({
   const supabase = await createSupabaseServerClient();
   const orgId = await getOrgId();
 
-  // Fetch all people once — compute all counts in one pass
+  // Fetch all people once — compute system-audience counts in one pass
   const { data: allPeople } = await supabase
     .from("people")
-    .select("id, categories, email, phone")
+    .select("id, categories, email, phone, whatsapp")
     .eq("org_id", orgId);
 
   const people = (allPeople ?? []) as {
@@ -39,7 +39,19 @@ export default async function NewMessagePage({
     categories: string[] | null;
     email: string | null;
     phone: string | null;
+    whatsapp: string | null;
   }[];
+
+  // Channel counts use the same "is this person reachable?" rules as
+  // sendMessage: email needs an email, SMS needs a phone, WhatsApp targets the
+  // whatsapp number and falls back to phone.
+  function channelCounts(members: typeof people) {
+    return {
+      emailCount: members.filter((p) => p.email).length,
+      phoneCount: members.filter((p) => p.phone).length,
+      whatsappCount: members.filter((p) => p.whatsapp?.trim() || p.phone).length,
+    };
+  }
 
   // System audiences
   const systemAudiences: AudienceOption[] = SYSTEM_AUDIENCES.map(
@@ -51,51 +63,35 @@ export default async function NewMessagePage({
         slug,
         label,
         totalCount: members.length,
-        emailCount: members.filter((p) => p.email).length,
-        phoneCount: members.filter((p) => p.phone).length,
+        ...channelCounts(members),
       };
     }
   );
 
-  // Custom audiences — tag-based groups are counted from the batch fetch
-  // below; dynamic (filter_config) groups are resolved the same way the
-  // audiences pages and the actual send path resolve them (see
-  // lib/audienceMembers.ts), so this picker's counts never lie about who a
-  // send will actually reach.
-  const [groupsResult, personTagsResult] = await Promise.all([
-    supabase
-      .from("groups")
-      .select("id, name, is_dynamic, filter_config, group_tags ( tag_id )")
-      .eq("org_id", orgId)
-      .order("name"),
-    supabase.from("person_tags").select("person_id, tag_id"),
-  ]);
+  // Custom audiences — members are resolved with getGroupMembers, the exact
+  // function sendMessage uses (tag-based and dynamic groups, org_id-scoped),
+  // so this picker's counts never lie about who a send will actually reach.
+  const { data: groupsData } = await supabase
+    .from("groups")
+    .select("id, name, is_dynamic, filter_config, group_tags ( tag_id )")
+    .eq("org_id", orgId)
+    .order("name");
 
-  const groups = (groupsResult.data ?? []) as unknown as GroupRow[];
-
-  const personTags = (personTagsResult.data ?? []) as {
-    person_id: string;
-    tag_id: string;
-  }[];
-
-  const personById = new Map(people.map((p) => [p.id, p]));
+  const groups = (groupsData ?? []) as unknown as GroupRow[];
 
   const customAudiences: AudienceOption[] = await Promise.all(
     groups.map(async (g) => {
-      let memberIds: string[];
-      if (g.is_dynamic) {
-        memberIds = await resolveGroupMemberIds(supabase, orgId, g);
-      } else {
-        const tagIdSet = new Set(g.group_tags.map((gt) => gt.tag_id));
-        memberIds = [...new Set(personTags.filter((pt) => tagIdSet.has(pt.tag_id)).map((pt) => pt.person_id))];
+      let members: typeof people = [];
+      try {
+        members = await getGroupMembers(supabase, orgId, g);
+      } catch (err) {
+        console.error(`[NewMessagePage] Failed to resolve members for group ${g.id}:`, err);
       }
-      const members = memberIds.map((id) => personById.get(id)).filter(Boolean) as typeof people;
       return {
         slug: g.id,
         label: g.name,
-        totalCount: memberIds.length,
-        emailCount: members.filter((p) => p.email).length,
-        phoneCount: members.filter((p) => p.phone).length,
+        totalCount: members.length,
+        ...channelCounts(members),
       };
     })
   );
