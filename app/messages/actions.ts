@@ -705,6 +705,45 @@ export async function sendMessage(
   const messageId = messageRow.id;
   const now = new Date().toISOString();
 
+  // ── Save the recipient list BEFORE sending ──────────────────────────────
+  // If these rows can't be written, nothing is sent: otherwise the message
+  // would go out and show as "sent" with an empty recipient list on the
+  // detail page. Rows start as "failed" so an interrupted send never reads
+  // as delivered; they're overwritten with real results after the send.
+  const { data: savedRows, error: saveError } = await supabase
+    .from("message_recipients")
+    .insert(
+      eligible.map((r) => ({
+        message_id: messageId,
+        person_id: r.id,
+        contact_value:
+          channel === "email" ? r.email! : normalizePhone(targetContactValue(r, channel)!),
+        name: `${r.first_name} ${r.last_name}`.trim(),
+        status: "failed",
+        provider_id: null,
+        sent_at: null,
+        error_detail: "Send did not complete",
+      }))
+    )
+    .select("id, person_id");
+
+  if (saveError || !savedRows) {
+    console.error(
+      `[sendMessage] Failed to save recipients for message ${messageId} — nothing was sent:`,
+      saveError
+    );
+    const saveErrMsg = "Couldn't save the recipient list, so nothing was sent. Please try again.";
+    const { error: markError } = await supabase
+      .from("messages")
+      .update({ status: "failed", sent_count: 0, failed_count: 0, error_detail: saveErrMsg })
+      .eq("id", messageId);
+    if (markError) console.error(`[sendMessage] Failed to mark message ${messageId} as failed:`, markError);
+    revalidatePath("/messages");
+    return { success: false, error: saveErrMsg };
+  }
+
+  const savedRowIdByPerson = new Map(savedRows.map((row) => [row.person_id as string, row.id as string]));
+
   let sentCount = 0;
   let failedCount = 0;
   let inserts: RecipientInsert[] = [];
@@ -753,8 +792,22 @@ export async function sendMessage(
       ? (batchError ?? inserts.find((i) => i.error_detail)?.error_detail ?? "All sends failed")
       : null;
 
-  await Promise.all([
-    inserts.length > 0 ? supabase.from("message_recipients").insert(inserts) : Promise.resolve(),
+  // Overwrite the pre-saved rows with real send results (matched by row id).
+  // Anyone who got no result (e.g. suppressed as opted-out) is removed so the
+  // recipient list matches exactly who was attempted, as before.
+  const resultRows = inserts.map((i) => ({ id: savedRowIdByPerson.get(i.person_id)!, ...i }));
+  const attemptedPersonIds = new Set(inserts.map((i) => i.person_id));
+  const unattemptedRowIds = savedRows
+    .filter((row) => !attemptedPersonIds.has(row.person_id as string))
+    .map((row) => row.id as string);
+
+  const [resultsWrite, unattemptedDelete, messageUpdate] = await Promise.all([
+    resultRows.length > 0
+      ? supabase.from("message_recipients").upsert(resultRows)
+      : Promise.resolve({ error: null }),
+    unattemptedRowIds.length > 0
+      ? supabase.from("message_recipients").delete().in("id", unattemptedRowIds)
+      : Promise.resolve({ error: null }),
     supabase
       .from("messages")
       .update({
@@ -766,6 +819,13 @@ export async function sendMessage(
       })
       .eq("id", messageId),
   ]);
+
+  if (resultsWrite.error)
+    console.error(`[sendMessage] Failed to save send results for message ${messageId}:`, resultsWrite.error);
+  if (unattemptedDelete.error)
+    console.error(`[sendMessage] Failed to remove unattempted recipients for message ${messageId}:`, unattemptedDelete.error);
+  if (messageUpdate.error)
+    console.error(`[sendMessage] Failed to update message ${messageId}:`, messageUpdate.error);
 
   revalidatePath("/messages");
 
