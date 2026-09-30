@@ -1,5 +1,6 @@
 "use client";
 
+import { useActionToast } from "@/app/components/ui/toast";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { addRelationship, type AddRelationshipState } from "./actions";
 
@@ -90,7 +91,7 @@ function PersonSearch({
         placeholder="Search by name…"
         disabled={isPending}
         autoComplete="off"
-        className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-zinc-400 disabled:opacity-50"
+        className="w-full rounded-md border border-line bg-card px-3 py-2 text-sm text-ink placeholder-ink-3 outline-none focus:border-ink-3 disabled:opacity-50"
       />
       {/* Carries the resolved person ID into the form */}
       <input type="hidden" name="related_person_id" value={selectedId} />
@@ -99,7 +100,7 @@ function PersonSearch({
         <div
           id={listboxId}
           role="listbox"
-          className="absolute top-full left-0 right-0 z-10 mt-1 overflow-hidden rounded-md border border-zinc-200 bg-white shadow-lg"
+          className="absolute top-full left-0 right-0 z-10 mt-1 overflow-hidden rounded-md border border-line bg-card shadow-pop animate-pop-in"
         >
           {results.map((p) => (
             <button
@@ -112,7 +113,7 @@ function PersonSearch({
                 e.preventDefault();
               }}
               onClick={() => select(p)}
-              className="w-full px-3 py-2.5 text-left text-sm text-zinc-900 hover:bg-zinc-50 transition-colors"
+              className="w-full px-3 py-2.5 text-left text-sm text-ink hover:bg-canvas transition-colors"
             >
               {p.first_name} {p.last_name}
             </button>
@@ -138,6 +139,7 @@ function AddRelationshipForm({
     addRelationship,
     initialState
   );
+  useActionToast(state, (s) => ({ success: s.success ? "Relationship added" : null }));
 
   useEffect(() => {
     if (state.success) onSuccess();
@@ -151,7 +153,7 @@ function AddRelationshipForm({
         <div>
           <label
             htmlFor="relationship_type"
-            className="block text-sm font-medium text-zinc-700 mb-1"
+            className="block text-sm font-medium text-ink-soft mb-1"
           >
             Relationship Type <span className="text-red-500">*</span>
           </label>
@@ -161,7 +163,7 @@ function AddRelationshipForm({
             defaultValue=""
             required
             disabled={isPending}
-            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-400 disabled:opacity-50"
+            className="w-full rounded-md border border-line bg-card px-3 py-2 text-sm text-ink outline-none focus:border-ink-3 disabled:opacity-50"
           >
             <option value="" disabled>
               Select type…
@@ -175,7 +177,7 @@ function AddRelationshipForm({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-700 mb-1">
+          <label className="block text-sm font-medium text-ink-soft mb-1">
             Related Person <span className="text-red-500">*</span>
           </label>
           <PersonSearch allPeople={allPeople} isPending={isPending} />
@@ -192,7 +194,7 @@ function AddRelationshipForm({
         <button
           type="submit"
           disabled={isPending}
-          className="inline-flex items-center gap-2 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 rounded-md bg-ink px-4 py-2 text-sm font-medium text-on-ink transition-colors hover:bg-ink-hover disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isPending ? (
             <>
@@ -255,7 +257,7 @@ export function AddRelationshipButton({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50 hover:border-zinc-300"
+        className="inline-flex items-center gap-1.5 rounded-md border border-line bg-card px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:bg-canvas hover:border-line-strong"
       >
         <svg
           className="h-3.5 w-3.5"
@@ -277,21 +279,21 @@ export function AddRelationshipButton({
         <div
           ref={overlayRef}
           onClick={handleOverlayClick}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4"
+          className="animate-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4"
         >
-          <div className="w-full max-w-md rounded-xl border border-zinc-200 bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4">
+          <div className="animate-pop-in w-full max-w-md rounded-xl border border-line bg-card shadow-pop">
+            <div className="flex items-center justify-between border-b border-muted px-6 py-4">
               <div>
-                <h2 className="text-sm font-semibold text-zinc-900">
+                <h2 className="text-sm font-semibold text-ink">
                   Add Relationship
                 </h2>
-                <p className="text-xs text-zinc-500 mt-0.5">
+                <p className="text-xs text-ink-2 mt-0.5">
                   Connect this person to someone else in the directory.
                 </p>
               </div>
               <button
                 onClick={() => setOpen(false)}
-                className="rounded-md p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
+                className="rounded-md p-1 text-ink-3 transition-colors hover:bg-muted hover:text-ink-soft"
                 aria-label="Close"
               >
                 <svg
@@ -319,10 +321,10 @@ export function AddRelationshipButton({
               />
             </div>
 
-            <div className="border-t border-zinc-100 px-6 py-3">
+            <div className="border-t border-muted px-6 py-3">
               <button
                 onClick={() => setOpen(false)}
-                className="text-sm text-zinc-500 hover:text-zinc-700 transition-colors"
+                className="text-sm text-ink-2 hover:text-ink-soft transition-colors"
               >
                 Cancel
               </button>

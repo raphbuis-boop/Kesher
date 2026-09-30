@@ -47,13 +47,13 @@ export default async function PeoplePage({
   const tags = (tagsResult.data ?? []) as Tag[];
 
   return (
-    <div className="min-h-screen bg-[#fafafa]">
+    <div className="min-h-screen bg-canvas">
       {/* Sticky page header */}
-      <header className="sticky top-0 z-10 border-b border-[#e7e7e7] bg-white/95 backdrop-blur-sm px-6 py-3.5">
+      <header className="sticky top-0 z-10 border-b border-line bg-card/95 backdrop-blur-sm px-6 py-3.5">
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-[13px] font-semibold text-[#0f0f0f]">People</h1>
-            <p className="text-[11px] text-[#a1a1aa] mt-px">
+            <h1 className="text-[13px] font-semibold text-ink">People</h1>
+            <p className="text-[11px] text-ink-3 mt-px">
               {counts.total.toLocaleString()} contacts
             </p>
           </div>

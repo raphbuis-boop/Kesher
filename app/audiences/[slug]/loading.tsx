@@ -2,10 +2,10 @@ import { Bone, LoadingAnnouncement, SkeletonHeader, SkeletonTable } from "@/app/
 
 export default function Loading() {
   return (
-    <div className="min-h-screen bg-[#fafafa]">
+    <div className="min-h-screen bg-canvas">
       <LoadingAnnouncement label="audience" />
       <SkeletonHeader wide />
-      <div className="border-b border-[#e7e7e7] bg-white px-6 py-3.5">
+      <div className="border-b border-line bg-card px-6 py-3.5">
         <Bone className="h-7 w-72 rounded-lg" />
       </div>
       <div className="px-6 py-4">

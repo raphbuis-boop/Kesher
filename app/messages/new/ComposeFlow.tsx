@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "@/app/components/ui/toast";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { sendMessage, previewRecipients, resolveAllRecipients, type Channel, type RecipientPreview, type ResolvedRecipient } from "../actions";
@@ -62,13 +63,13 @@ const IMAGE_RE = /\.(jpg|jpeg|png|gif|webp)$/i;
 function fileIcon(url: string) {
   if (IMAGE_RE.test(url)) {
     return (
-      <svg className="h-3.5 w-3.5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <svg className="h-3.5 w-3.5 text-ink-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
       </svg>
     );
   }
   return (
-    <svg className="h-3.5 w-3.5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <svg className="h-3.5 w-3.5 text-ink-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
     </svg>
   );
@@ -150,14 +151,14 @@ function AudienceDropdown({
       <button
         type="button"
         onClick={() => onToggle(a)}
-        className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left transition-colors hover:bg-zinc-50"
+        className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left transition-colors hover:bg-canvas"
       >
         <span
           className={
             "flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border transition-colors " +
             (checked
-              ? "border-zinc-900 bg-zinc-900"
-              : "border-zinc-300 bg-white")
+              ? "border-ink bg-ink"
+              : "border-line-strong bg-card")
           }
         >
           {checked && (
@@ -166,8 +167,8 @@ function AudienceDropdown({
             </svg>
           )}
         </span>
-        <span className="flex-1 text-sm font-medium text-zinc-900">{a.label}</span>
-        <span className="text-xs tabular-nums text-zinc-400">{a.totalCount.toLocaleString()}</span>
+        <span className="flex-1 text-sm font-medium text-ink">{a.label}</span>
+        <span className="text-xs tabular-nums text-ink-3">{a.totalCount.toLocaleString()}</span>
       </button>
     );
   }
@@ -180,15 +181,15 @@ function AudienceDropdown({
         className={
           "flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-sm transition-colors " +
           (open
-            ? "border-zinc-400 bg-white text-zinc-900"
+            ? "border-ink-3 bg-card text-ink"
             : selected.length > 0
-            ? "border-zinc-300 bg-white text-zinc-900 hover:border-zinc-400"
-            : "border-zinc-200 bg-white text-zinc-400 hover:border-zinc-300 hover:text-zinc-600")
+            ? "border-line-strong bg-card text-ink hover:border-ink-3"
+            : "border-line bg-card text-ink-3 hover:border-line-strong hover:text-ink-soft")
         }
       >
         <span className={selected.length > 0 ? "font-medium" : ""}>{triggerLabel}</span>
         <svg
-          className={"h-4 w-4 flex-shrink-0 text-zinc-400 transition-transform " + (open ? "rotate-180" : "")}
+          className={"h-4 w-4 flex-shrink-0 text-ink-3 transition-transform " + (open ? "rotate-180" : "")}
           fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
@@ -196,11 +197,11 @@ function AudienceDropdown({
       </button>
 
       {open && (
-        <div className="absolute left-0 right-0 top-full z-20 mt-1.5 max-h-80 overflow-y-auto rounded-xl border border-zinc-200 bg-white shadow-lg">
+        <div className="absolute left-0 right-0 top-full z-20 mt-1.5 max-h-80 overflow-y-auto rounded-xl border border-line bg-card shadow-pop animate-pop-in">
           {/* Search */}
-          <div className="sticky top-0 border-b border-zinc-100 bg-white px-3 py-2">
+          <div className="sticky top-0 border-b border-muted bg-card px-3 py-2">
             <div className="relative">
-              <svg className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
               </svg>
               <input
@@ -209,7 +210,7 @@ function AudienceDropdown({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search audiences…"
-                className="w-full rounded-md border border-zinc-200 bg-zinc-50 py-1.5 pl-8 pr-3 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-zinc-300 focus:bg-white"
+                className="w-full rounded-md border border-line bg-canvas py-1.5 pl-8 pr-3 text-sm text-ink placeholder-ink-3 outline-none focus:border-line-strong focus:bg-card"
               />
             </div>
           </div>
@@ -217,31 +218,31 @@ function AudienceDropdown({
           <div className="p-2">
             {system.length > 0 && (
               <div>
-                <p className="mb-1 px-3 pt-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+                <p className="mb-1 px-3 pt-1 text-[10px] font-semibold uppercase tracking-wider text-ink-3">
                   Audiences
                 </p>
                 {system.map((a) => <AudienceRow key={a.slug} a={a} />)}
               </div>
             )}
             {custom.length > 0 && (
-              <div className={system.length > 0 ? "mt-2 border-t border-zinc-100 pt-2" : ""}>
-                <p className="mb-1 px-3 pt-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+              <div className={system.length > 0 ? "mt-2 border-t border-muted pt-2" : ""}>
+                <p className="mb-1 px-3 pt-1 text-[10px] font-semibold uppercase tracking-wider text-ink-3">
                   Groups
                 </p>
                 {custom.map((a) => <AudienceRow key={a.slug} a={a} />)}
               </div>
             )}
             {system.length === 0 && custom.length === 0 && (
-              <p className="px-3 py-4 text-center text-sm text-zinc-400">No audiences found</p>
+              <p className="px-3 py-4 text-center text-sm text-ink-3">No audiences found</p>
             )}
           </div>
 
           {selected.length > 0 && (
-            <div className="sticky bottom-0 border-t border-zinc-100 bg-zinc-50 px-3 py-2.5">
+            <div className="sticky bottom-0 border-t border-muted bg-canvas px-3 py-2.5">
               <button
                 type="button"
                 onClick={() => { setOpen(false); setSearch(""); }}
-                className="w-full rounded-md bg-zinc-900 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700"
+                className="w-full rounded-md bg-ink py-2 text-sm font-medium text-on-ink transition-colors hover:bg-ink-hover"
               >
                 Confirm {selected.length === 1 ? selected[0].label : `${selected.length} audiences`}
               </button>
@@ -277,32 +278,32 @@ function EmailPreview({
     : null;
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-      <p className="mb-3 text-center text-[10px] font-medium uppercase tracking-wider text-zinc-400">
+    <div className="rounded-xl border border-line bg-canvas p-4">
+      <p className="mb-3 text-center text-[10px] font-medium uppercase tracking-wider text-ink-3">
         Preview — as {PREVIEW_PERSON.first_name} {PREVIEW_PERSON.last_name} will see it
       </p>
-      <div className="mx-auto max-w-[560px] rounded-xl border border-zinc-200 bg-white px-8 py-6 shadow-sm">
+      <div className="mx-auto max-w-[560px] rounded-xl border border-line bg-card px-8 py-6 shadow-sm">
         {subject && (
-          <p className="mb-4 border-b border-zinc-100 pb-4 text-sm font-semibold text-zinc-900">
+          <p className="mb-4 border-b border-muted pb-4 text-sm font-semibold text-ink">
             {renderTemplate(subject, PREVIEW_PERSON)}
           </p>
         )}
         {previewGreeting && (
-          <p className="mb-4 text-sm font-semibold text-zinc-900">{previewGreeting}</p>
+          <p className="mb-4 text-sm font-semibold text-ink">{previewGreeting}</p>
         )}
         {paragraphs.length > 0 ? (
           paragraphs.map((para, i) => (
-            <p key={i} className="mb-4 text-sm leading-relaxed text-zinc-800 last:mb-0">
+            <p key={i} className="mb-4 text-sm leading-relaxed text-ink-hover last:mb-0">
               {para.split("\n").map((line, j, arr) => (
                 <span key={j}>{line}{j < arr.length - 1 && <br />}</span>
               ))}
             </p>
           ))
         ) : (
-          <p className="text-sm italic text-zinc-300">Your message will appear here…</p>
+          <p className="text-sm italic text-line-strong">Your message will appear here…</p>
         )}
         {images.length > 0 && (
-          <div className="mt-4 space-y-3 border-t border-zinc-100 pt-4">
+          <div className="mt-4 space-y-3 border-t border-muted pt-4">
             {images.map((a) => (
               <img key={a.url} src={a.url} alt={a.fileName} className="max-w-full rounded-md" />
             ))}
@@ -311,9 +312,9 @@ function EmailPreview({
         {docs.length > 0 && (
           <div className="mt-4 space-y-1.5">
             {docs.map((a) => (
-              <div key={a.url} className="flex items-center gap-2 rounded-md border border-zinc-100 bg-zinc-50 px-3 py-2">
+              <div key={a.url} className="flex items-center gap-2 rounded-md border border-muted bg-canvas px-3 py-2">
                 {fileIcon(a.url)}
-                <span className="text-xs text-zinc-600">{a.fileName}</span>
+                <span className="text-xs text-ink-soft">{a.fileName}</span>
               </div>
             ))}
           </div>
@@ -326,17 +327,17 @@ function EmailPreview({
 function SmsPreview({ body }: { body: string }) {
   const rendered = renderTemplate(body, PREVIEW_PERSON);
   return (
-    <div className="rounded-xl border border-zinc-200 bg-zinc-100 p-6">
-      <p className="mb-3 text-center text-[10px] font-medium uppercase tracking-wider text-zinc-400">
+    <div className="rounded-xl border border-line bg-muted p-6">
+      <p className="mb-3 text-center text-[10px] font-medium uppercase tracking-wider text-ink-3">
         Preview — as {PREVIEW_PERSON.first_name} {PREVIEW_PERSON.last_name} will see it
       </p>
       <div className="mx-auto max-w-[280px]">
         {rendered ? (
-          <div className="inline-block max-w-full rounded-2xl rounded-tl-sm bg-zinc-300 px-4 py-2.5 text-sm leading-relaxed text-zinc-900">
+          <div className="inline-block max-w-full rounded-2xl rounded-tl-sm bg-line-strong px-4 py-2.5 text-sm leading-relaxed text-ink">
             {rendered}
           </div>
         ) : (
-          <p className="text-xs italic text-zinc-400">Your message will appear here…</p>
+          <p className="text-xs italic text-ink-3">Your message will appear here…</p>
         )}
       </div>
     </div>
@@ -348,27 +349,27 @@ function WhatsAppPreview({ body, attachments }: { body: string; attachments: Att
   const firstImage = attachments.find((a) => IMAGE_RE.test(a.url));
   const docs = attachments.filter((a) => DOC_RE.test(a.url));
   return (
-    <div className="rounded-xl border border-zinc-200 bg-[#e5ddd5] p-6">
-      <p className="mb-3 text-center text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+    <div className="rounded-xl border border-line bg-[#e5ddd5] p-6">
+      <p className="mb-3 text-center text-[10px] font-medium uppercase tracking-wider text-ink-2">
         Preview — as {PREVIEW_PERSON.first_name} {PREVIEW_PERSON.last_name} will see it
       </p>
       <div className="mx-auto max-w-[280px]">
-        <div className="inline-block max-w-full rounded-2xl rounded-tl-sm bg-white px-4 py-2.5 text-sm leading-relaxed text-zinc-900 shadow-sm">
+        <div className="inline-block max-w-full rounded-2xl rounded-tl-sm bg-card px-4 py-2.5 text-sm leading-relaxed text-ink shadow-sm">
           {firstImage && (
             <img src={firstImage.url} alt={firstImage.fileName} className="mb-2 max-w-full rounded-lg" />
           )}
           {docs.length > 0 && (
             <div className="mb-2 space-y-1">
               {docs.map((a) => (
-                <div key={a.url} className="flex items-center gap-1.5 rounded bg-zinc-50 px-2 py-1.5 text-xs text-zinc-600">
+                <div key={a.url} className="flex items-center gap-1.5 rounded bg-canvas px-2 py-1.5 text-xs text-ink-soft">
                   {fileIcon(a.url)}
                   {a.fileName}
                 </div>
               ))}
             </div>
           )}
-          {rendered || <span className="italic text-zinc-400">Your message will appear here…</span>}
-          <span className="ml-2 text-[10px] text-zinc-400">✓✓</span>
+          {rendered || <span className="italic text-ink-3">Your message will appear here…</span>}
+          <span className="ml-2 text-[10px] text-ink-3">✓✓</span>
         </div>
       </div>
     </div>
@@ -545,10 +546,12 @@ export function ComposeFlow({
         removedPersonIds.size > 0 ? Array.from(removedPersonIds) : undefined
       );
       if (result.success) {
+        toast.success("Message sent");
         router.push("/messages");
         router.refresh();
       } else {
         setSendError(result.error ?? "Something went wrong. Please try again.");
+        toast.error(result.error ?? "Message could not be sent.");
       }
     });
   }
@@ -563,12 +566,12 @@ export function ComposeFlow({
 
   return (
     <>
-    <div className="rounded-xl border border-zinc-200 bg-white shadow-sm overflow-hidden">
+    <div className="rounded-xl border border-line bg-card shadow-sm overflow-hidden">
 
       {/* ── TO ────────────────────────────────────────────────────────────── */}
       <div className="px-6 py-5">
         <div className="flex items-start gap-4">
-          <span className="mt-2.5 w-16 flex-shrink-0 text-xs font-semibold uppercase tracking-wider text-zinc-400">To</span>
+          <span className="mt-2.5 w-16 flex-shrink-0 text-xs font-semibold uppercase tracking-wider text-ink-3">To</span>
           <div className="flex-1">
             <AudienceDropdown
               allAudiences={audiences}
@@ -580,13 +583,13 @@ export function ComposeFlow({
             {selectedAudiences.length > 0 && (
               <div className="mt-2.5 flex flex-wrap items-center gap-2">
                 {selectedAudiences.map((a) => (
-                  <span key={a.slug} className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 py-1 pl-3 pr-2 text-xs font-medium text-zinc-700">
+                  <span key={a.slug} className="inline-flex items-center gap-1.5 rounded-full bg-muted py-1 pl-3 pr-2 text-xs font-medium text-ink-soft">
                     {a.label}
-                    <span className="tabular-nums text-zinc-400">{a.totalCount}</span>
+                    <span className="tabular-nums text-ink-3">{a.totalCount}</span>
                     <button
                       type="button"
                       onClick={() => toggleAudience(a)}
-                      className="flex h-3.5 w-3.5 items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-200 hover:text-zinc-600"
+                      className="flex h-3.5 w-3.5 items-center justify-center rounded-full text-ink-3 transition-colors hover:bg-line hover:text-ink-soft"
                       aria-label={`Remove ${a.label}`}
                     >
                       <svg className="h-2 w-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -601,12 +604,12 @@ export function ComposeFlow({
         </div>
       </div>
 
-      <div className="mx-6 border-t border-zinc-100" />
+      <div className="mx-6 border-t border-muted" />
 
       {/* ── CHANNEL ───────────────────────────────────────────────────────── */}
       <div className="px-6 py-5">
         <div className="flex items-start gap-4">
-          <span className="mt-2.5 w-16 flex-shrink-0 text-xs font-semibold uppercase tracking-wider text-zinc-400">Via</span>
+          <span className="mt-2.5 w-16 flex-shrink-0 text-xs font-semibold uppercase tracking-wider text-ink-3">Via</span>
           <div className="flex-1">
             <div className="flex gap-2">
               {(["email", "sms", "whatsapp"] as Channel[]).map((c) => {
@@ -620,8 +623,8 @@ export function ComposeFlow({
                     className={
                       "flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors " +
                       (isSelected
-                        ? "border-zinc-900 bg-zinc-900 text-white"
-                        : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:text-zinc-900")
+                        ? "border-ink bg-ink text-on-ink"
+                        : "border-line bg-card text-ink-soft hover:border-line-strong hover:text-ink")
                     }
                   >
                     <ChannelIcon channel={c} className="h-4 w-4" />
@@ -629,7 +632,7 @@ export function ComposeFlow({
                     {selectedAudiences.length > 0 && (
                       <span className={
                         "text-xs tabular-nums " +
-                        (isSelected ? "text-zinc-300" : "text-zinc-400")
+                        (isSelected ? "text-line-strong" : "text-ink-3")
                       }>
                         {count.toLocaleString()}
                       </span>
@@ -641,12 +644,12 @@ export function ComposeFlow({
 
             {/* Human-language channel notes */}
             {channel === "sms" && (
-              <p className="mt-3 text-xs text-zinc-400">
+              <p className="mt-3 text-xs text-ink-3">
                 Messages are sent as text. Keep messages under {SMS_LIMIT} characters to avoid splitting.
               </p>
             )}
             {channel === "whatsapp" && (
-              <p className="mt-3 text-xs text-zinc-400">
+              <p className="mt-3 text-xs text-ink-3">
                 Messages are sent via WhatsApp. Recipients must have WhatsApp installed on their phone.
               </p>
             )}
@@ -654,12 +657,12 @@ export function ComposeFlow({
         </div>
       </div>
 
-      <div className="mx-6 border-t border-zinc-100" />
+      <div className="mx-6 border-t border-muted" />
 
       {/* ── COMPOSE ───────────────────────────────────────────────────────── */}
       <div className="px-6 py-5">
         <div className="flex items-start gap-4">
-          <span className="mt-1 w-16 flex-shrink-0 text-xs font-semibold uppercase tracking-wider text-zinc-400">Message</span>
+          <span className="mt-1 w-16 flex-shrink-0 text-xs font-semibold uppercase tracking-wider text-ink-3">Message</span>
           <div className="flex-1 space-y-3">
             {channel === "email" && (
               <input
@@ -667,7 +670,7 @@ export function ComposeFlow({
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 placeholder="Subject line…"
-                className="w-full border-0 border-b border-zinc-100 pb-3 text-sm font-semibold text-zinc-900 placeholder-zinc-300 outline-none transition-colors focus:border-zinc-300"
+                className="w-full border-0 border-b border-muted pb-3 text-sm font-semibold text-ink placeholder-line-strong outline-none transition-colors focus:border-line-strong"
                 autoFocus
               />
             )}
@@ -684,12 +687,12 @@ export function ComposeFlow({
                   : "Write your WhatsApp message…"
               }
               rows={channel === "email" ? 12 : 6}
-              className="w-full resize-none border-0 text-sm leading-relaxed text-zinc-900 placeholder-zinc-300 outline-none"
+              className="w-full resize-none border-0 text-sm leading-relaxed text-ink placeholder-line-strong outline-none"
               autoFocus={channel !== "email"}
             />
 
             {/* Toolbar: personalization tokens + greeting toggle + char count */}
-            <div className="flex items-center justify-between border-t border-zinc-100 pt-2.5">
+            <div className="flex items-center justify-between border-t border-muted pt-2.5">
               <div className="flex flex-wrap items-center gap-3">
                 {/* Insert token dropdown */}
                 <div className="relative">
@@ -701,7 +704,7 @@ export function ComposeFlow({
                         e.target.value = "";
                       }
                     }}
-                    className="appearance-none cursor-pointer rounded-md border border-zinc-200 bg-white py-1.5 pl-3 pr-7 text-xs font-medium text-zinc-600 outline-none transition-colors hover:border-zinc-300 hover:text-zinc-900 focus:border-zinc-300"
+                    className="appearance-none cursor-pointer rounded-md border border-line bg-card py-1.5 pl-3 pr-7 text-xs font-medium text-ink-soft outline-none transition-colors hover:border-line-strong hover:text-ink focus:border-line-strong"
                   >
                     <option value="" disabled>Insert field…</option>
                     {TEMPLATE_TOKENS.map(({ token, label }) => (
@@ -709,7 +712,7 @@ export function ComposeFlow({
                     ))}
                   </select>
                   <svg
-                    className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-zinc-400"
+                    className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-ink-3"
                     fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
@@ -720,7 +723,7 @@ export function ComposeFlow({
 
               {/* SMS character count */}
               {channel === "sms" && (
-                <span className={"text-xs tabular-nums " + (body.length > SMS_LIMIT ? "font-medium text-amber-600" : "text-zinc-400")}>
+                <span className={"text-xs tabular-nums " + (body.length > SMS_LIMIT ? "font-medium text-amber-600" : "text-ink-3")}>
                   {body.length > SMS_LIMIT
                     ? `${body.length} chars · splits into ${Math.ceil(body.length / SMS_LIMIT)} messages`
                     : `${body.length} / ${SMS_LIMIT}`}
@@ -730,7 +733,7 @@ export function ComposeFlow({
 
             {/* Attachment zone — only shown when storage is configured */}
             {showAttachments && (
-              <div className="border-t border-zinc-100 pt-3">
+              <div className="border-t border-muted pt-3">
                 {attachments.length > 0 && (
                   <div className="mb-3 flex flex-wrap gap-2">
                     {attachments.map((a, i) => {
@@ -741,7 +744,7 @@ export function ComposeFlow({
                       return (
                         <div
                           key={a.url}
-                          className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2"
+                          className="flex items-center gap-2 rounded-lg border border-line bg-canvas px-3 py-2"
                         >
                           {IMAGE_RE.test(a.url) ? (
                             <img src={a.url} alt={a.fileName} className="h-6 w-6 rounded object-cover" />
@@ -749,15 +752,15 @@ export function ComposeFlow({
                             fileIcon(a.url)
                           )}
                           <div className="min-w-0">
-                            <p className="max-w-[140px] truncate text-xs font-medium text-zinc-700">
+                            <p className="max-w-[140px] truncate text-xs font-medium text-ink-soft">
                               {a.fileName}
                             </p>
-                            <p className="text-[10px] tabular-nums text-zinc-400">{sizeLabel}</p>
+                            <p className="text-[10px] tabular-nums text-ink-3">{sizeLabel}</p>
                           </div>
                           <button
                             type="button"
                             onClick={() => setAttachments((prev) => prev.filter((_, j) => j !== i))}
-                            className="ml-1 text-zinc-300 transition-colors hover:text-zinc-500"
+                            className="ml-1 text-line-strong transition-colors hover:text-ink-2"
                             aria-label="Remove attachment"
                           >
                             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -775,7 +778,7 @@ export function ComposeFlow({
                     type="button"
                     onClick={() => { setUploadError(null); fileInputRef.current?.click(); }}
                     disabled={isUploading}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:border-zinc-300 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 rounded-md border border-line bg-card px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-line-strong hover:bg-canvas disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {isUploading ? (
                       <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -789,7 +792,7 @@ export function ComposeFlow({
                     )}
                     {isUploading ? "Uploading…" : "Attach files"}
                   </button>
-                  <span className="text-xs text-zinc-400">
+                  <span className="text-xs text-ink-3">
                     {channel === "email"
                       ? "PDF, Word, Excel, or image · 10 MB max"
                       : "PDF or image · 10 MB max"}
@@ -813,14 +816,14 @@ export function ComposeFlow({
         </div>
       </div>
 
-      <div className="mx-6 border-t border-zinc-100" />
+      <div className="mx-6 border-t border-muted" />
 
       {/* ── PREVIEW ───────────────────────────────────────────────────────── */}
       <div className="px-6 py-4">
         <button
           type="button"
           onClick={() => setShowPreview((v) => !v)}
-          className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500 transition-colors hover:text-zinc-800"
+          className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-ink-2 transition-colors hover:text-ink-hover"
         >
           <svg
             className={"h-3.5 w-3.5 transition-transform " + (showPreview ? "rotate-180" : "")}
@@ -841,11 +844,11 @@ export function ComposeFlow({
 
       {/* ── RECIPIENT PREVIEWS ────────────────────────────────────────────── */}
       {selectedAudiences.length > 0 && body.trim() && (
-        <div className="border-t border-zinc-100 px-6 py-4">
+        <div className="border-t border-muted px-6 py-4">
           <button
             type="button"
             onClick={handleToggleRecipientPreviews}
-            className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-zinc-500 transition-colors hover:text-zinc-800"
+            className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-ink-2 transition-colors hover:text-ink-hover"
           >
             <svg
               className={"h-3.5 w-3.5 transition-transform " + (showRecipientPreviews ? "rotate-180" : "")}
@@ -855,7 +858,7 @@ export function ComposeFlow({
             </svg>
             Preview personalization
             {recipientTotal > 0 && (
-              <span className="ml-1 rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium normal-case tracking-normal text-zinc-500">
+              <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium normal-case tracking-normal text-ink-2">
                 {Math.min(8, recipientTotal)} of {recipientTotal} recipients
               </span>
             )}
@@ -864,7 +867,7 @@ export function ComposeFlow({
           {showRecipientPreviews && (
             <div className="mt-3">
               {isLoadingPreviews ? (
-                <div className="flex items-center gap-2 py-4 text-xs text-zinc-400">
+                <div className="flex items-center gap-2 py-4 text-xs text-ink-3">
                   <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
@@ -872,24 +875,24 @@ export function ComposeFlow({
                   Personalizing messages…
                 </div>
               ) : recipientPreviews && recipientPreviews.length > 0 ? (
-                <div className="overflow-hidden rounded-lg border border-zinc-200 divide-y divide-zinc-100">
+                <div className="overflow-hidden rounded-lg border border-line divide-y divide-muted">
                   {recipientPreviews.map((p, i) => (
-                    <div key={i} className="bg-white px-4 py-3 transition-colors hover:bg-zinc-50">
+                    <div key={i} className="bg-card px-4 py-3 transition-colors hover:bg-canvas">
                       <div className="mb-1 flex items-baseline justify-between">
-                        <span className="text-xs font-semibold text-zinc-900">{p.name}</span>
-                        <span className="text-[10px] text-zinc-400">{p.contactValue}</span>
+                        <span className="text-xs font-semibold text-ink">{p.name}</span>
+                        <span className="text-[10px] text-ink-3">{p.contactValue}</span>
                       </div>
-                      <p className="text-xs leading-relaxed text-zinc-600 whitespace-pre-wrap">{p.rendered}</p>
+                      <p className="text-xs leading-relaxed text-ink-soft whitespace-pre-wrap">{p.rendered}</p>
                     </div>
                   ))}
                   {recipientTotal > 8 && (
-                    <div className="bg-zinc-50 px-4 py-2.5 text-xs text-zinc-400">
+                    <div className="bg-canvas px-4 py-2.5 text-xs text-ink-3">
                       + {(recipientTotal - 8).toLocaleString()} more recipients
                     </div>
                   )}
                 </div>
               ) : (
-                <p className="py-2 text-xs text-zinc-400">
+                <p className="py-2 text-xs text-ink-3">
                   No contacts with a {channelField(channel)} found in the selected audiences.
                 </p>
               )}
@@ -899,7 +902,7 @@ export function ComposeFlow({
       )}
 
       {/* ── SEND ──────────────────────────────────────────────────────────── */}
-      <div className="rounded-b-xl border-t border-zinc-100 bg-zinc-50 px-6 py-5">
+      <div className="rounded-b-xl border-t border-muted bg-canvas px-6 py-5">
         {sendError && (
           <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
             {sendError}
@@ -913,21 +916,21 @@ export function ComposeFlow({
         )}
 
         {missing > 0 && eligible > 0 && (
-          <p className="mb-3 text-xs text-zinc-400">
+          <p className="mb-3 text-xs text-ink-3">
             {missing.toLocaleString()} contact{missing !== 1 ? "s" : ""}{" "}
             {missing === 1 ? "doesn't" : "don't"} have a {channelField(channel)} and won't receive this message.
           </p>
         )}
 
         <div className="flex items-center justify-between">
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-ink-2">
             {selectedAudiences.length === 0
               ? "Choose an audience to continue."
               : eligible === 0
               ? "No eligible contacts for this channel."
               : (
                 <>
-                  <span className="font-medium text-zinc-700">{eligible.toLocaleString()} contacts</span>
+                  <span className="font-medium text-ink-soft">{eligible.toLocaleString()} contacts</span>
                   {" "}will receive this {channelLabel(channel).toLowerCase()}.
                 </>
               )}
@@ -937,7 +940,7 @@ export function ComposeFlow({
             type="button"
             onClick={handleSend}
             disabled={!canSend || isPending || isResolvingRecipients}
-            className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex items-center gap-2 rounded-lg bg-ink px-5 py-2.5 text-sm font-medium text-on-ink transition-colors hover:bg-ink-hover disabled:cursor-not-allowed disabled:opacity-40"
           >
             {(isPending || isResolvingRecipients) ? (
               <>
@@ -962,34 +965,34 @@ export function ComposeFlow({
 
     {/* ── PRE-SEND CONFIRMATION MODAL ─────────────────────────────────────── */}
     {confirmRecipients && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setConfirmRecipients(null)}>
+      <div className="animate-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setConfirmRecipients(null)}>
         <div
           role="dialog"
           aria-modal="true"
           aria-labelledby="confirm-send-title"
-          className="w-full max-w-md rounded-xl border border-zinc-200 bg-white shadow-2xl"
+          className="animate-pop-in w-full max-w-md rounded-xl border border-line bg-card shadow-pop"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="border-b border-zinc-100 px-5 py-4">
-            <h2 id="confirm-send-title" className="text-sm font-semibold text-zinc-900">
+          <div className="border-b border-muted px-5 py-4">
+            <h2 id="confirm-send-title" className="text-sm font-semibold text-ink">
               Confirm send to {confirmRecipients.length.toLocaleString()} {confirmRecipients.length === 1 ? "recipient" : "recipients"}
             </h2>
-            <p className="mt-0.5 text-xs text-zinc-500">
+            <p className="mt-0.5 text-xs text-ink-2">
               Review the list and remove anyone who should not receive this message.
             </p>
           </div>
 
           {/* Recipient list — scrollable, shows every address */}
-          <div className="max-h-72 overflow-y-auto divide-y divide-zinc-50">
+          <div className="max-h-72 overflow-y-auto divide-y divide-canvas">
             {confirmRecipients.length === 0 ? (
-              <p className="px-5 py-4 text-sm text-zinc-400">No recipients remaining.</p>
+              <p className="px-5 py-4 text-sm text-ink-3">No recipients remaining.</p>
             ) : (
               confirmRecipients.map((r) => (
-                <div key={r.personId} className="group flex items-center justify-between px-5 py-2.5 hover:bg-zinc-50">
-                  <span className="text-sm font-medium text-zinc-800 truncate mr-3">{r.name}</span>
+                <div key={r.personId} className="group flex items-center justify-between px-5 py-2.5 hover:bg-canvas">
+                  <span className="text-sm font-medium text-ink-hover truncate mr-3">{r.name}</span>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-xs text-zinc-400 tabular-nums">{r.contactValue}</span>
+                    <span className="text-xs text-ink-3 tabular-nums">{r.contactValue}</span>
                     <button
                       type="button"
                       aria-label={`Remove ${r.name}`}
@@ -997,7 +1000,7 @@ export function ComposeFlow({
                         setRemovedPersonIds((prev) => new Set([...prev, r.personId]));
                         setConfirmRecipients((prev) => prev ? prev.filter((x) => x.personId !== r.personId) : prev);
                       }}
-                      className="flex h-5 w-5 items-center justify-center rounded text-zinc-300 opacity-0 transition-opacity hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
+                      className="flex h-5 w-5 items-center justify-center rounded text-line-strong opacity-0 transition-opacity hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
                     >
                       <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -1010,7 +1013,7 @@ export function ComposeFlow({
           </div>
 
           {/* Footer */}
-          <div className="border-t border-zinc-100 px-5 py-4">
+          <div className="border-t border-muted px-5 py-4">
             {confirmRecipients.length === 0 && (
               <p className="mb-3 text-xs text-amber-600">
                 Add at least one recipient to send.
@@ -1020,7 +1023,7 @@ export function ComposeFlow({
               <button
                 type="button"
                 onClick={() => setConfirmRecipients(null)}
-                className="rounded-lg border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-50"
+                className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-ink-soft transition-colors hover:bg-canvas"
               >
                 Cancel
               </button>
@@ -1028,7 +1031,7 @@ export function ComposeFlow({
                 type="button"
                 onClick={handleConfirmedSend}
                 disabled={confirmRecipients.length === 0}
-                className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 rounded-lg bg-ink px-4 py-2 text-sm font-medium text-on-ink transition-colors hover:bg-ink-hover disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Confirm &amp; Send {channelLabel(channel)}
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

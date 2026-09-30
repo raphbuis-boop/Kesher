@@ -2,9 +2,9 @@ import { Bone, LoadingAnnouncement, SkeletonForm } from "@/app/components/ui/Ske
 
 export default function Loading() {
   return (
-    <div className="min-h-screen bg-[#fafafa]">
+    <div className="min-h-screen bg-canvas">
       <LoadingAnnouncement label="composer" />
-      <header className="sticky top-0 z-10 border-b border-[#e7e7e7] bg-white/95 px-6 py-3.5">
+      <header className="sticky top-0 z-10 border-b border-line bg-card/95 px-6 py-3.5">
         <div className="max-w-2xl mx-auto space-y-1.5">
           <Bone className="h-3.5 w-28" />
           <Bone className="h-2.5 w-52" />

@@ -102,47 +102,47 @@ export default async function DuplicatesPage() {
     if (groups.length === 0) {
       return (
         <div className="mb-10">
-          <h2 className="mb-2 text-sm font-semibold text-zinc-900">{title}</h2>
-          <p className="text-sm text-zinc-400">No duplicates found.</p>
+          <h2 className="mb-2 text-sm font-semibold text-ink">{title}</h2>
+          <p className="text-sm text-ink-3">No duplicates found.</p>
         </div>
       );
     }
     return (
       <div className="mb-10">
-        <h2 className="mb-1 text-sm font-semibold text-zinc-900">{title}</h2>
-        <p className="mb-4 text-xs text-zinc-400">{groups.length} duplicate group{groups.length !== 1 ? "s" : ""}</p>
+        <h2 className="mb-1 text-sm font-semibold text-ink">{title}</h2>
+        <p className="mb-4 text-xs text-ink-3">{groups.length} duplicate group{groups.length !== 1 ? "s" : ""}</p>
         <div className="space-y-4">
           {groups.map((g) => (
-            <div key={g.key} className="overflow-hidden rounded-lg border border-zinc-200">
-              <div className="border-b border-zinc-100 bg-zinc-50 px-4 py-2 text-xs font-medium text-zinc-500">
+            <div key={g.key} className="overflow-hidden rounded-lg border border-line">
+              <div className="border-b border-muted bg-canvas px-4 py-2 text-xs font-medium text-ink-2">
                 {g.reason} — {g.people.length} contacts
               </div>
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-zinc-100">
-                    <th className="py-2 pl-4 pr-3 text-left text-xs font-medium text-zinc-400">Name</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-zinc-400">Email</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-zinc-400">Phone</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-zinc-400">Audiences</th>
-                    <th className="pl-3 pr-4 py-2 text-left text-xs font-medium text-zinc-400">Added</th>
+                  <tr className="border-b border-muted">
+                    <th className="py-2 pl-4 pr-3 text-left text-xs font-medium text-ink-3">Name</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-ink-3">Email</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-ink-3">Phone</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-ink-3">Audiences</th>
+                    <th className="pl-3 pr-4 py-2 text-left text-xs font-medium text-ink-3">Added</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-50">
+                <tbody className="divide-y divide-canvas">
                   {g.people.map((p, i) => (
-                    <tr key={p.id} className={i === 0 ? "bg-white" : "bg-amber-50"}>
-                      <td className="py-2.5 pl-4 pr-3 font-medium text-zinc-900">
+                    <tr key={p.id} className={i === 0 ? "bg-card" : "bg-amber-50"}>
+                      <td className="py-2.5 pl-4 pr-3 font-medium text-ink">
                         {p.first_name} {p.last_name}
                         {i === 0 && (
-                          <span className="ml-2 text-[10px] font-normal text-zinc-400 uppercase tracking-wide">keep</span>
+                          <span className="ml-2 text-[10px] font-normal text-ink-3 uppercase tracking-wide">keep</span>
                         )}
                         {i > 0 && (
                           <span className="ml-2 text-[10px] font-normal text-amber-600 uppercase tracking-wide">duplicate</span>
                         )}
                       </td>
-                      <td className="px-3 py-2.5 text-zinc-600">{p.email ?? <span className="text-zinc-300">—</span>}</td>
-                      <td className="px-3 py-2.5 text-zinc-600">{p.phone ?? <span className="text-zinc-300">—</span>}</td>
-                      <td className="px-3 py-2.5 text-zinc-500 text-xs">{(p.categories ?? []).join(", ") || "—"}</td>
-                      <td className="pl-3 pr-4 py-2.5 text-zinc-400 tabular-nums">{formatDate(p.created_at)}</td>
+                      <td className="px-3 py-2.5 text-ink-soft">{p.email ?? <span className="text-line-strong">—</span>}</td>
+                      <td className="px-3 py-2.5 text-ink-soft">{p.phone ?? <span className="text-line-strong">—</span>}</td>
+                      <td className="px-3 py-2.5 text-ink-2 text-xs">{(p.categories ?? []).join(", ") || "—"}</td>
+                      <td className="pl-3 pr-4 py-2.5 text-ink-3 tabular-nums">{formatDate(p.created_at)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -155,39 +155,39 @@ export default async function DuplicatesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="min-h-screen bg-canvas">
       <div className="mx-auto max-w-5xl px-6 py-10">
         <div className="mb-8">
-          <h1 className="text-xl font-semibold text-zinc-900">Duplicate Contacts Audit</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <h1 className="text-xl font-semibold text-ink">Duplicate Contacts Audit</h1>
+          <p className="mt-1 text-sm text-ink-2">
             Read-only — no data has been modified.
           </p>
         </div>
 
         {/* Summary */}
         <div className="mb-10 grid grid-cols-3 gap-4">
-          <div className="rounded-xl border border-zinc-200 bg-white px-5 py-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">Total contacts</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums text-zinc-900">{people.length.toLocaleString()}</p>
+          <div className="rounded-xl border border-line bg-card shadow-card px-5 py-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-3">Total contacts</p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums text-ink">{people.length.toLocaleString()}</p>
           </div>
-          <div className="rounded-xl border border-zinc-200 bg-white px-5 py-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">In duplicate groups</p>
+          <div className="rounded-xl border border-line bg-card shadow-card px-5 py-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-3">In duplicate groups</p>
             <p className="mt-1 text-2xl font-semibold tabular-nums text-amber-600">{totalDupPeople.toLocaleString()}</p>
           </div>
-          <div className="rounded-xl border border-zinc-200 bg-white px-5 py-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">Safe to remove</p>
+          <div className="rounded-xl border border-line bg-card shadow-card px-5 py-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-3">Safe to remove</p>
             <p className="mt-1 text-2xl font-semibold tabular-nums text-red-600">{safeToDelete.toLocaleString()}</p>
           </div>
         </div>
 
         {/* Cleanup strategy */}
-        <div className="mb-10 rounded-xl border border-zinc-200 bg-white px-6 py-5">
-          <h2 className="mb-3 text-sm font-semibold text-zinc-900">Cleanup Strategy</h2>
-          <ol className="space-y-2 text-sm text-zinc-600 list-decimal list-inside">
-            <li><span className="font-medium text-zinc-900">Email duplicates first</span> — highest confidence. Keep the oldest record (first import), delete the rest. Merge phone/categories from duplicates if the keeper is missing them.</li>
-            <li><span className="font-medium text-zinc-900">Name + phone duplicates next</span> — very safe if not already caught by email. Same rule: keep oldest.</li>
-            <li><span className="font-medium text-zinc-900">Name-only duplicates last</span> — review manually. Same name ≠ same person (e.g., two "Yossi Cohen"). Only delete if you recognise them as the same individual.</li>
-            <li><span className="font-medium text-zinc-900">Before deleting</span> — back up the people table with a Supabase export, or copy duplicate IDs to a spreadsheet so you can restore if needed.</li>
+        <div className="mb-10 rounded-xl border border-line bg-card shadow-card px-6 py-5">
+          <h2 className="mb-3 text-sm font-semibold text-ink">Cleanup Strategy</h2>
+          <ol className="space-y-2 text-sm text-ink-soft list-decimal list-inside">
+            <li><span className="font-medium text-ink">Email duplicates first</span> — highest confidence. Keep the oldest record (first import), delete the rest. Merge phone/categories from duplicates if the keeper is missing them.</li>
+            <li><span className="font-medium text-ink">Name + phone duplicates next</span> — very safe if not already caught by email. Same rule: keep oldest.</li>
+            <li><span className="font-medium text-ink">Name-only duplicates last</span> — review manually. Same name ≠ same person (e.g., two "Yossi Cohen"). Only delete if you recognise them as the same individual.</li>
+            <li><span className="font-medium text-ink">Before deleting</span> — back up the people table with a Supabase export, or copy duplicate IDs to a spreadsheet so you can restore if needed.</li>
           </ol>
         </div>
 

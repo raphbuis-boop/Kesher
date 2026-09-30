@@ -22,12 +22,12 @@ export function Pagination({
   const end = Math.min(page * pageSize, total);
 
   const btn =
-    "inline-flex h-7 w-7 items-center justify-center rounded-md border border-[#e7e7e7] bg-white text-[#71717a] transition-[background-color,color,transform] duration-150 hover:bg-[#f5f5f5] hover:text-[#0f0f0f] active:scale-[0.97]";
-  const disabled = "inline-flex h-7 w-7 items-center justify-center rounded-md border border-[#f0f0f0] text-[#a1a1aa] opacity-40";
+    "inline-flex h-7 w-7 items-center justify-center rounded-md border border-line bg-card text-ink-2 transition-[background-color,color,transform] duration-150 hover:bg-muted hover:text-ink active:scale-[0.97]";
+  const disabled = "inline-flex h-7 w-7 items-center justify-center rounded-md border border-muted-2 text-ink-3 opacity-40";
 
   return (
-    <nav aria-label="Pagination" className="flex items-center justify-between gap-3 px-5 py-3 border-t border-[#f0f0f0]">
-      <span className="text-[11px] tabular-nums text-[#a1a1aa]">
+    <nav aria-label="Pagination" className="flex items-center justify-between gap-3 px-5 py-3 border-t border-muted-2">
+      <span className="text-[11px] tabular-nums text-ink-3">
         {start.toLocaleString()}–{end.toLocaleString()} of {total.toLocaleString()}
       </span>
       <div className="flex items-center gap-1.5">
@@ -38,7 +38,7 @@ export function Pagination({
         ) : (
           <span className={disabled} aria-hidden><ChevronLeft size={13} strokeWidth={2} /></span>
         )}
-        <span className="px-1.5 text-[11px] tabular-nums text-[#71717a]">
+        <span className="px-1.5 text-[11px] tabular-nums text-ink-2">
           {page} / {totalPages}
         </span>
         {page < totalPages ? (

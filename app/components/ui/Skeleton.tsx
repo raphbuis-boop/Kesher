@@ -5,12 +5,12 @@
  */
 
 export function Bone({ className = "" }: { className?: string }) {
-  return <div aria-hidden className={`rounded-md bg-[#ececee] motion-safe:animate-pulse ${className}`} />;
+  return <div aria-hidden className={`rounded-md bg-muted-2 motion-safe:animate-pulse ${className}`} />;
 }
 
 export function SkeletonHeader({ action = true, wide = false }: { action?: boolean; wide?: boolean }) {
   return (
-    <header className="sticky top-0 z-10 border-b border-[#e7e7e7] bg-white/95 px-6 py-3.5">
+    <header className="sticky top-0 z-10 border-b border-line bg-card/95 px-6 py-3.5">
       <div className="flex items-center justify-between gap-4">
         <div className="space-y-1.5">
           <Bone className={`h-3.5 ${wide ? "w-48" : "w-24"}`} />
@@ -24,14 +24,14 @@ export function SkeletonHeader({ action = true, wide = false }: { action?: boole
 
 export function SkeletonTable({ rows = 8, cols = 5 }: { rows?: number; cols?: number }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-[#e7e7e7] bg-white">
-      <div className="flex items-center gap-6 border-b border-[#f0f0f0] bg-[#fafafa] px-5 py-3">
+    <div className="overflow-hidden rounded-xl border border-line bg-card shadow-card">
+      <div className="flex items-center gap-6 border-b border-muted-2 bg-canvas px-5 py-3">
         {Array.from({ length: cols }, (_, i) => (
           <Bone key={i} className={`h-2.5 ${i === 0 ? "w-24" : "w-14"}`} />
         ))}
       </div>
       {Array.from({ length: rows }, (_, r) => (
-        <div key={r} className="flex items-center gap-6 border-b border-[#f5f5f5] px-5 py-3.5 last:border-0">
+        <div key={r} className="flex items-center gap-6 border-b border-muted px-5 py-3.5 last:border-0">
           <div className="flex min-w-[180px] items-center gap-3">
             <Bone className="h-8 w-8 rounded-full" />
             <div className="space-y-1.5">
@@ -52,7 +52,7 @@ export function SkeletonStatCards({ count = 4 }: { count?: number }) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {Array.from({ length: count }, (_, i) => (
-        <div key={i} className="rounded-xl border border-[#e7e7e7] bg-white p-4 space-y-3">
+        <div key={i} className="rounded-xl border border-line bg-card shadow-card p-4 space-y-3">
           <Bone className="h-2.5 w-20" />
           <Bone className="h-6 w-16" />
           <Bone className="h-2.5 w-24" />
@@ -64,7 +64,7 @@ export function SkeletonStatCards({ count = 4 }: { count?: number }) {
 
 export function SkeletonList({ rows = 6 }: { rows?: number }) {
   return (
-    <div className="rounded-xl border border-[#e7e7e7] bg-white divide-y divide-[#f5f5f5]">
+    <div className="rounded-xl border border-line bg-card shadow-card divide-y divide-muted">
       {Array.from({ length: rows }, (_, i) => (
         <div key={i} className="flex items-center gap-3 px-4 py-3.5">
           <Bone className="h-8 w-8 rounded-lg" />
@@ -81,7 +81,7 @@ export function SkeletonList({ rows = 6 }: { rows?: number }) {
 
 export function SkeletonForm({ fields = 5 }: { fields?: number }) {
   return (
-    <div className="space-y-5 rounded-xl border border-[#e7e7e7] bg-white p-5">
+    <div className="space-y-5 rounded-xl border border-line bg-card shadow-card p-5">
       {Array.from({ length: fields }, (_, i) => (
         <div key={i} className="space-y-2">
           <Bone className="h-2.5 w-24" />

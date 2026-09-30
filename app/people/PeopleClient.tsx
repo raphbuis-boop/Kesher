@@ -23,7 +23,7 @@ const CATEGORY_DEFS = [
   { value: "donor",       label: "Donor",       plural: "Donors",       badge: "bg-yellow-50 text-yellow-700", chip: "text-yellow-700" },
   { value: "grandparent", label: "Grandparent", plural: "Grandparents", badge: "bg-purple-50 text-purple-700", chip: "text-purple-700" },
   { value: "board",       label: "Board",       plural: "Board",        badge: "bg-rose-50 text-rose-700",     chip: "text-rose-700" },
-  { value: "prospect",    label: "Prospect",    plural: "Prospects",    badge: "bg-zinc-100 text-zinc-600",    chip: "text-zinc-600" },
+  { value: "prospect",    label: "Prospect",    plural: "Prospects",    badge: "bg-muted text-ink-soft",    chip: "text-ink-soft" },
 ] as const;
 
 type CategoryValue = typeof CATEGORY_DEFS[number]["value"];
@@ -91,12 +91,12 @@ function Checkbox({
       className={[
         "flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border transition-all duration-100",
         checked || indeterminate
-          ? "border-[#2563eb] bg-[#2563eb]"
-          : "border-[#d4d4d8] bg-white hover:border-[#a1a1aa]",
+          ? "border-brand bg-brand"
+          : "border-line-strong bg-card hover:border-ink-3",
       ].join(" ")}
     >
       {checked && <Check size={9} className="text-white" strokeWidth={3} />}
-      {!checked && indeterminate && <span className="h-0.5 w-2 rounded-full bg-white" />}
+      {!checked && indeterminate && <span className="h-0.5 w-2 rounded-full bg-card" />}
     </button>
   );
 }
@@ -118,10 +118,10 @@ function SortBtn({
   return (
     <button
       onClick={onClick}
-      className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa] hover:text-[#71717a] transition-colors"
+      className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-ink-3 hover:text-ink-2 transition-colors"
     >
       {children}
-      <Icon size={10} strokeWidth={2} className={active ? "text-[#71717a]" : "text-[#d4d4d8]"} />
+      <Icon size={10} strokeWidth={2} className={active ? "text-ink-2" : "text-line-strong"} />
     </button>
   );
 }
@@ -147,14 +147,14 @@ function PersonDrawer({
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/[0.07] backdrop-blur-[2px] animate-backdrop" onClick={onClose} />
-      <div className="animate-slide-right relative flex w-full max-w-[340px] flex-col bg-white border-l border-[#e7e7e7] shadow-2xl shadow-black/10 overflow-hidden">
+      <div className="animate-slide-right relative flex w-full max-w-[340px] flex-col bg-card border-l border-line shadow-pop overflow-hidden">
         {/* Header */}
-        <div className="flex items-start gap-3 border-b border-[#f0f0f0] px-5 py-5 flex-shrink-0">
-          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-[#f0f0f0] text-[13px] font-semibold text-[#71717a]">
+        <div className="flex items-start gap-3 border-b border-muted-2 px-5 py-5 flex-shrink-0">
+          <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-muted-2 text-[13px] font-semibold text-ink-2">
             {ini}
           </div>
           <div className="flex-1 min-w-0 pt-0.5">
-            <p className="text-[15px] font-semibold text-[#0f0f0f] leading-tight">
+            <p className="text-[15px] font-semibold text-ink leading-tight">
               {person.first_name} {person.last_name}
             </p>
             {cats.length > 0 && (
@@ -166,7 +166,7 @@ function PersonDrawer({
           <button
             onClick={onClose}
             aria-label="Close"
-            className="flex-shrink-0 rounded-lg p-1.5 text-[#a1a1aa] hover:bg-[#f5f5f5] hover:text-[#0f0f0f] transition-colors"
+            className="flex-shrink-0 rounded-lg p-1.5 text-ink-3 hover:bg-muted hover:text-ink transition-colors"
           >
             <X size={14} strokeWidth={2} />
           </button>
@@ -176,42 +176,42 @@ function PersonDrawer({
         <div className="flex-1 overflow-y-auto px-5 py-5 space-y-5">
           {/* Contact info */}
           <div>
-            <p className="mb-2.5 text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">Contact</p>
-            <div className="rounded-xl border border-[#e7e7e7] divide-y divide-[#f5f5f5]">
+            <p className="mb-2.5 text-[10px] font-semibold uppercase tracking-wider text-ink-3">Contact</p>
+            <div className="rounded-xl border border-line divide-y divide-muted">
               {person.email ? (
                 <div className="flex items-center gap-3 px-4 py-3">
-                  <Mail size={13} className="flex-shrink-0 text-[#a1a1aa]" strokeWidth={1.75} />
+                  <Mail size={13} className="flex-shrink-0 text-ink-3" strokeWidth={1.75} />
                   <div className="min-w-0">
-                    <p className="text-[10px] text-[#a1a1aa]">Email</p>
-                    <p className="truncate font-mono text-[12px] text-[#0f0f0f]">{person.email}</p>
+                    <p className="text-[10px] text-ink-3">Email</p>
+                    <p className="truncate font-mono text-[12px] text-ink">{person.email}</p>
                   </div>
                 </div>
               ) : (
                 <div className="flex items-center gap-3 px-4 py-3 opacity-40">
-                  <Mail size={13} className="flex-shrink-0 text-[#a1a1aa]" strokeWidth={1.75} />
-                  <p className="text-[12px] text-[#a1a1aa]">No email</p>
+                  <Mail size={13} className="flex-shrink-0 text-ink-3" strokeWidth={1.75} />
+                  <p className="text-[12px] text-ink-3">No email</p>
                 </div>
               )}
               {person.phone ? (
                 <div className="flex items-center gap-3 px-4 py-3">
-                  <Phone size={13} className="flex-shrink-0 text-[#a1a1aa]" strokeWidth={1.75} />
+                  <Phone size={13} className="flex-shrink-0 text-ink-3" strokeWidth={1.75} />
                   <div className="min-w-0">
-                    <p className="text-[10px] text-[#a1a1aa]">Phone</p>
-                    <p className="font-mono text-[12px] text-[#0f0f0f]">{person.phone}</p>
+                    <p className="text-[10px] text-ink-3">Phone</p>
+                    <p className="font-mono text-[12px] text-ink">{person.phone}</p>
                   </div>
                 </div>
               ) : (
                 <div className="flex items-center gap-3 px-4 py-3 opacity-40">
-                  <Phone size={13} className="flex-shrink-0 text-[#a1a1aa]" strokeWidth={1.75} />
-                  <p className="text-[12px] text-[#a1a1aa]">No phone</p>
+                  <Phone size={13} className="flex-shrink-0 text-ink-3" strokeWidth={1.75} />
+                  <p className="text-[12px] text-ink-3">No phone</p>
                 </div>
               )}
               {person.whatsapp && (
                 <div className="flex items-center gap-3 px-4 py-3">
                   <MessageSquare size={13} className="flex-shrink-0 text-emerald-500" strokeWidth={1.75} />
                   <div className="min-w-0">
-                    <p className="text-[10px] text-[#a1a1aa]">WhatsApp</p>
-                    <p className="font-mono text-[12px] text-[#0f0f0f]">{person.whatsapp}</p>
+                    <p className="text-[10px] text-ink-3">WhatsApp</p>
+                    <p className="font-mono text-[12px] text-ink">{person.whatsapp}</p>
                   </div>
                 </div>
               )}
@@ -221,17 +221,17 @@ function PersonDrawer({
           {/* Details */}
           {(person.grade || cats.length > 0) && (
             <div>
-              <p className="mb-2.5 text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">Details</p>
-              <div className="rounded-xl border border-[#e7e7e7] divide-y divide-[#f5f5f5]">
+              <p className="mb-2.5 text-[10px] font-semibold uppercase tracking-wider text-ink-3">Details</p>
+              <div className="rounded-xl border border-line divide-y divide-muted">
                 {person.grade && (
                   <div className="px-4 py-3">
-                    <p className="text-[10px] text-[#a1a1aa]">Grade</p>
-                    <p className="mt-0.5 text-[13px] text-[#0f0f0f]">{person.grade}</p>
+                    <p className="text-[10px] text-ink-3">Grade</p>
+                    <p className="mt-0.5 text-[13px] text-ink">{person.grade}</p>
                   </div>
                 )}
                 {cats.length > 0 && (
                   <div className="px-4 py-3">
-                    <p className="text-[10px] text-[#a1a1aa]">Audiences</p>
+                    <p className="text-[10px] text-ink-3">Audiences</p>
                     <div className="mt-1.5 flex flex-wrap gap-1">
                       {cats.map((c) => {
                         const def = getCategoryDef(c);
@@ -239,7 +239,7 @@ function PersonDrawer({
                           <Link
                             key={c}
                             href={`/audiences/${c}s`}
-                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold transition-opacity hover:opacity-80 ${def?.badge ?? "bg-zinc-100 text-zinc-600"}`}
+                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold transition-opacity hover:opacity-80 ${def?.badge ?? "bg-muted text-ink-soft"}`}
                             onClick={(e) => e.stopPropagation()}
                           >
                             {def?.label ?? c}
@@ -256,14 +256,14 @@ function PersonDrawer({
           {/* Tags */}
           {person.person_tags.length > 0 && (
             <div>
-              <p className="mb-2.5 text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">Tags</p>
+              <p className="mb-2.5 text-[10px] font-semibold uppercase tracking-wider text-ink-3">Tags</p>
               <div className="flex flex-wrap gap-1.5">
                 {person.person_tags.map((pt) => (
                   <span
                     key={pt.tag_id}
-                    className="inline-flex items-center gap-1 rounded-full bg-[#f5f5f5] px-2.5 py-1 text-[11px] font-medium text-[#71717a]"
+                    className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-ink-2"
                   >
-                    <Hash size={9} strokeWidth={2.5} className="text-[#a1a1aa]" />
+                    <Hash size={9} strokeWidth={2.5} className="text-ink-3" />
                     {pt.tags.name}
                   </span>
                 ))}
@@ -273,10 +273,10 @@ function PersonDrawer({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-[#f0f0f0] px-5 py-4 flex-shrink-0 flex gap-2">
+        <div className="border-t border-muted-2 px-5 py-4 flex-shrink-0 flex gap-2">
           <Link
             href={`/messages/new?person=${person.id}`}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-[#e7e7e7] bg-[#fafafa] py-2 text-[12px] font-medium text-[#71717a] hover:bg-white hover:text-[#0f0f0f] hover:shadow-sm transition-all"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-line bg-canvas py-2 text-[12px] font-medium text-ink-2 hover:bg-card hover:text-ink hover:shadow-sm transition-all"
             onClick={(e) => e.stopPropagation()}
           >
             <Smartphone size={12} strokeWidth={2} />
@@ -284,7 +284,7 @@ function PersonDrawer({
           </Link>
           <Link
             href={`/people/${person.id}`}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#0f0f0f] py-2 text-[12px] font-medium text-white hover:bg-[#27272a] transition-colors"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-ink py-2 text-[12px] font-medium text-on-ink hover:bg-ink-hover transition-colors"
             onClick={(e) => e.stopPropagation()}
           >
             <ExternalLink size={12} strokeWidth={2} />
@@ -311,32 +311,32 @@ function BulkToolbar({
 
   return (
     <div className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 animate-fade-up">
-      <div className="flex items-center gap-3 rounded-xl border border-[#e7e7e7] bg-white px-4 py-3 shadow-lg shadow-black/8 ring-1 ring-black/[0.04]">
-        <span className="text-[12px] font-semibold text-[#0f0f0f]">
+      <div className="flex items-center gap-3 rounded-xl border border-line bg-card px-4 py-3 shadow-pop">
+        <span className="text-[12px] font-semibold text-ink">
           {count} selected
         </span>
-        <div className="h-4 w-px bg-[#e7e7e7]" />
+        <div className="h-4 w-px bg-line" />
         <div className="flex items-center gap-1">
           <Link
             href={`/messages/new`}
-            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium text-[#71717a] hover:bg-[#f5f5f5] hover:text-[#0f0f0f] transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium text-ink-2 hover:bg-muted hover:text-ink transition-colors"
           >
             <Smartphone size={12} strokeWidth={2} />
             Message
           </Link>
           <button
             onClick={() => exportCSV(people)}
-            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium text-[#71717a] hover:bg-[#f5f5f5] hover:text-[#0f0f0f] transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium text-ink-2 hover:bg-muted hover:text-ink transition-colors"
           >
             <Download size={12} strokeWidth={2} />
             Export
           </button>
         </div>
-        <div className="h-4 w-px bg-[#e7e7e7]" />
+        <div className="h-4 w-px bg-line" />
         <button
           onClick={onClear}
           aria-label="Clear selection"
-          className="rounded-lg p-1.5 text-[#a1a1aa] hover:bg-[#f5f5f5] hover:text-[#0f0f0f] transition-colors"
+          className="rounded-lg p-1.5 text-ink-3 hover:bg-muted hover:text-ink transition-colors"
         >
           <X size={13} strokeWidth={2} />
         </button>
@@ -458,19 +458,19 @@ export function PeopleClient({
   return (
     <>
       {/* Category chips toolbar */}
-      <div className="border-b border-[#e7e7e7] bg-white">
+      <div className="border-b border-line bg-card">
         <div className="flex items-center gap-0 overflow-x-auto px-6 py-3">
           <button
             onClick={() => handleCategoryFilter(null)}
             className={[
               "mr-2 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium whitespace-nowrap transition-all duration-100",
               categoryFilter === null
-                ? "bg-[#0f0f0f] text-white"
-                : "text-[#71717a] hover:bg-[#f5f5f5] hover:text-[#0f0f0f]",
+                ? "bg-ink text-on-ink"
+                : "text-ink-2 hover:bg-muted hover:text-ink",
             ].join(" ")}
           >
             All
-            <span className={`text-[10px] tabular-nums ${categoryFilter === null ? "opacity-60" : "text-[#a1a1aa]"}`}>
+            <span className={`text-[10px] tabular-nums ${categoryFilter === null ? "opacity-60" : "text-ink-3"}`}>
               {counts.total}
             </span>
           </button>
@@ -484,12 +484,12 @@ export function PeopleClient({
                 className={[
                   "mr-2 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium whitespace-nowrap transition-all duration-100",
                   isActive
-                    ? "bg-[#eff6ff] text-[#2563eb]"
-                    : "text-[#71717a] hover:bg-[#f5f5f5] hover:text-[#0f0f0f]",
+                    ? "bg-brand-tint text-brand"
+                    : "text-ink-2 hover:bg-muted hover:text-ink",
                 ].join(" ")}
               >
                 {def.plural}
-                <span className={`text-[10px] tabular-nums ${isActive ? "text-[#2563eb] opacity-70" : "text-[#a1a1aa]"}`}>
+                <span className={`text-[10px] tabular-nums ${isActive ? "text-brand opacity-70" : "text-ink-3"}`}>
                   {categoryCounts[def.value]}
                 </span>
               </button>
@@ -499,12 +499,12 @@ export function PeopleClient({
       </div>
 
       {/* Search + count bar */}
-      <div className="border-b border-[#e7e7e7] bg-white px-6 py-2.5">
+      <div className="border-b border-line bg-card px-6 py-2.5">
         <div className="flex items-center gap-3">
           <div className="relative max-w-[280px] flex-1">
             <Search
               size={13}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#a1a1aa]"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-3"
               strokeWidth={2}
             />
             <input
@@ -512,22 +512,22 @@ export function PeopleClient({
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
               placeholder="Search name, email, phone, grade, tags…"
-              className="w-full rounded-lg border border-[#e7e7e7] bg-[#fafafa] py-1.5 pl-8 pr-8 text-[12px] text-[#0f0f0f] placeholder-[#c4c4c8] outline-none transition-all focus:border-[#a1a1aa] focus:bg-white focus:shadow-sm"
+              className="w-full rounded-lg border border-line bg-canvas py-1.5 pl-8 pr-8 text-[12px] text-ink placeholder-ink-4 outline-none transition-all focus:border-ink-3 focus:bg-card focus:shadow-sm"
             />
             {search && (
               <button
                 onClick={() => handleSearch("")}
                 aria-label="Clear search"
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-[#a1a1aa] hover:text-[#0f0f0f] transition-colors"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-ink-3 hover:text-ink transition-colors"
               >
                 <X size={11} strokeWidth={2} />
               </button>
             )}
           </div>
 
-          <span className="ml-auto inline-flex items-center gap-2 text-[11px] tabular-nums text-[#a1a1aa]" aria-live="polite">
+          <span className="ml-auto inline-flex items-center gap-2 text-[11px] tabular-nums text-ink-3" aria-live="polite">
             {isNavigating && (
-              <span className="h-3 w-3 animate-spin rounded-full border-[1.5px] border-[#d4d4d8] border-t-[#71717a]" aria-label="Loading" />
+              <span className="h-3 w-3 animate-spin rounded-full border-[1.5px] border-line-strong border-t-ink-2" aria-label="Loading" />
             )}
             {!hasFilters
               ? `${counts.total.toLocaleString()} contacts`
@@ -539,14 +539,14 @@ export function PeopleClient({
       {/* Content */}
       <div className="px-6 py-4 pb-20">
         {paginated.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#e7e7e7] py-24 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#e7e7e7] bg-white mb-4">
-              <UserX size={18} className="text-[#d4d4d8]" strokeWidth={1.5} />
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-line py-24 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-line bg-card mb-4">
+              <UserX size={18} className="text-line-strong" strokeWidth={1.5} />
             </div>
-            <p className="text-[13px] font-semibold text-[#0f0f0f]">
+            <p className="text-[13px] font-semibold text-ink">
               {hasFilters ? "No contacts match" : "No contacts yet"}
             </p>
-            <p className="mt-1 text-[12px] text-[#a1a1aa]">
+            <p className="mt-1 text-[12px] text-ink-3">
               {hasFilters
                 ? "Try adjusting your search or filters."
                 : "Add your first contact to get started."}
@@ -554,17 +554,17 @@ export function PeopleClient({
             {hasFilters && (
               <button
                 onClick={clearFilters}
-                className="mt-4 rounded-lg border border-[#e7e7e7] bg-white px-3 py-1.5 text-[12px] font-medium text-[#71717a] hover:bg-[#fafafa] transition-all"
+                className="mt-4 rounded-lg border border-line bg-card px-3 py-1.5 text-[12px] font-medium text-ink-2 hover:bg-canvas transition-all"
               >
                 Clear filters
               </button>
             )}
           </div>
         ) : (
-          <div className={`overflow-hidden rounded-xl border border-[#e7e7e7] bg-white transition-opacity duration-150 ${isNavigating ? "opacity-60" : ""}`}>
+          <div className={`overflow-hidden rounded-xl border border-line bg-card shadow-card transition-opacity duration-150 ${isNavigating ? "opacity-60" : ""}`}>
             <table className="w-full">
               <thead className="sticky top-[57px] z-[5]">
-                <tr className="border-b border-[#f0f0f0] bg-[#fafafa]">
+                <tr className="border-b border-muted-2 bg-canvas">
                   <th className="py-2.5 pl-4 pr-2 w-10">
                     <Checkbox
                       checked={allPageSelected}
@@ -581,13 +581,13 @@ export function PeopleClient({
                       Name
                     </SortBtn>
                   </th>
-                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">
+                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-ink-3">
                     Email
                   </th>
-                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">
+                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-ink-3">
                     Phone
                   </th>
-                  <th className="pl-3 pr-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">
+                  <th className="pl-3 pr-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-ink-3">
                     Tags
                   </th>
                   <th className="pl-3 pr-4 py-2.5 text-right">
@@ -620,10 +620,10 @@ export function PeopleClient({
                       onClick={() => setDrawerPerson(person)}
                       className={[
                         "group cursor-pointer transition-colors duration-100",
-                        !isLast ? "border-b border-[#f5f5f5]" : "",
+                        !isLast ? "border-b border-muted" : "",
                         isSelected
-                          ? "bg-[#eff6ff] hover:bg-[#e8f0fe]"
-                          : "hover:bg-[#fafafa]",
+                          ? "bg-brand-tint hover:bg-brand-tint-2"
+                          : "hover:bg-canvas",
                       ].join(" ")}
                     >
                       {/* Checkbox */}
@@ -641,18 +641,18 @@ export function PeopleClient({
                             className={[
                               "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
                               isSelected
-                                ? "bg-[#dbeafe] text-[#1d4ed8]"
-                                : "bg-[#f0f0f0] text-[#71717a]",
+                                ? "bg-brand-soft text-brand-strong"
+                                : "bg-muted-2 text-ink-2",
                             ].join(" ")}
                           >
                             {initials(person.first_name, person.last_name)}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-[13px] font-medium text-[#0f0f0f] leading-tight">
+                            <p className="text-[13px] font-medium text-ink leading-tight">
                               {person.first_name} {person.last_name}
                             </p>
                             {subline && (
-                              <p className="mt-0.5 text-[11px] text-[#a1a1aa] leading-tight">
+                              <p className="mt-0.5 text-[11px] text-ink-3 leading-tight">
                                 {subline}
                               </p>
                             )}
@@ -665,21 +665,21 @@ export function PeopleClient({
                         {person.email ? (
                           <span
                             title={person.email}
-                            className="block truncate text-[12px] text-[#71717a] font-mono"
+                            className="block truncate text-[12px] text-ink-2 font-mono"
                           >
                             {person.email}
                           </span>
                         ) : (
-                          <span className="text-[#e0e0e0] text-[12px]">—</span>
+                          <span className="text-ink-5 text-[12px]">—</span>
                         )}
                       </td>
 
                       {/* Phone */}
                       <td className="px-3 py-3.5">
                         {person.phone ? (
-                          <span className="text-[12px] font-mono text-[#71717a]">{person.phone}</span>
+                          <span className="text-[12px] font-mono text-ink-2">{person.phone}</span>
                         ) : (
-                          <span className="text-[#e0e0e0] text-[12px]">—</span>
+                          <span className="text-ink-5 text-[12px]">—</span>
                         )}
                       </td>
 
@@ -690,25 +690,25 @@ export function PeopleClient({
                             {visibleTags.map((pt) => (
                               <span
                                 key={pt.tag_id}
-                                className="inline-flex items-center rounded-md bg-[#f5f5f5] px-1.5 py-0.5 text-[10px] font-medium text-[#71717a]"
+                                className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-ink-2"
                               >
                                 {pt.tags.name}
                               </span>
                             ))}
                             {overflowTags > 0 && (
-                              <span className="inline-flex items-center rounded-md bg-[#f0f0f0] px-1.5 py-0.5 text-[10px] font-medium text-[#a1a1aa]">
+                              <span className="inline-flex items-center rounded-md bg-muted-2 px-1.5 py-0.5 text-[10px] font-medium text-ink-3">
                                 +{overflowTags}
                               </span>
                             )}
                           </div>
                         ) : (
-                          <span className="text-[#e0e0e0] text-[12px]">—</span>
+                          <span className="text-ink-5 text-[12px]">—</span>
                         )}
                       </td>
 
                       {/* Added date */}
                       <td className="pl-3 pr-4 py-3.5 text-right">
-                        <span className="text-[11px] tabular-nums text-[#a1a1aa]">
+                        <span className="text-[11px] tabular-nums text-ink-3">
                           {new Date(person.created_at).toLocaleDateString("en-US", {
                             month: "short",
                             day: "numeric",
@@ -724,8 +724,8 @@ export function PeopleClient({
 
             {/* Pagination footer */}
             {matchCount > PAGE_SIZE && (
-              <div className="flex items-center justify-between border-t border-[#f0f0f0] bg-[#fafafa] px-5 py-3">
-                <span className="text-[11px] tabular-nums text-[#a1a1aa]">
+              <div className="flex items-center justify-between border-t border-muted-2 bg-canvas px-5 py-3">
+                <span className="text-[11px] tabular-nums text-ink-3">
                   {startIdx}–{endIdx} of {matchCount.toLocaleString()}
                 </span>
                 <div className="flex items-center gap-1">
@@ -733,7 +733,7 @@ export function PeopleClient({
                     onClick={() => setPage(Math.max(1, clampedPage - 1))}
                     aria-label="Previous page"
                     disabled={clampedPage === 1}
-                    className="flex h-7 w-7 items-center justify-center rounded-md border border-[#e7e7e7] bg-white text-[#71717a] hover:bg-[#f5f5f5] hover:text-[#0f0f0f] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    className="flex h-7 w-7 items-center justify-center rounded-md border border-line bg-card text-ink-2 hover:bg-muted hover:text-ink disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                   >
                     <ChevronLeft size={13} strokeWidth={2} />
                   </button>
@@ -747,8 +747,8 @@ export function PeopleClient({
                           className={[
                             "flex h-7 w-7 items-center justify-center rounded-md text-[11px] font-medium transition-all",
                             clampedPage === p
-                              ? "bg-[#0f0f0f] text-white"
-                              : "text-[#71717a] hover:bg-[#f5f5f5] hover:text-[#0f0f0f]",
+                              ? "bg-ink text-on-ink"
+                              : "text-ink-2 hover:bg-muted hover:text-ink",
                           ].join(" ")}
                         >
                           {p}
@@ -756,14 +756,14 @@ export function PeopleClient({
                       );
                     })}
                     {totalPages > 7 && (
-                      <span className="px-1 text-[11px] text-[#a1a1aa]">…{totalPages}</span>
+                      <span className="px-1 text-[11px] text-ink-3">…{totalPages}</span>
                     )}
                   </div>
                   <button
                     onClick={() => setPage(Math.min(totalPages, clampedPage + 1))}
                     aria-label="Next page"
                     disabled={clampedPage === totalPages}
-                    className="flex h-7 w-7 items-center justify-center rounded-md border border-[#e7e7e7] bg-white text-[#71717a] hover:bg-[#f5f5f5] hover:text-[#0f0f0f] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    className="flex h-7 w-7 items-center justify-center rounded-md border border-line bg-card text-ink-2 hover:bg-muted hover:text-ink disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                   >
                     <ChevronRight size={13} strokeWidth={2} />
                   </button>

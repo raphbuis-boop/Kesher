@@ -49,7 +49,7 @@ const CHANNEL_META: Record<
   string,
   { label: string; icon: React.FC<{ size?: number; strokeWidth?: number; className?: string }>; color: string; bg: string }
 > = {
-  email:    { label: "Email",    icon: Mail,          color: "text-zinc-500",    bg: "bg-[#f5f5f5]"   },
+  email:    { label: "Email",    icon: Mail,          color: "text-ink-2",    bg: "bg-muted"   },
   sms:      { label: "SMS",      icon: Smartphone,    color: "text-blue-500",    bg: "bg-blue-50"      },
   whatsapp: { label: "WhatsApp", icon: MessageSquare, color: "text-emerald-500", bg: "bg-emerald-50"   },
 };
@@ -81,7 +81,7 @@ const STATUS_META: Record<RecipientStatus, { label: string; textColor: string; b
   complained:{ label: "Spam",      textColor: "text-orange-700",  bg: "bg-orange-50",  dot: "bg-orange-500"  },
   failed:    { label: "Failed",    textColor: "text-red-600",     bg: "bg-red-50",     dot: "bg-red-500"     },
   opted_out: { label: "Opted out", textColor: "text-rose-700",    bg: "bg-rose-50",    dot: "bg-rose-500"    },
-  sent:      { label: "Sent",      textColor: "text-[#71717a]",   bg: "bg-[#f5f5f5]", dot: "bg-[#a1a1aa]"  },
+  sent:      { label: "Sent",      textColor: "text-ink-2",   bg: "bg-muted", dot: "bg-ink-3"  },
 };
 
 const ACCENT: Record<string, string> = {
@@ -233,16 +233,16 @@ function KPICard({
   return (
     <div
       className={[
-        "rounded-xl border border-[#e7e7e7] bg-white px-4 py-4 transition-all duration-200 hover:shadow-sm hover:border-[#d4d4d8] animate-fade-up",
+        "rounded-xl border border-line bg-card px-4 py-4 transition-all duration-200 hover:shadow-sm hover:border-line-strong animate-fade-up",
         accent ?? "",
       ].filter(Boolean).join(" ")}
       style={{ animationDelay: `${index * 50}ms` }}
     >
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">{label}</p>
-      <p className="mt-2.5 text-[30px] font-semibold tracking-tight tabular-nums leading-none text-[#0f0f0f]">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">{label}</p>
+      <p className="mt-2.5 text-[30px] font-semibold tracking-tight tabular-nums leading-none text-ink">
         {count.toLocaleString()}
       </p>
-      {sub && <p className="mt-2 text-[11px] text-[#a1a1aa] leading-tight">{sub}</p>}
+      {sub && <p className="mt-2 text-[11px] text-ink-3 leading-tight">{sub}</p>}
     </div>
   );
 }
@@ -334,7 +334,7 @@ function LiveProgressBanner({ message, stats }: { message: CampaignMessage; stat
   const engLabel = isEmail ? "opened" : isWA ? "read" : "replied";
 
   return (
-    <div className="rounded-xl border border-[#e7e7e7] bg-white px-5 py-4 animate-fade-up" style={{ animationDelay: "0ms" }}>
+    <div className="rounded-xl border border-line bg-card shadow-card px-5 py-4 animate-fade-up" style={{ animationDelay: "0ms" }}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2.5">
           {isComplete ? (
@@ -345,19 +345,19 @@ function LiveProgressBanner({ message, stats }: { message: CampaignMessage; stat
               <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
             </span>
           )}
-          <span className="text-[13px] font-semibold text-[#0f0f0f]">
+          <span className="text-[13px] font-semibold text-ink">
             {isComplete ? "Campaign delivered" : "Sending in progress"}
           </span>
           {!isComplete && (
-            <span className="text-[11px] text-[#a1a1aa]">· updates every 10s</span>
+            <span className="text-[11px] text-ink-3">· updates every 10s</span>
           )}
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-[12px] tabular-nums font-medium text-[#0f0f0f]">{barPct}%</span>
+          <span className="text-[12px] tabular-nums font-medium text-ink">{barPct}%</span>
           {isComplete && (
             <button
               onClick={() => setDismissed(true)}
-              className="rounded p-0.5 text-[#a1a1aa] hover:text-[#0f0f0f]"
+              className="rounded p-0.5 text-ink-3 hover:text-ink"
               aria-label="Dismiss"
             >
               <X size={12} strokeWidth={2} />
@@ -366,7 +366,7 @@ function LiveProgressBanner({ message, stats }: { message: CampaignMessage; stat
         </div>
       </div>
 
-      <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-[#f0f0f0]">
+      <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-muted-2">
         <div
           className="h-full rounded-full bg-emerald-500 transition-all duration-700 ease-out"
           style={{ width: `${barPct}%` }}
@@ -376,16 +376,16 @@ function LiveProgressBanner({ message, stats }: { message: CampaignMessage; stat
       <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1">
         <div className="flex items-center gap-1.5">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          <span className="text-[11px] text-[#71717a]">
-            <span className="tabular-nums font-semibold text-[#0f0f0f]">{stats.delivered.toLocaleString()}</span>
+          <span className="text-[11px] text-ink-2">
+            <span className="tabular-nums font-semibold text-ink">{stats.delivered.toLocaleString()}</span>
             {" / "}{stats.total.toLocaleString()} delivered
           </span>
         </div>
         {engCount > 0 && (
           <div className="flex items-center gap-1.5">
             <span className="h-1.5 w-1.5 rounded-full bg-sky-400" />
-            <span className="text-[11px] text-[#71717a]">
-              <span className="tabular-nums font-semibold text-[#0f0f0f]">{engCount.toLocaleString()}</span>
+            <span className="text-[11px] text-ink-2">
+              <span className="tabular-nums font-semibold text-ink">{engCount.toLocaleString()}</span>
               {" "}{engLabel}
             </span>
           </div>
@@ -393,7 +393,7 @@ function LiveProgressBanner({ message, stats }: { message: CampaignMessage; stat
         {stats.failed > 0 && (
           <div className="flex items-center gap-1.5">
             <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
-            <span className="text-[11px] text-[#71717a]">
+            <span className="text-[11px] text-ink-2">
               <span className="tabular-nums font-semibold text-red-600">{stats.failed.toLocaleString()}</span>
               {" "}failed
             </span>
@@ -452,19 +452,19 @@ function ActivityFeed({
   }, [recipients, isEmail, isWhatsApp]);
 
   return (
-    <div className="rounded-xl border border-[#e7e7e7] bg-white px-5 py-5 flex flex-col animate-fade-up" style={{ animationDelay: "280ms" }}>
+    <div className="rounded-xl border border-line bg-card shadow-card px-5 py-5 flex flex-col animate-fade-up" style={{ animationDelay: "280ms" }}>
       <div className="mb-4 flex-shrink-0">
-        <h2 className="text-[13px] font-semibold text-[#0f0f0f]">Activity</h2>
-        <p className="mt-0.5 text-[11px] text-[#a1a1aa]">Most recent engagement events</p>
+        <h2 className="text-[13px] font-semibold text-ink">Activity</h2>
+        <p className="mt-0.5 text-[11px] text-ink-3">Most recent engagement events</p>
       </div>
 
       {events.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center py-10 text-center">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e7e7e7] bg-[#fafafa] mb-3">
-            <Activity size={15} className="text-[#d4d4d8]" strokeWidth={1.5} />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-canvas mb-3">
+            <Activity size={15} className="text-line-strong" strokeWidth={1.5} />
           </div>
-          <p className="text-[12px] font-medium text-[#71717a]">Waiting for activity</p>
-          <p className="mt-0.5 text-[11px] text-[#a1a1aa]">
+          <p className="text-[12px] font-medium text-ink-2">Waiting for activity</p>
+          <p className="mt-0.5 text-[11px] text-ink-3">
             {isEmail
               ? "Opens and bounces will appear here."
               : isWhatsApp
@@ -473,7 +473,7 @@ function ActivityFeed({
           </p>
         </div>
       ) : (
-        <div className="flex-1 overflow-y-auto divide-y divide-[#f5f5f5]" style={{ maxHeight: 220 }}>
+        <div className="flex-1 overflow-y-auto divide-y divide-muted" style={{ maxHeight: 220 }}>
           {events.map((ev, i) => {
             const Icon = ev.icon;
             return (
@@ -482,8 +482,8 @@ function ActivityFeed({
                   <Icon size={11} strokeWidth={2} className={ev.color} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[12px] text-[#0f0f0f] leading-snug">{ev.label}</p>
-                  <p className="mt-0.5 text-[10px] text-[#a1a1aa]">{fmtRelative(ev.time)}</p>
+                  <p className="text-[12px] text-ink leading-snug">{ev.label}</p>
+                  <p className="mt-0.5 text-[10px] text-ink-3">{fmtRelative(ev.time)}</p>
                 </div>
               </div>
             );
@@ -513,12 +513,12 @@ function TimelineChart({ data, channel }: { data: ChartBucket[]; channel: string
   if (!hasDelivered) {
     return (
       <div className="flex h-[160px] flex-col items-center justify-center gap-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#e7e7e7] bg-[#fafafa]">
-          <Clock size={18} className="text-[#d4d4d8]" strokeWidth={1.5} />
+        <div className="flex h-12 w-12 items-center justify-center rounded-full border border-line bg-canvas">
+          <Clock size={18} className="text-line-strong" strokeWidth={1.5} />
         </div>
         <div className="text-center">
-          <p className="text-[13px] font-medium text-[#0f0f0f]">Awaiting delivery events</p>
-          <p className="mt-0.5 text-[12px] text-[#a1a1aa]">Events will appear as recipients receive the message.</p>
+          <p className="text-[13px] font-medium text-ink">Awaiting delivery events</p>
+          <p className="mt-0.5 text-[12px] text-ink-3">Events will appear as recipients receive the message.</p>
         </div>
       </div>
     );
@@ -586,7 +586,7 @@ function TimelineChart({ data, channel }: { data: ChartBucket[]; channel: string
         {/* Grid lines */}
         {yTicks.map((v, i) => (
           <line key={`grid-${i}-${v}`} x1={PAD.left} x2={W - PAD.right} y1={yS(v)} y2={yS(v)}
-            stroke="#f0f0f0" strokeWidth="1" />
+            stroke="var(--app-muted-2)" strokeWidth="1" />
         ))}
 
         {/* Animated chart paths */}
@@ -606,12 +606,12 @@ function TimelineChart({ data, channel }: { data: ChartBucket[]; channel: string
 
         {/* Axes */}
         {xTicks.map((i) => (
-          <text key={i} x={xS(i)} y={H - 8} textAnchor="middle" fontSize="9" fill="#a1a1aa">
+          <text key={i} x={xS(i)} y={H - 8} textAnchor="middle" fontSize="9" fill="var(--app-ink-3)">
             {i === 0 ? "0h" : i === 23 ? "24h" : `${i}h`}
           </text>
         ))}
         {yTicks.filter((v) => v > 0).map((v, i) => (
-          <text key={`ytick-${i}-${v}`} x={PAD.left - 7} y={yS(v) + 3} textAnchor="end" fontSize="9" fill="#a1a1aa">
+          <text key={`ytick-${i}-${v}`} x={PAD.left - 7} y={yS(v) + 3} textAnchor="end" fontSize="9" fill="var(--app-ink-3)">
             {v}
           </text>
         ))}
@@ -628,20 +628,20 @@ function TimelineChart({ data, channel }: { data: ChartBucket[]; channel: string
           return (
             <g>
               <line x1={cx} y1={PAD.top} x2={cx} y2={PAD.top + iH}
-                stroke="#d4d4d8" strokeWidth="1" strokeDasharray="3,2" />
-              <circle cx={cx} cy={yS(hBucket.delivered)} r="4" fill="white" stroke="#10b981" strokeWidth="2" />
+                stroke="var(--app-line-strong)" strokeWidth="1" strokeDasharray="3,2" />
+              <circle cx={cx} cy={yS(hBucket.delivered)} r="4" fill="var(--app-card)" stroke="#10b981" strokeWidth="2" />
               {hasOpened && hBucket.opened > 0 && (
-                <circle cx={cx} cy={yS(hBucket.opened)} r="4" fill="white" stroke="#0ea5e9" strokeWidth="2" />
+                <circle cx={cx} cy={yS(hBucket.opened)} r="4" fill="var(--app-card)" stroke="#0ea5e9" strokeWidth="2" />
               )}
               {hasRead && hBucket.read > 0 && (
-                <circle cx={cx} cy={yS(hBucket.read)} r="4" fill="white" stroke="#3b82f6" strokeWidth="2" />
+                <circle cx={cx} cy={yS(hBucket.read)} r="4" fill="var(--app-card)" stroke="#3b82f6" strokeWidth="2" />
               )}
               {hasReplied && hBucket.replied > 0 && (
-                <circle cx={cx} cy={yS(hBucket.replied)} r="4" fill="white" stroke="#8b5cf6" strokeWidth="2" />
+                <circle cx={cx} cy={yS(hBucket.replied)} r="4" fill="var(--app-card)" stroke="#8b5cf6" strokeWidth="2" />
               )}
               <rect x={ttX} y={ttY} width={ttW} height={ttH}
-                rx="6" fill="white" stroke="#e7e7e7" strokeWidth="1" filter="url(#tt-shadow)" />
-              <text x={ttX + 10} y={ttY + 13} fontSize="9" fontWeight="600" fill="#a1a1aa">
+                rx="6" fill="var(--app-card)" stroke="var(--app-line)" strokeWidth="1" filter="url(#tt-shadow)" />
+              <text x={ttX + 10} y={ttY + 13} fontSize="9" fontWeight="600" fill="var(--app-ink-3)">
                 {hoverIdx === 0 ? "At send" : `${hoverIdx}h after send`}
               </text>
               <text x={ttX + 10} y={ttY + ttLine} fontSize="9.5" fill="#10b981" fontWeight="500">
@@ -670,24 +670,24 @@ function TimelineChart({ data, channel }: { data: ChartBucket[]; channel: string
       <div className="mt-3 flex flex-wrap items-center gap-5">
         <div className="flex items-center gap-1.5">
           <span className="h-[2px] w-5 rounded-full bg-emerald-500" />
-          <span className="text-[11px] text-[#71717a]">Delivered</span>
+          <span className="text-[11px] text-ink-2">Delivered</span>
         </div>
         {hasOpened && (
           <div className="flex items-center gap-1.5">
             <span className="h-[2px] w-5 rounded-full bg-sky-500" />
-            <span className="text-[11px] text-[#71717a]">Opened</span>
+            <span className="text-[11px] text-ink-2">Opened</span>
           </div>
         )}
         {hasRead && (
           <div className="flex items-center gap-1.5">
             <span className="h-[2px] w-5 rounded-full bg-blue-500" />
-            <span className="text-[11px] text-[#71717a]">Read</span>
+            <span className="text-[11px] text-ink-2">Read</span>
           </div>
         )}
         {hasReplied && (
           <div className="flex items-center gap-1.5">
             <span className="h-[2px] w-5 rounded-full bg-violet-500" />
-            <span className="text-[11px] text-[#71717a]">Replied</span>
+            <span className="text-[11px] text-ink-2">Replied</span>
           </div>
         )}
       </div>
@@ -714,10 +714,10 @@ function StatusBadge({ status, tooltip }: { status: RecipientStatus; tooltip?: s
     <span className="group/sb relative inline-flex">
       {badge}
       <span
-        className="pointer-events-none absolute bottom-[calc(100%+5px)] left-1/2 -translate-x-1/2 z-[60] whitespace-nowrap rounded-md bg-[#0f0f0f] px-2 py-1 text-[10px] font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/sb:opacity-100"
+        className="pointer-events-none absolute bottom-[calc(100%+5px)] left-1/2 -translate-x-1/2 z-[60] whitespace-nowrap rounded-md bg-ink px-2 py-1 text-[10px] font-medium text-on-ink opacity-0 shadow-lg transition-opacity duration-150 group-hover/sb:opacity-100"
       >
         {tooltip}
-        <span className="absolute top-full left-1/2 -translate-x-1/2 border-[3px] border-transparent border-t-[#0f0f0f]" />
+        <span className="absolute top-full left-1/2 -translate-x-1/2 border-[3px] border-transparent border-t-ink" />
       </span>
     </span>
   );
@@ -747,7 +747,7 @@ function RecipientDrawer({
     color: string; bg: string;
   }> = [
     message.sent_at
-      ? { label: "Sent", time: message.sent_at, icon: Send, color: "text-[#71717a]", bg: "bg-[#f5f5f5]" }
+      ? { label: "Sent", time: message.sent_at, icon: Send, color: "text-ink-2", bg: "bg-muted" }
       : null,
     recipient.delivered_at
       ? { label: "Delivered", time: recipient.delivered_at, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50" }
@@ -779,45 +779,45 @@ function RecipientDrawer({
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/[0.08] backdrop-blur-[2px] animate-backdrop" onClick={onClose} />
-      <div className="animate-slide-right relative flex w-full max-w-[360px] flex-col bg-white border-l border-[#e7e7e7] shadow-2xl shadow-black/10 overflow-hidden">
-        <div className="flex items-center justify-between border-b border-[#f0f0f0] px-5 py-4 flex-shrink-0">
+      <div className="animate-slide-right relative flex w-full max-w-[360px] flex-col bg-card border-l border-line shadow-pop overflow-hidden">
+        <div className="flex items-center justify-between border-b border-muted-2 px-5 py-4 flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#f0f0f0] text-[12px] font-semibold text-[#71717a]">
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-muted-2 text-[12px] font-semibold text-ink-2">
               {initials}
             </div>
             <div className="min-w-0">
-              <p className="text-[13px] font-semibold text-[#0f0f0f] truncate">{recipient.name}</p>
-              <p className="text-[11px] text-[#a1a1aa] font-mono truncate">{recipient.contact_value}</p>
+              <p className="text-[13px] font-semibold text-ink truncate">{recipient.name}</p>
+              <p className="text-[11px] text-ink-3 font-mono truncate">{recipient.contact_value}</p>
             </div>
           </div>
-          <button onClick={onClose} aria-label="Close" className="ml-2 flex-shrink-0 rounded-lg p-1.5 text-[#a1a1aa] hover:bg-[#f5f5f5] hover:text-[#0f0f0f]">
+          <button onClick={onClose} aria-label="Close" className="ml-2 flex-shrink-0 rounded-lg p-1.5 text-ink-3 hover:bg-muted hover:text-ink">
             <X size={14} strokeWidth={2} />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
           <div>
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">Delivery Status</p>
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-ink-3">Delivery Status</p>
             <StatusBadge status={status} />
           </div>
 
           <div>
-            <p className="mb-2.5 text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">Contact</p>
-            <div className="rounded-xl border border-[#e7e7e7] divide-y divide-[#f5f5f5]">
+            <p className="mb-2.5 text-[10px] font-semibold uppercase tracking-wider text-ink-3">Contact</p>
+            <div className="rounded-xl border border-line divide-y divide-muted">
               <div className="px-4 py-3">
-                <p className="text-[10px] text-[#a1a1aa]">Name</p>
-                <p className="mt-0.5 text-[13px] text-[#0f0f0f]">{recipient.name}</p>
+                <p className="text-[10px] text-ink-3">Name</p>
+                <p className="mt-0.5 text-[13px] text-ink">{recipient.name}</p>
               </div>
               <div className="px-4 py-3">
-                <p className="text-[10px] text-[#a1a1aa]">{isEmail ? "Email" : "Phone"}</p>
-                <p className="mt-0.5 font-mono text-[12px] text-[#0f0f0f]">{recipient.contact_value}</p>
+                <p className="text-[10px] text-ink-3">{isEmail ? "Email" : "Phone"}</p>
+                <p className="mt-0.5 font-mono text-[12px] text-ink">{recipient.contact_value}</p>
               </div>
               {person?.categories && person.categories.length > 0 && (
                 <div className="px-4 py-3">
-                  <p className="text-[10px] text-[#a1a1aa]">Audiences</p>
+                  <p className="text-[10px] text-ink-3">Audiences</p>
                   <div className="mt-1.5 flex flex-wrap gap-1">
                     {person.categories.map((c) => (
-                      <span key={c} className="rounded-full bg-[#f0f0f0] px-2 py-0.5 text-[10px] font-medium text-[#71717a]">
+                      <span key={c} className="rounded-full bg-muted-2 px-2 py-0.5 text-[10px] font-medium text-ink-2">
                         {CATEGORY_LABELS[c] ?? c}
                       </span>
                     ))}
@@ -828,11 +828,11 @@ function RecipientDrawer({
           </div>
 
           <div>
-            <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">Activity Timeline</p>
+            <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-ink-3">Activity Timeline</p>
             {events.length === 0 ? (
-              <div className="flex flex-col items-center py-6 text-center rounded-xl border border-dashed border-[#e7e7e7]">
-                <Clock size={16} className="text-[#d4d4d8]" strokeWidth={1.5} />
-                <p className="mt-2 text-[12px] text-[#a1a1aa]">No events recorded yet.</p>
+              <div className="flex flex-col items-center py-6 text-center rounded-xl border border-dashed border-line">
+                <Clock size={16} className="text-line-strong" strokeWidth={1.5} />
+                <p className="mt-2 text-[12px] text-ink-3">No events recorded yet.</p>
               </div>
             ) : (
               <div>
@@ -845,11 +845,11 @@ function RecipientDrawer({
                         <div className={`flex h-7 w-7 items-center justify-center rounded-full ${ev.bg} ${ev.color}`}>
                           <Icon size={12} strokeWidth={2} />
                         </div>
-                        {!isLast && <div className="mt-0.5 h-6 w-px bg-[#f0f0f0]" />}
+                        {!isLast && <div className="mt-0.5 h-6 w-px bg-muted-2" />}
                       </div>
                       <div className={isLast ? "pb-0" : "pb-3"}>
-                        <p className="text-[13px] font-medium text-[#0f0f0f] leading-tight">{ev.label}</p>
-                        <p className="mt-0.5 text-[11px] text-[#a1a1aa]">{fmt(ev.time) ?? ""}</p>
+                        <p className="text-[13px] font-medium text-ink leading-tight">{ev.label}</p>
+                        <p className="mt-0.5 text-[11px] text-ink-3">{fmt(ev.time) ?? ""}</p>
                       </div>
                     </div>
                   );
@@ -890,10 +890,10 @@ function RecipientDrawer({
         </div>
 
         {person && (
-          <div className="border-t border-[#f0f0f0] px-5 py-4 flex-shrink-0">
+          <div className="border-t border-muted-2 px-5 py-4 flex-shrink-0">
             <Link
               href={`/people/${person.id}`}
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#e7e7e7] bg-[#fafafa] px-4 py-2.5 text-[12px] font-medium text-[#71717a] hover:bg-white hover:text-[#0f0f0f] hover:shadow-sm transition-all duration-150"
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-line bg-canvas px-4 py-2.5 text-[12px] font-medium text-ink-2 hover:bg-card hover:text-ink hover:shadow-sm transition-all duration-150"
             >
               <Users size={12} strokeWidth={2} />
               View full profile
@@ -926,15 +926,15 @@ function EmptyState({ filter, search, channel, onClear }: {
 
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#e7e7e7] bg-[#fafafa] mb-4">
-        <Users size={18} className="text-[#d4d4d8]" strokeWidth={1.5} />
+      <div className="flex h-12 w-12 items-center justify-center rounded-full border border-line bg-canvas mb-4">
+        <Users size={18} className="text-line-strong" strokeWidth={1.5} />
       </div>
-      <p className="text-[13px] font-semibold text-[#0f0f0f]">{cfg.title}</p>
-      <p className="mt-1 text-[12px] text-[#a1a1aa] max-w-xs">{cfg.body}</p>
+      <p className="text-[13px] font-semibold text-ink">{cfg.title}</p>
+      <p className="mt-1 text-[12px] text-ink-3 max-w-xs">{cfg.body}</p>
       {search && (
         <button
           onClick={onClear}
-          className="mt-4 rounded-md border border-[#e7e7e7] bg-white px-3 py-1.5 text-[12px] font-medium text-[#71717a] hover:bg-[#fafafa] hover:text-[#0f0f0f] transition-all"
+          className="mt-4 rounded-md border border-line bg-card px-3 py-1.5 text-[12px] font-medium text-ink-2 hover:bg-canvas hover:text-ink transition-all"
         >
           Clear search
         </button>
@@ -1022,17 +1022,17 @@ export function CampaignClient({
   }, [FILTERS, filter]);
 
   return (
-    <div className="min-h-screen bg-[#fafafa]">
+    <div className="min-h-screen bg-canvas">
       {/* ── Sticky header ────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-10 border-b border-[#e7e7e7] bg-white/95 backdrop-blur-sm">
+      <header className="sticky top-0 z-10 border-b border-line bg-card/95 backdrop-blur-sm">
         <div className="flex items-center justify-between gap-4 px-6 py-3.5">
           <div className="flex items-center gap-3 min-w-0">
-            <Link href="/messages" className="inline-flex items-center gap-1.5 shrink-0 text-[12px] font-medium text-[#a1a1aa] hover:text-[#71717a]">
+            <Link href="/messages" className="inline-flex items-center gap-1.5 shrink-0 text-[12px] font-medium text-ink-3 hover:text-ink-2">
               <ArrowLeft size={13} strokeWidth={2} />
               Messages
             </Link>
-            <span className="text-[#e0e0e0] text-[13px]">/</span>
-            <h1 className="truncate text-[13px] font-semibold text-[#0f0f0f]">
+            <span className="text-ink-5 text-[13px]">/</span>
+            <h1 className="truncate text-[13px] font-semibold text-ink">
               {message.subject ?? message.body.slice(0, 55) + (message.body.length > 55 ? "…" : "")}
             </h1>
             <span className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${channelMeta.bg} ${channelMeta.color}`}>
@@ -1044,21 +1044,21 @@ export function CampaignClient({
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => exportCSV(recipients, message.subject, message.channel)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[#e7e7e7] bg-white px-3 py-1.5 text-[12px] font-medium text-[#71717a] hover:bg-[#fafafa] hover:text-[#0f0f0f] hover:border-[#d4d4d8]"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-card px-3 py-1.5 text-[12px] font-medium text-ink-2 hover:bg-canvas hover:text-ink hover:border-line-strong"
             >
               <Download size={11} strokeWidth={2} />
               Export
             </button>
             <Link
               href={`/messages/new?audiences=${message.audience_slug}`}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[#e7e7e7] bg-white px-3 py-1.5 text-[12px] font-medium text-[#71717a] hover:bg-[#fafafa] hover:text-[#0f0f0f] hover:border-[#d4d4d8]"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-card px-3 py-1.5 text-[12px] font-medium text-ink-2 hover:bg-canvas hover:text-ink hover:border-line-strong"
             >
               <RotateCcw size={11} strokeWidth={2} />
               Resend
             </Link>
             <Link
               href="/messages/new"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#0f0f0f] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#27272a]"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-ink px-3 py-1.5 text-[12px] font-medium text-on-ink hover:bg-ink-hover"
             >
               <Copy size={11} strokeWidth={2} />
               Duplicate
@@ -1066,13 +1066,13 @@ export function CampaignClient({
           </div>
         </div>
 
-        <div className="flex items-center gap-3 px-6 pb-3 text-[11px] text-[#a1a1aa]">
+        <div className="flex items-center gap-3 px-6 pb-3 text-[11px] text-ink-3">
           <span>{message.audience_label}</span>
-          <span className="text-[#e7e7e7]">·</span>
+          <span className="text-line">·</span>
           <span>{fmtDate(sentAt)}</span>
           {message.status === "sent" && (
             <>
-              <span className="text-[#e7e7e7]">·</span>
+              <span className="text-line">·</span>
               <span className="inline-flex items-center gap-1.5 text-emerald-600">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                 Sent
@@ -1093,10 +1093,10 @@ export function CampaignClient({
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-5">
           {/* Chart — 3/5 width */}
           <div className="lg:col-span-3">
-            <div className="rounded-xl border border-[#e7e7e7] bg-white px-5 py-5 h-full animate-fade-up" style={{ animationDelay: "260ms" }}>
+            <div className="rounded-xl border border-line bg-card shadow-card px-5 py-5 h-full animate-fade-up" style={{ animationDelay: "260ms" }}>
               <div className="mb-5">
-                <h2 className="text-[13px] font-semibold text-[#0f0f0f]">Delivery Timeline</h2>
-                <p className="mt-0.5 text-[11px] text-[#a1a1aa]">
+                <h2 className="text-[13px] font-semibold text-ink">Delivery Timeline</h2>
+                <p className="mt-0.5 text-[11px] text-ink-3">
                   Cumulative events over the first 24 hours · hover for details
                 </p>
               </div>
@@ -1111,32 +1111,32 @@ export function CampaignClient({
         </div>
 
         {/* ── Recipients table ──────────────────────────────────────────────── */}
-        <div className="rounded-xl border border-[#e7e7e7] bg-white animate-fade-up" style={{ animationDelay: "300ms" }}>
+        <div className="rounded-xl border border-line bg-card shadow-card animate-fade-up" style={{ animationDelay: "300ms" }}>
           <div className="px-5 pt-5 pb-0">
             <div className="flex items-center justify-between gap-4 mb-4">
-              <h2 className="text-[13px] font-semibold text-[#0f0f0f]">
+              <h2 className="text-[13px] font-semibold text-ink">
                 Recipients
                 {filtered.length !== recipients.length && (
-                  <span className="ml-2 text-[11px] font-normal text-[#a1a1aa]">
+                  <span className="ml-2 text-[11px] font-normal text-ink-3">
                     {filtered.length.toLocaleString()} of {recipients.length.toLocaleString()}
                   </span>
                 )}
               </h2>
 
               <div className="relative">
-                <Search size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#a1a1aa]" strokeWidth={2} />
+                <Search size={13} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-3" strokeWidth={2} />
                 <input
                   type="text"
                   placeholder="Search recipients…"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-56 rounded-lg border border-[#e7e7e7] bg-[#fafafa] py-1.5 pl-8 pr-8 text-[12px] text-[#0f0f0f] placeholder-[#d4d4d8] outline-none transition-all focus:border-[#a1a1aa] focus:bg-white focus:shadow-sm"
+                  className="w-56 rounded-lg border border-line bg-canvas py-1.5 pl-8 pr-8 text-[12px] text-ink placeholder-line-strong outline-none transition-all focus:border-ink-3 focus:bg-card focus:shadow-sm"
                 />
                 {search && (
                   <button
                     onClick={() => setSearch("")}
                     aria-label="Clear search"
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-[#a1a1aa] hover:text-[#0f0f0f]"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-ink-3 hover:text-ink"
                   >
                     <X size={11} strokeWidth={2} />
                   </button>
@@ -1145,7 +1145,7 @@ export function CampaignClient({
             </div>
 
             {/* Filter tabs */}
-            <div className="flex items-center gap-0 border-b border-[#f0f0f0] -mx-5 px-5">
+            <div className="flex items-center gap-0 border-b border-muted-2 -mx-5 px-5">
               {FILTERS.map((f) => {
                 const count = filterCounts[f.key];
                 const isActive = filter === f.key;
@@ -1156,13 +1156,13 @@ export function CampaignClient({
                     className={[
                       "inline-flex items-center gap-1.5 border-b-[1.5px] pb-3 pt-0.5 mr-5 text-[12px] font-medium transition-all duration-100",
                       isActive
-                        ? "border-[#0f0f0f] text-[#0f0f0f]"
-                        : "border-transparent text-[#a1a1aa] hover:text-[#71717a]",
+                        ? "border-ink text-ink"
+                        : "border-transparent text-ink-3 hover:text-ink-2",
                     ].join(" ")}
                   >
                     {f.label}
                     {count > 0 && (
-                      <span className={`text-[10px] tabular-nums font-normal ${isActive ? "text-[#71717a]" : "text-[#d4d4d8]"}`}>
+                      <span className={`text-[10px] tabular-nums font-normal ${isActive ? "text-ink-2" : "text-line-strong"}`}>
                         {count}
                       </span>
                     )}
@@ -1177,24 +1177,24 @@ export function CampaignClient({
           ) : (
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[#f0f0f0] bg-[#fafafa]">
-                  <th className="py-2.5 pl-5 pr-3 text-left text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">Name</th>
-                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">
+                <tr className="border-b border-muted-2 bg-canvas">
+                  <th className="py-2.5 pl-5 pr-3 text-left text-[10px] font-semibold uppercase tracking-wide text-ink-3">Name</th>
+                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-ink-3">
                     {isEmail ? "Email" : "Phone"}
                   </th>
-                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">Audience</th>
-                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">Status</th>
-                  <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">Delivered</th>
+                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-ink-3">Audience</th>
+                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-ink-3">Status</th>
+                  <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wide text-ink-3">Delivered</th>
                   {isEmail && (
-                    <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">Opened</th>
+                    <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wide text-ink-3">Opened</th>
                   )}
                   {isWhatsApp && (
-                    <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">Read</th>
+                    <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wide text-ink-3">Read</th>
                   )}
                   {!isEmail && (
-                    <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">Replied</th>
+                    <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wide text-ink-3">Replied</th>
                   )}
-                  <th className="pl-3 pr-5 py-2.5 text-right text-[10px] font-semibold uppercase tracking-wide text-[#a1a1aa]">
+                  <th className="pl-3 pr-5 py-2.5 text-right text-[10px] font-semibold uppercase tracking-wide text-ink-3">
                     Last Activity
                   </th>
                 </tr>
@@ -1212,28 +1212,28 @@ export function CampaignClient({
                       key={r.id}
                       onClick={() => setSelected(r)}
                       className={[
-                        "group cursor-pointer transition-colors duration-100 hover:bg-[#fafafa]",
-                        !isLast ? "border-b border-[#f5f5f5]" : "",
+                        "group cursor-pointer transition-colors duration-100 hover:bg-canvas",
+                        !isLast ? "border-b border-muted" : "",
                       ].join(" ")}
                     >
                       <td className="py-3 pl-5 pr-3">
                         <div className="flex items-center gap-2.5">
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#f0f0f0] text-[10px] font-semibold text-[#71717a]">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted-2 text-[10px] font-semibold text-ink-2">
                             {r.name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()}
                           </div>
-                          <span className="text-[13px] font-medium text-[#0f0f0f]">{r.name}</span>
+                          <span className="text-[13px] font-medium text-ink">{r.name}</span>
                         </div>
                       </td>
                       <td className="px-3 py-3">
-                        <span className="font-mono text-[11px] text-[#71717a]">{r.contact_value}</span>
+                        <span className="font-mono text-[11px] text-ink-2">{r.contact_value}</span>
                       </td>
                       <td className="px-3 py-3">
                         {person?.categories && person.categories.length > 0 ? (
-                          <span className="text-[12px] text-[#71717a]">
+                          <span className="text-[12px] text-ink-2">
                             {CATEGORY_LABELS[person.categories[0]] ?? person.categories[0]}
                           </span>
                         ) : (
-                          <span className="text-[#d4d4d8]">—</span>
+                          <span className="text-line-strong">—</span>
                         )}
                       </td>
                       <td className="px-3 py-3">
@@ -1245,7 +1245,7 @@ export function CampaignClient({
                             <CheckCircle2 size={14} className="text-emerald-500" strokeWidth={1.75} />
                           </span>
                         ) : (
-                          <span className="text-[#d4d4d8]">—</span>
+                          <span className="text-line-strong">—</span>
                         )}
                       </td>
                       {isEmail && (
@@ -1255,7 +1255,7 @@ export function CampaignClient({
                               <CheckCircle2 size={14} className="text-sky-500" strokeWidth={1.75} />
                             </span>
                           ) : (
-                            <span className="text-[#d4d4d8]">—</span>
+                            <span className="text-line-strong">—</span>
                           )}
                         </td>
                       )}
@@ -1266,7 +1266,7 @@ export function CampaignClient({
                               <CheckCircle2 size={14} className="text-blue-500" strokeWidth={1.75} />
                             </span>
                           ) : (
-                            <span className="text-[#d4d4d8]">—</span>
+                            <span className="text-line-strong">—</span>
                           )}
                         </td>
                       )}
@@ -1277,12 +1277,12 @@ export function CampaignClient({
                               <CheckCircle2 size={14} className="text-violet-500" strokeWidth={1.75} />
                             </span>
                           ) : (
-                            <span className="text-[#d4d4d8]">—</span>
+                            <span className="text-line-strong">—</span>
                           )}
                         </td>
                       )}
                       <td className="pl-3 pr-5 py-3 text-right">
-                        <span className="text-[11px] tabular-nums text-[#a1a1aa]">
+                        <span className="text-[11px] tabular-nums text-ink-3">
                           {la ? fmt(la, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "—"}
                         </span>
                       </td>
@@ -1294,8 +1294,8 @@ export function CampaignClient({
           )}
 
           {filtered.length > 0 && (
-            <div className="flex items-center justify-between gap-3 border-t border-[#f5f5f5] px-5 py-3">
-              <p className="text-[11px] text-[#a1a1aa]">
+            <div className="flex items-center justify-between gap-3 border-t border-muted px-5 py-3">
+              <p className="text-[11px] text-ink-3">
                 {filtered.length > visibleCount
                   ? `Showing ${visibleCount.toLocaleString()} of ${filtered.length.toLocaleString()} recipients`
                   : `${filtered.length.toLocaleString()} recipient${filtered.length !== 1 ? "s" : ""}`}
@@ -1305,7 +1305,7 @@ export function CampaignClient({
                 <button
                   type="button"
                   onClick={() => setShown({ key: listKey, count: visibleCount + RECIPIENTS_PAGE })}
-                  className="rounded-md border border-[#e7e7e7] bg-white px-2.5 py-1 text-[11px] font-medium text-[#71717a] transition-[background-color,color,transform] duration-150 hover:bg-[#f5f5f5] hover:text-[#0f0f0f] active:scale-[0.97]"
+                  className="rounded-md border border-line bg-card px-2.5 py-1 text-[11px] font-medium text-ink-2 transition-[background-color,color,transform] duration-150 hover:bg-muted hover:text-ink active:scale-[0.97]"
                 >
                   Show more
                 </button>

@@ -14,9 +14,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return hideNav ? (
     <>{children}</>
   ) : (
-    <>
+    // `contents` keeps the body's flex layout; the wrapper scopes the app's
+    // semantic colour tokens (and dark mode) to the signed-in interior.
+    <div className="app-shell contents text-ink">
       <Nav />
       {children}
-    </>
+    </div>
   );
 }

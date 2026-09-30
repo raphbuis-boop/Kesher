@@ -1,5 +1,6 @@
 "use client";
 
+import { useActionToast } from "@/app/components/ui/toast";
 import { useActionState, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { saveSettings, type SettingsState } from "./actions";
@@ -9,23 +10,24 @@ const initialState: SettingsState = { success: false, error: null };
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
-    <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-[#a1a1aa]">
+    <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-ink-3">
       {children}
     </label>
   );
 }
 
 function Hint({ children }: { children: React.ReactNode }) {
-  return <p className="mt-1.5 text-[11px] text-[#a1a1aa] leading-relaxed">{children}</p>;
+  return <p className="mt-1.5 text-[11px] text-ink-3 leading-relaxed">{children}</p>;
 }
 
 const inputCls =
-  "w-full rounded-lg border border-[#e7e7e7] bg-[#fafafa] px-3 py-2 text-[13px] text-[#0f0f0f] placeholder-[#d4d4d8] outline-none transition-all duration-100 focus:border-[#a1a1aa] focus:bg-white disabled:opacity-50";
+  "w-full rounded-lg border border-line bg-canvas px-3 py-2 text-[13px] text-ink placeholder-line-strong outline-none transition-all duration-100 focus:border-ink-3 focus:bg-card disabled:opacity-50";
 
 const textareaCls = inputCls + " resize-none leading-relaxed";
 
 export function SettingsForm({ current }: { current: BrandingSettings }) {
   const [state, formAction, isPending] = useActionState(saveSettings, initialState);
+  useActionToast(state, (s) => ({ success: s.success ? "Settings saved" : null, error: s.error }));
   const [color, setColor] = useState(current.primaryColor || "#18181b");
 
   useEffect(() => {
@@ -47,10 +49,10 @@ export function SettingsForm({ current }: { current: BrandingSettings }) {
 
       {/* School Identity */}
       <section>
-        <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-[#a1a1aa]">
+        <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-ink-3">
           School Identity
         </h2>
-        <div className="space-y-5 rounded-xl border border-[#e7e7e7] bg-white p-5">
+        <div className="space-y-5 rounded-xl border border-line bg-card shadow-card p-5">
           <div>
             <Label>School Name</Label>
             <input
@@ -85,10 +87,10 @@ export function SettingsForm({ current }: { current: BrandingSettings }) {
                 type="color"
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
-                className="h-9 w-12 cursor-pointer rounded-lg border border-[#e7e7e7] bg-white p-1 disabled:opacity-50"
+                className="h-9 w-12 cursor-pointer rounded-lg border border-line bg-card p-1 disabled:opacity-50"
                 disabled={isPending}
               />
-              <span className="font-mono text-[12px] text-[#71717a]">{color}</span>
+              <span className="font-mono text-[12px] text-ink-2">{color}</span>
             </div>
             <Hint>Used as the email header background color.</Hint>
           </div>
@@ -97,10 +99,10 @@ export function SettingsForm({ current }: { current: BrandingSettings }) {
 
       {/* Sender & Reply */}
       <section>
-        <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-[#a1a1aa]">
+        <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-ink-3">
           Sender & Reply
         </h2>
-        <div className="space-y-5 rounded-xl border border-[#e7e7e7] bg-white p-5">
+        <div className="space-y-5 rounded-xl border border-line bg-card shadow-card p-5">
           <div>
             <Label>Sender Name</Label>
             <input
@@ -144,10 +146,10 @@ export function SettingsForm({ current }: { current: BrandingSettings }) {
 
       {/* Email Footer */}
       <section>
-        <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-[#a1a1aa]">
+        <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-ink-3">
           Email Footer
         </h2>
-        <div className="space-y-5 rounded-xl border border-[#e7e7e7] bg-white p-5">
+        <div className="space-y-5 rounded-xl border border-line bg-card shadow-card p-5">
           <div>
             <Label>Footer Text</Label>
             <textarea
@@ -180,7 +182,7 @@ export function SettingsForm({ current }: { current: BrandingSettings }) {
         <button
           type="submit"
           disabled={isPending}
-          className="inline-flex items-center gap-2 rounded-md bg-[#0f0f0f] px-4 py-2 text-[12px] font-medium text-white transition-colors hover:bg-[#27272a] disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-md bg-ink px-4 py-2 text-[12px] font-medium text-on-ink transition-colors hover:bg-ink-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isPending ? (
             <>
