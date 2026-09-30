@@ -17,6 +17,8 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
+const PREFS_SCRIPT = `try{if(localStorage.getItem("kesher.sidebar")==="collapsed")document.documentElement.dataset.sidebar="collapsed"}catch(e){}`;
+
 export const metadata: Metadata = {
   title: "Kesher",
   description: "School communications platform for email, SMS, and WhatsApp.",
@@ -31,8 +33,13 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable}`}
+      suppressHydrationWarning
     >
-      <body className="flex bg-[#fafafa] text-[#0f0f0f]">
+      <head>
+        {/* Applies saved UI preferences before first paint (no flash). */}
+        <script dangerouslySetInnerHTML={{ __html: PREFS_SCRIPT }} />
+      </head>
+      <body className="flex flex-col md:flex-row bg-[#fafafa] text-[#0f0f0f]">
         <AppShell>
           <main className="flex-1 min-w-0 flex flex-col min-h-screen">
             {children}

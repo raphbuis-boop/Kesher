@@ -5,7 +5,8 @@
  */
 
 export function Bone({ className = "" }: { className?: string }) {
-  return <div aria-hidden className={`rounded-md bg-muted-2 motion-safe:animate-pulse ${className}`} />;
+  const radius = /\brounded-/.test(className) ? "" : "rounded-md";
+  return <div aria-hidden className={`${radius} bg-muted-2 motion-safe:animate-pulse ${className}`} />;
 }
 
 export function SkeletonHeader({ action = true, wide = false }: { action?: boolean; wide?: boolean }) {

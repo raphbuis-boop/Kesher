@@ -487,3 +487,81 @@ button:disabled { cursor: not-allowed; }
   [role="button"]:active,
   a.btn:active { transform: none; }
 }
+
+/* ── Sidebar (collapsible on desktop, drawer on mobile) ─────────────────────
+ * Width follows <html data-sidebar="collapsed">, which the inline script in
+ * app/layout.tsx sets before paint from localStorage, so there's no flash.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+.app-sidebar {
+  width: 260px;
+  transform: translateX(-100%);
+  transition: transform 200ms var(--ease-out);
+}
+.app-sidebar[data-open="true"] { transform: translateX(0); box-shadow: var(--app-shadow-pop); }
+.app-sidebar .sidebar-scroll { overflow-y: auto; }
+
+/* Mobile: page headers stick below the 48px top bar */
+@media (max-width: 767px) {
+  .app-shell header.sticky { top: 3rem; }
+}
+
+@media (min-width: 768px) {
+  .app-sidebar {
+    width: 220px;
+    transform: none;
+    box-shadow: none;
+    transition: width 200ms var(--ease-out);
+  }
+
+  .app-sidebar .nav-label {
+    transition: opacity 150ms ease;
+  }
+
+  html[data-sidebar="collapsed"] .app-sidebar { width: 60px; }
+  html[data-sidebar="collapsed"] .app-sidebar .nav-label {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+    pointer-events: none;
+    position: absolute;
+  }
+  html[data-sidebar="collapsed"] .app-sidebar .nav-item { justify-content: center; padding-left: 0; padding-right: 0; }
+  /* Collapsed: logo and toggle stack so both stay reachable */
+  html[data-sidebar="collapsed"] .app-sidebar > div:first-child { flex-direction: column; padding-left: 0; padding-right: 0; }
+  /* Tooltips escape the rail when collapsed */
+  html[data-sidebar="collapsed"] .app-sidebar .sidebar-scroll { overflow: visible; }
+}
+
+/* Icon tooltips — only shown on the collapsed desktop rail */
+.nav-tip { display: none; }
+@media (min-width: 768px) {
+  html[data-sidebar="collapsed"] .nav-tip {
+    display: block;
+    position: absolute;
+    left: calc(100% + 10px);
+    top: 50%;
+    transform: translateY(-50%) translateX(-2px);
+    white-space: nowrap;
+    border-radius: 6px;
+    background: var(--app-ink);
+    color: var(--app-on-ink);
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 500;
+    box-shadow: var(--app-shadow-pop);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 150ms ease, transform 150ms var(--ease-out);
+    z-index: 60;
+  }
+  html[data-sidebar="collapsed"] .nav-item:hover .nav-tip,
+  html[data-sidebar="collapsed"] .nav-item:focus-visible .nav-tip {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-sidebar, .app-sidebar .nav-label, .nav-tip { transition: none !important; }
+}
