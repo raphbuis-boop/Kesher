@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 import { renderTemplate } from "@/lib/template";
 import { getBrandingSettings, type BrandingSettings } from "@/lib/settings";
 import { getSmsProvider, getWhatsAppProvider, validateSmsEnv, validateMetaWhatsAppEnv } from "@/lib/sms-provider";
+import { buildUnsubscribeUrls, validateUnsubscribeEnv } from "@/lib/unsubscribe";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -45,6 +46,27 @@ const SYSTEM_CATEGORY_MAP: Record<string, string> = {
 
 const EMAIL_IMAGE_RE = /\.(jpg|jpeg|png|gif|webp)$/i;
 
+/** Escapes user/school-provided text before it goes into the HTML template. */
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/**
+ * RFC 5322 From header: quotes the display name when it contains characters
+ * like "," or "." that would otherwise break parsing ("Heichal HaTorah, Inc.").
+ */
+function formatFrom(name: string, email: string): string {
+  if (!name) return email;
+  const safe = /^[\p{L}\p{N} '!#$%&*+\-/=?^_`{|}~]+$/u.test(name)
+    ? name
+    : `"${name.replace(/["\\]/g, "\\$&")}"`;
+  return `${safe} <${email}>`;
+}
+
 /**
  * Resolves a greeting template string (e.g. "Hi {{first_name}},") into a
  * final greeting line, applying the fallback when the name is absent.
@@ -73,7 +95,8 @@ function buildEmailText(
   body: string,
   branding: BrandingSettings,
   greetingTemplate: string | null,
-  firstName: string | null
+  firstName: string | null,
+  unsubscribeUrl: string
 ): string {
   const lines: string[] = [];
 
@@ -82,10 +105,18 @@ function buildEmailText(
   if (greeting) lines.push(greeting, "");
   lines.push(bodyTrimmed, "");
 
-  if (branding.footerText) lines.push("---", branding.footerText);
+  lines.push("---");
+  if (branding.schoolName) lines.push(branding.schoolName);
+  if (branding.footerText) lines.push(branding.footerText);
   if (branding.websiteUrl) lines.push(branding.websiteUrl);
   if (branding.replyToEmail) lines.push(branding.replyToEmail);
-  lines.push("", "Sent with Kesher");
+  lines.push(
+    "",
+    `You're receiving this because you're on ${branding.schoolName || "this school"}'s contact list.`,
+    `Unsubscribe: ${unsubscribeUrl}`,
+    "",
+    "Sent with Kesher"
+  );
 
   return lines.join("\n");
 }
@@ -95,24 +126,27 @@ function buildEmailHtml(
   branding: BrandingSettings,
   greetingTemplate: string | null,
   firstName: string | null,
+  unsubscribeUrl: string,
   attachmentUrls?: string[]
 ): string {
   const primaryColor = branding.primaryColor || "#1e3a6e";
-  const schoolName   = branding.schoolName   || "";
-  const footerText   = branding.footerText   || "";
+  const schoolName   = escapeHtml(branding.schoolName || "");
+  const footerText   = escapeHtml(branding.footerText || "");
   const websiteUrl   = branding.websiteUrl   || "";
   const logoUrl      = branding.logoUrl      || "";
   const replyEmail   = branding.replyToEmail || "";
 
   // ── Header: logo > initials circle + name > color bar only ──────────────
   // Initials are derived from the real school name only — never a placeholder.
-  const initials = schoolName
-    .split(/\s+/)
-    .map((w) => w[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  const initials = escapeHtml(
+    (branding.schoolName || "")
+      .split(/\s+/)
+      .map((w) => w[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase()
+  );
 
   let headerContentHtml: string;
   if (logoUrl) {
@@ -137,14 +171,14 @@ function buildEmailHtml(
   const bodyTrimmed = body.trim();
   const resolvedGreeting = resolveGreeting(greetingTemplate, firstName);
   const greetingHtml = resolvedGreeting
-    ? `<p style="margin:0 0 22px;font-size:16px;font-weight:600;color:#111827;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">${resolvedGreeting}</p>`
+    ? `<p style="margin:0 0 22px;font-size:16px;font-weight:600;color:#111827;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">${escapeHtml(resolvedGreeting)}</p>`
     : "";
 
   // ── Body paragraphs ───────────────────────────────────────────────────────
   const paragraphs = bodyTrimmed.split(/\n\n+/).filter((p) => p.trim());
   const paragraphsHtml = paragraphs
     .map((p, i) => {
-      const lines = p.split("\n").map((l) => l.trim()).filter(Boolean);
+      const lines = p.split("\n").map((l) => escapeHtml(l.trim())).filter(Boolean);
       const isLast = i === paragraphs.length - 1;
       return `<p style="margin:0${isLast ? "" : " 0 20px"};line-height:1.75;font-size:15px;color:#374151;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">${lines.join("<br>")}</p>`;
     })
@@ -170,7 +204,7 @@ ${images
       attachmentsHtml += `<div style="margin-top:${images.length ? "12" : "28"}px;">
 ${docs
   .map((u) => {
-    const name = decodeURIComponent(u.split("/").pop() ?? "Attachment");
+    const name = escapeHtml(decodeURIComponent(u.split("/").pop() ?? "Attachment"));
     return `<a href="${u}" style="display:block;margin-bottom:8px;padding:13px 16px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;font-weight:500;color:#374151;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">&#128206;&nbsp; ${name}</a>`;
   })
   .join("")}
@@ -179,10 +213,17 @@ ${docs
   }
 
   // ── Footer blocks ─────────────────────────────────────────────────────────
+  // School name + address (footer text) + unsubscribe on every email — a
+  // missing sender identity or opt-out link is a strong spam signal.
   const footerLines: string[] = [];
+  if (schoolName) {
+    footerLines.push(
+      `<p style="margin:0 0 6px;font-size:13px;font-weight:600;color:#374151;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">${schoolName}</p>`
+    );
+  }
   if (footerText) {
     footerLines.push(
-      `<p style="margin:0 0 6px;font-size:13px;color:#6b7280;line-height:1.65;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">${footerText}</p>`
+      `<p style="margin:0 0 6px;font-size:13px;color:#6b7280;line-height:1.65;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">${footerText.replace(/\n/g, "<br>")}</p>`
     );
   }
   if (websiteUrl) {
@@ -196,11 +237,13 @@ ${docs
       `<p style="margin:0 0 4px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;"><a href="mailto:${replyEmail}" style="font-size:13px;color:#6b7280;text-decoration:none;">${replyEmail}</a></p>`
     );
   }
-  const footerContentHtml = footerLines.length
-    ? footerLines.join("\n")
-    : schoolName
-    ? `<p style="margin:0;font-size:13px;color:#9ca3af;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">${schoolName}</p>`
-    : "";
+  footerLines.push(
+    `<p style="margin:14px 0 0;font-size:12px;color:#9ca3af;line-height:1.6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">You're receiving this because you're on ${schoolName || "this school"}'s contact list.<br><a href="${escapeHtml(unsubscribeUrl)}" style="color:#6b7280;text-decoration:underline;">Unsubscribe</a></p>`
+  );
+  const footerContentHtml = footerLines.join("\n");
+
+  // Inbox preview line: the start of the message, instead of an empty spacer
+  const preheader = escapeHtml(bodyTrimmed.replace(/\s+/g, " ").slice(0, 110));
 
   // ── Full template ─────────────────────────────────────────────────────────
   return `<!DOCTYPE html>
@@ -221,9 +264,9 @@ ${docs
 </head>
 <body style="margin:0;padding:0;background-color:#eef0f3;">
 
-<!-- Invisible preheader spacer -->
+<!-- Preheader: inbox preview text -->
 <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">
-&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+${preheader}&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
 </div>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#eef0f3;">
@@ -313,6 +356,11 @@ type RecipientInsert = {
   error_detail: string | null;
 };
 
+/** Lowercased domain part of an email address. */
+function emailDomain(email: string): string {
+  return email.slice(email.lastIndexOf("@") + 1).trim().toLowerCase();
+}
+
 async function sendEmailBatch(
   recipients: Person[],
   subject: string,
@@ -321,15 +369,55 @@ async function sendEmailBatch(
   now: string,
   branding: BrandingSettings,
   greetingTemplate: string | null,
+  recipientRowIds: Map<string, string>,
   attachmentUrls?: string[]
 ): Promise<{ inserts: RecipientInsert[]; sentCount: number; failedCount: number; batchError: string | null }> {
   const resend = new Resend(process.env.RESEND_API_KEY!);
-  const fromEmail = branding.senderEmail || process.env.RESEND_FROM_EMAIL!;
-  const senderName = branding.senderName || branding.schoolName || "";
-  const from = senderName ? `${senderName} <${fromEmail}>` : fromEmail;
-  const replyTo = branding.replyToEmail || undefined;
 
-  const eligible = recipients.filter((r) => r.email);
+  // Only send From an address on the verified Resend domain (RESEND_FROM_EMAIL's
+  // domain) so SPF/DKIM align with DMARC. A school address set as Sender Email
+  // on another domain is used as the reply-to instead.
+  const defaultFrom = process.env.RESEND_FROM_EMAIL!;
+  const senderOnVerifiedDomain =
+    !!branding.senderEmail && emailDomain(branding.senderEmail) === emailDomain(defaultFrom);
+  const fromEmail = senderOnVerifiedDomain ? branding.senderEmail : defaultFrom;
+  const replyTo =
+    branding.replyToEmail ||
+    (branding.senderEmail && !senderOnVerifiedDomain ? branding.senderEmail : "") ||
+    undefined;
+
+  // Display name is the school, never the platform name
+  const configuredName = branding.senderName?.trim().toLowerCase() === "kesher" ? "" : branding.senderName;
+  const senderName = configuredName || branding.schoolName || "";
+  const from = formatFrom(senderName, fromEmail);
+  if (!senderName) {
+    console.warn(`[sendEmailBatch] No School Name / Sender Name set — sending from bare address ${fromEmail}`);
+  }
+
+  const withEmail = recipients.filter((r) => r.email);
+
+  // ── Suppress unsubscribed addresses ──────────────────────────────────────
+  // Same opt-out store as SMS STOP: message_recipients rows with
+  // status='opted_out' (set by /unsubscribe). RLS scopes this to the org.
+  // Checked in chunks to keep the PostgREST query URL short.
+  const supabase = await createSupabaseServerClient();
+  const optedOutEmails = new Set<string>();
+  for (let i = 0; i < withEmail.length; i += BATCH_SIZE) {
+    const chunk = withEmail.slice(i, i + BATCH_SIZE).map((r) => r.email!);
+    const { data: optedOutRows, error: optOutError } = await supabase
+      .from("message_recipients")
+      .select("contact_value")
+      .in("contact_value", chunk)
+      .eq("status", "opted_out");
+    if (optOutError) {
+      console.error(`[sendEmailBatch] Opt-out lookup failed:`, optOutError.message);
+    }
+    for (const row of optedOutRows ?? []) optedOutEmails.add(row.contact_value as string);
+  }
+  const eligible = withEmail.filter((r) => !optedOutEmails.has(r.email!));
+  if (optedOutEmails.size > 0) {
+    console.log(`[sendEmailBatch] Suppressed ${optedOutEmails.size} unsubscribed recipient(s) from message ${messageId}`);
+  }
 
   let sentCount = 0;
   let failedCount = 0;
@@ -343,19 +431,21 @@ async function sendEmailBatch(
     const emails = batch.map((r) => {
       const rendered = renderTemplate(bodyTemplate, r);
       const firstName = r.preferred_name?.trim() || r.first_name?.trim() || null;
+      const unsubscribe = buildUnsubscribeUrls(recipientRowIds.get(r.id)!);
       const payload: Record<string, unknown> = {
         from,
         to: r.email!,
         subject,
-        html: buildEmailHtml(rendered, branding, greetingTemplate, firstName, attachmentUrls),
-        text: buildEmailText(rendered, branding, greetingTemplate, firstName),
+        html: buildEmailHtml(rendered, branding, greetingTemplate, firstName, unsubscribe.page, attachmentUrls),
+        text: buildEmailText(rendered, branding, greetingTemplate, firstName, unsubscribe.page),
         headers: {
           // Helps Gmail and Outlook route bulk mail correctly
           "Precedence": "bulk",
           // Unique per-recipient ID prevents duplicate-detection false positives
           "X-Entity-Ref-ID": `${messageId}-${r.id}`,
-          // One-click unsubscribe — required by Gmail/Yahoo bulk sender guidelines (2024+)
-          "List-Unsubscribe": `<mailto:${replyTo || fromEmail}?subject=Unsubscribe>`,
+          // RFC 8058 one-click unsubscribe — required by Gmail/Yahoo bulk sender
+          // rules. Must be an https URL that accepts POST (see /api/unsubscribe).
+          "List-Unsubscribe": `<${unsubscribe.oneClick}>`,
           "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
         },
       };
@@ -610,6 +700,7 @@ function validateEnv(channel: Channel): string | null {
   if (channel === "email") {
     if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL)
       return "Email delivery is not configured for this account. Contact your administrator.";
+    return validateUnsubscribeEnv();
   }
   if (channel === "sms") return validateSmsEnv("sms");
   if (channel === "whatsapp") return validateMetaWhatsAppEnv();
@@ -770,7 +861,7 @@ export async function sendMessage(
     inserts = result.inserts;
     batchError = result.batchError;
   } else if (channel === "email") {
-    const result = await sendEmailBatch(eligible, trimmedSubject, trimmedBody, messageId, now, branding, greetingTemplate ?? null, attachmentUrls);
+    const result = await sendEmailBatch(eligible, trimmedSubject, trimmedBody, messageId, now, branding, greetingTemplate ?? null, savedRowIdByPerson, attachmentUrls);
     sentCount = result.sentCount;
     failedCount = result.failedCount;
     inserts = result.inserts;
