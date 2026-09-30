@@ -135,8 +135,6 @@
 
   --app-shadow-card:  0 1px 2px rgb(15 15 15 / 0.04), 0 1px 1px rgb(15 15 15 / 0.02);
   --app-shadow-pop:   0 12px 32px rgb(15 15 15 / 0.10), 0 2px 6px rgb(15 15 15 / 0.05);
-
-  color-scheme: light;
 }
 
 :root[data-theme="dark"] {
@@ -165,9 +163,12 @@
 
   --app-shadow-card:  0 1px 2px rgb(0 0 0 / 0.4);
   --app-shadow-pop:   0 16px 40px rgb(0 0 0 / 0.55), 0 2px 6px rgb(0 0 0 / 0.4);
-
-  color-scheme: dark;
 }
+
+/* Native controls (date pickers, selects, scrollbars inside panels) follow
+   the app theme — scoped to the signed-in interior only. */
+:root[data-theme="dark"] .app-shell { color-scheme: dark; }
+:root[data-theme="dark"] body:has(.app-shell) { background: var(--app-canvas); }
 
 @theme inline {
   --color-canvas:       var(--app-canvas);

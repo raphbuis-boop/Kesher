@@ -17,7 +17,16 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
-const PREFS_SCRIPT = `try{if(localStorage.getItem("kesher.sidebar")==="collapsed")document.documentElement.dataset.sidebar="collapsed"}catch(e){}`;
+// Applies saved UI preferences before first paint (no flash):
+//  - sidebar collapsed state (Part 3)
+//  - theme: "light" (default) | "dark" | "system"; exposes window.__kesherTheme
+//    for Settings → Appearance and follows OS changes while on "system".
+const PREFS_SCRIPT = `(function(){var d=document.documentElement;function get(k){try{return localStorage.getItem(k)}catch(e){return null}}
+if(get("kesher.sidebar")==="collapsed")d.dataset.sidebar="collapsed";
+var m=window.matchMedia("(prefers-color-scheme: dark)");
+window.__kesherTheme=function(p){p=p==="dark"||p==="system"?p:"light";d.dataset.themePref=p;d.dataset.theme=p==="system"?(m.matches?"dark":"light"):p};
+window.__kesherTheme(get("kesher.theme"));
+m.addEventListener("change",function(){if(d.dataset.themePref==="system")window.__kesherTheme("system")});})();`;
 
 export const metadata: Metadata = {
   title: "Kesher",
@@ -36,7 +45,6 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        {/* Applies saved UI preferences before first paint (no flash). */}
         <script dangerouslySetInnerHTML={{ __html: PREFS_SCRIPT }} />
       </head>
       <body className="flex flex-col md:flex-row bg-[#fafafa] text-[#0f0f0f]">
