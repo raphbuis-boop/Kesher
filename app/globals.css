@@ -565,3 +565,97 @@ button:disabled { cursor: not-allowed; }
 @media (prefers-reduced-motion: reduce) {
   .app-sidebar, .app-sidebar .nav-label, .nav-tip { transition: none !important; }
 }
+
+/* ── Liquid-glass dropzone ───────────────────────────────────────────────────
+ * Frosted panel (backdrop blur over soft colour fields), with a light sheen
+ * that sweeps across while dragging over or uploading. Reduced motion gets a
+ * static highlight instead of the sweep.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+.glass-drop-wrap {
+  position: relative;
+  isolation: isolate;
+  border-radius: 16px;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 0% 0%, color-mix(in oklab, var(--app-brand) 16%, transparent) 0%, transparent 55%),
+    radial-gradient(110% 90% at 100% 100%, color-mix(in oklab, oklch(70% 0.14 162) 18%, transparent) 0%, transparent 55%),
+    var(--app-canvas);
+}
+
+.glass-drop {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid color-mix(in oklab, var(--app-line) 70%, white 30%);
+  background: color-mix(in oklab, var(--app-card) 58%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+          backdrop-filter: blur(16px) saturate(1.4);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, white 70%, transparent),
+    inset 0 0 0 1px color-mix(in oklab, white 12%, transparent),
+    var(--app-shadow-card);
+  transition: border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease, transform 180ms var(--ease-out);
+}
+:root[data-theme="dark"] .glass-drop {
+  border-color: color-mix(in oklab, var(--app-line) 80%, white 8%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06), var(--app-shadow-card);
+}
+
+.glass-drop[data-state="idle"]:hover { border-color: var(--app-line-strong); }
+.glass-drop[data-state="dragging"] {
+  border-color: color-mix(in oklab, var(--app-brand) 55%, transparent);
+  background: color-mix(in oklab, var(--app-brand-tint) 55%, transparent);
+  transform: scale(1.005);
+}
+.glass-drop[data-state="error"] {
+  border-color: color-mix(in oklab, oklch(60% 0.2 25) 60%, transparent);
+  background: color-mix(in oklab, oklch(96% 0.03 25) 55%, transparent);
+}
+:root[data-theme="dark"] .glass-drop[data-state="error"] { background: color-mix(in oklab, oklch(30% 0.08 25) 45%, transparent); }
+
+/* The sweeping light sheen */
+.glass-drop::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / 0.55) 50%, transparent 65%);
+  transform: translateX(-110%);
+  opacity: 0;
+}
+:root[data-theme="dark"] .glass-drop::after {
+  background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / 0.10) 50%, transparent 65%);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .glass-drop[data-state="dragging"]::after,
+  .glass-drop[data-state="uploading"]::after {
+    opacity: 1;
+    animation: glass-sheen 1.6s var(--ease-in-out) infinite;
+  }
+}
+@keyframes glass-sheen {
+  from { transform: translateX(-110%); }
+  to   { transform: translateX(110%); }
+}
+/* Reduced motion: static highlight, no sweep */
+@media (prefers-reduced-motion: reduce) {
+  .glass-drop[data-state="dragging"],
+  .glass-drop[data-state="uploading"] {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--app-brand) 25%, transparent), var(--app-shadow-card);
+  }
+}
+
+.glass-progress {
+  height: 4px;
+  border-radius: 9999px;
+  background: color-mix(in oklab, var(--app-line) 70%, transparent);
+  overflow: hidden;
+}
+.glass-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--app-brand), oklch(66% 0.14 162));
+  transition: width 200ms var(--ease-out);
+}

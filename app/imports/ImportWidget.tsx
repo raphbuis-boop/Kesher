@@ -1,7 +1,8 @@
 "use client";
 
 import { toast } from "@/app/components/ui/toast";
-import { useState, useRef, useTransition } from "react";
+import { GlassDropzone } from "@/app/components/ui/GlassDropzone";
+import { useState, useTransition } from "react";
 import { commitImport, type CommitRow } from "./commitImport";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -304,73 +305,48 @@ function parseCSV(text: string): RawRow[] {
 
 // ─── Drop zone ────────────────────────────────────────────────────────────────
 
-function DropZone({ onFile, error, onClearError }: {
-  onFile: (name: string, rows: RawRow[]) => void;
-  error: string | null;
-  onClearError: () => void;
-}) {
-  const [isDragging, setIsDragging] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+const MAX_CSV_BYTES = 5 * 1024 * 1024;
 
-  function processFile(file: File) {
-    if (!file.name.toLowerCase().endsWith(".csv")) {
-      onClearError();
-      return;
-    }
-    onClearError();
+/** Reads a text file with progress events. */
+function readTextWithProgress(file: File, onProgress: (pct: number) => void): Promise<string> {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target?.result as string;
-      const rows = parseCSV(text);
-      if (rows.length === 0) return;
-      onFile(file.name, rows);
+    reader.onprogress = (e) => {
+      if (e.lengthComputable) onProgress((e.loaded / e.total) * 90);
     };
+    reader.onload = () => resolve(String(reader.result ?? ""));
+    reader.onerror = () => reject(new Error("Couldn't read this file. Please try again."));
     reader.readAsText(file);
-  }
+  });
+}
 
+function DropZone({ onFile }: { onFile: (name: string, rows: RawRow[]) => void }) {
   return (
     <div className="space-y-3">
-      <div
-        role="button"
-        tabIndex={0}
-        aria-label="Upload CSV file — click or drag and drop"
-        onClick={() => inputRef.current?.click()}
-        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); inputRef.current?.click(); } }}
-        onDragEnter={(e) => { e.preventDefault(); setIsDragging(true); }}
-        onDragOver={(e) => e.preventDefault()}
-        onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
-        onDrop={(e) => { e.preventDefault(); setIsDragging(false); const f = e.dataTransfer.files[0]; if (f) processFile(f); }}
-        className={
-          "cursor-pointer select-none rounded-lg border-2 border-dashed px-8 py-14 text-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ink-3 " +
-          (isDragging ? "border-ink-3 bg-canvas" : "border-line hover:border-line-strong hover:bg-canvas")
-        }
-      >
-        <div className="flex flex-col items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-            <svg className="h-5 w-5 text-ink-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-ink">
-              Drop a CSV here, or <span className="underline underline-offset-2">browse</span>
-            </p>
-            <p className="mt-1 text-xs text-ink-3">
-              Review and confirm contacts before they're added to your directory.
-            </p>
-          </div>
-        </div>
-      </div>
+      <GlassDropzone
+        accept=".csv,text/csv"
+        acceptLabel="a .csv file"
+        isAccepted={(f) => f.name.toLowerCase().endsWith(".csv")}
+        maxBytes={MAX_CSV_BYTES}
+        title="Drop a CSV here, or browse"
+        hint="Review and confirm contacts before they're added to your directory."
+        onUpload={async (file, onProgress) => {
+          const text = await readTextWithProgress(file, onProgress);
+          const rows = parseCSV(text);
+          if (rows.length === 0) {
+            throw new Error("No contacts found — the file needs a header row and at least one contact.");
+          }
+          onProgress(100);
+          // Let the success state register before moving on to the review step
+          setTimeout(() => onFile(file.name, rows), 450);
+        }}
+      />
       <p className="text-xs text-ink-3">
         <a href="/sample-contacts.csv" download className="underline underline-offset-2 hover:text-ink-soft transition-colors">
           Download sample CSV
         </a>{" "}
         to see the expected format.
       </p>
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <input ref={inputRef} type="file" accept=".csv" className="hidden"
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) processFile(f); e.target.value = ""; }}
-      />
     </div>
   );
 }
@@ -582,7 +558,6 @@ function PreviewTable({
 
 export function ImportWidget() {
   const [stage, setStage] = useState<Stage>({ type: "idle" });
-  const [fileError, setFileError] = useState<string | null>(null);
   const [rows, setRows] = useState<EnrichedRow[]>([]);
   const [isPending, startTransition] = useTransition();
   const [aiUnavailable, setAiUnavailable] = useState(false);
@@ -590,7 +565,6 @@ export function ImportWidget() {
   function reset() {
     setStage({ type: "idle" });
     setRows([]);
-    setFileError(null);
     setAiUnavailable(false);
   }
 
@@ -675,11 +649,7 @@ export function ImportWidget() {
   // ── Idle ──────────────────────────────────────────────────────────────────
   if (stage.type === "idle") {
     return (
-      <DropZone
-        onFile={handleFile}
-        error={fileError}
-        onClearError={() => setFileError(null)}
-      />
+      <DropZone onFile={handleFile} />
     );
   }
 

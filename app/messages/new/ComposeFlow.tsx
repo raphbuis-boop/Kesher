@@ -1,6 +1,7 @@
 "use client";
 
 import { toast } from "@/app/components/ui/toast";
+import { GlassDropzone, postWithProgress } from "@/app/components/ui/GlassDropzone";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { sendMessage, previewRecipients, resolveAllRecipients, type Channel, type RecipientPreview, type ResolvedRecipient } from "../actions";
@@ -392,7 +393,6 @@ export function ComposeFlow({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const bodyRef = useRef<HTMLTextAreaElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const initialSelected = initialAudienceSlugs
     ? audiences.filter((a) => initialAudienceSlugs.includes(a.slug))
@@ -405,8 +405,6 @@ export function ComposeFlow({
   const [greetingEnabled, setGreetingEnabled] = useState(false);
   const [greetingTemplate, setGreetingTemplate] = useState("Hi {{first_name}},");
   const [attachments, setAttachments] = useState<Attachment[]>([]);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
   const [showPreview, setShowPreview] = useState(true);
   const [sendError, setSendError] = useState<string | null>(null);
   const [recipientPreviews, setRecipientPreviews] = useState<RecipientPreview[] | null>(null);
@@ -432,7 +430,6 @@ export function ComposeFlow({
     setChannel(c);
     if (c !== "email") setSubject("");
     if (c === "sms") setAttachments([]);
-    setUploadError(null);
     setRecipientPreviews(null);
     setRecipientTotal(0);
     setShowRecipientPreviews(false);
@@ -475,30 +472,12 @@ export function ComposeFlow({
     });
   }
 
-  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    e.target.value = "";
-
-    setUploadError(null);
-    setIsUploading(true);
-    try {
-      const form = new FormData();
-      form.append("file", file);
-      form.append("channel", channel);
-
-      const res = await fetch("/api/upload", { method: "POST", body: form });
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        setUploadError("The file could not be uploaded. Please try a different file or try again.");
-        return;
-      }
-      setAttachments((prev) => [...prev, data as Attachment]);
-    } catch {
-      setUploadError("The file could not be uploaded. Please check your connection and try again.");
-    } finally {
-      setIsUploading(false);
-    }
+  async function uploadAttachment(file: File, onProgress: (pct: number) => void) {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("channel", channel);
+    const data = await postWithProgress<Attachment>("/api/upload", form, onProgress);
+    setAttachments((prev) => [...prev, data]);
   }
 
   const totalCount = selectedAudiences.reduce((s, a) => s + a.totalCount, 0);
@@ -773,42 +752,17 @@ export function ComposeFlow({
                   </div>
                 )}
 
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => { setUploadError(null); fileInputRef.current?.click(); }}
-                    disabled={isUploading}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-line bg-card px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-line-strong hover:bg-canvas disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isUploading ? (
-                      <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                      </svg>
-                    ) : (
-                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" />
-                      </svg>
-                    )}
-                    {isUploading ? "Uploading…" : "Attach files"}
-                  </button>
-                  <span className="text-xs text-ink-3">
-                    {channel === "email"
-                      ? "PDF, Word, Excel, or image · 10 MB max"
-                      : "PDF or image · 10 MB max"}
-                  </span>
-                </div>
-
-                {uploadError && (
-                  <p className="mt-2 text-xs text-red-600">{uploadError}</p>
-                )}
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
+                <GlassDropzone
+                  key={channel}
+                  compact
                   accept={acceptTypes}
-                  className="hidden"
-                  onChange={handleFileSelect}
+                  acceptLabel={channel === "email" ? "a PDF, Word, Excel or image file" : "a PDF or image"}
+                  isAccepted={(f) => acceptTypes.split(",").some((t) => f.type === t.trim() || f.name.toLowerCase().endsWith(t.trim()))}
+                  maxBytes={10 * 1024 * 1024}
+                  title="Attach a file — drop it here or browse"
+                  hint={channel === "email" ? "PDF, Word, Excel, or image · 10 MB max" : "PDF or image · 10 MB max"}
+                  onUpload={uploadAttachment}
+                  resetAfterSuccess={1400}
                 />
               </div>
             )}
