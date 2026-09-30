@@ -57,13 +57,13 @@ export async function proxy(request: NextRequest) {
     }
   );
 
-  // Refresh the session and get the current user.
-  // getUser() validates the JWT with the Supabase server — not just the local cookie.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Refresh the session and verify it. getClaims() checks the JWT signature
+  // (locally against the cached JWKS with asymmetric signing keys, or via the
+  // Auth server for legacy HS256 keys) — never trusts the cookie unverified,
+  // but skips the Auth-server round trip getUser() made on every navigation.
+  const { data: claimsData } = await supabase.auth.getClaims();
 
-  if (!user) {
+  if (!claimsData?.claims?.sub) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     // Preserve the intended destination so we can redirect back after login

@@ -74,12 +74,12 @@ export default async function AudiencePage({
   let nonMembers: { id: string; first_name: string; last_name: string; email: string | null }[] = [];
   let isDynamicGroup = false;
 
-  const { data: allTagsData } = await supabase
+  // Started now, awaited below — runs in parallel with the member lookups.
+  const allTagsPromise = supabase
     .from("tags")
     .select("id, name")
     .eq("org_id", orgId)
     .order("name");
-  const allTags = (allTagsData ?? []) as Tag[];
 
   if (isSystem) {
     audienceLabel = systemConfig!.label;
@@ -93,22 +93,28 @@ export default async function AudiencePage({
     audienceDescription = group.description ?? "";
     isDynamicGroup = group.is_dynamic;
 
-    people = await getGroupMembers(supabase, orgId, group);
-
     // Manual "Add Contacts" only makes sense for tag-based groups — a
     // dynamic group's membership is computed from its saved rule, not by
     // hand-picking people, so we don't bother loading candidates for it.
-    if (!isDynamicGroup) {
-      const { data: allPeopleData, error: allPeopleError } = await supabase
-        .from("people")
-        .select("id, first_name, last_name, email")
-        .eq("org_id", orgId);
+    // Members and candidates are fetched in parallel.
+    const [members, allPeopleResult] = await Promise.all([
+      getGroupMembers(supabase, orgId, group),
+      isDynamicGroup
+        ? null
+        : supabase.from("people").select("id, first_name, last_name, email").eq("org_id", orgId),
+    ]);
+    people = members;
+
+    if (allPeopleResult) {
+      const { data: allPeopleData, error: allPeopleError } = allPeopleResult;
       if (allPeopleError) throw new Error(allPeopleError.message);
 
       const memberIds = new Set(people.map((p) => p.id));
       nonMembers = (allPeopleData ?? []).filter((p) => !memberIds.has(p.id));
     }
   }
+
+  const allTags = ((await allTagsPromise).data ?? []) as Tag[];
 
   let filtered = people;
 

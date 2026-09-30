@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 /**
@@ -8,38 +9,43 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
  * INSERT and used in every SELECT for defence-in-depth (RLS is the hard
  * wall; explicit org_id in queries is the belt-and-suspenders layer).
  *
+ * Identity comes from getClaims(), which verifies the session JWT's
+ * signature (locally against the project's cached JWKS when asymmetric
+ * signing keys are enabled; via the Auth server for legacy HS256 projects)
+ * instead of always making a network round trip like getUser(). Wrapped in
+ * React cache() so a page, its layout and helpers like getBrandingSettings()
+ * share one lookup per request instead of repeating it.
+ *
  * Throws if:
  *   - The user is not authenticated
  *   - The user has no membership row (shouldn't happen after the migration
  *     trigger is installed, but surfaced clearly if it does)
  */
-export async function getOrgId(): Promise<string> {
+export const getOrgId = cache(async (): Promise<string> => {
   const supabase = await createSupabaseServerClient();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { data: claimsData, error: authError } = await supabase.auth.getClaims();
+  const userId = claimsData?.claims?.sub;
 
-  if (authError || !user) {
+  if (authError || !userId) {
     throw new Error("Not authenticated — cannot resolve org.");
   }
 
   const { data: membership, error: membershipError } = await supabase
     .from("memberships")
     .select("org_id")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .single();
 
   if (membershipError || !membership) {
     throw new Error(
-      `No org membership found for user ${user.id}. ` +
+      `No org membership found for user ${userId}. ` +
         "Run the multi-tenancy migration and ensure the signup trigger is installed."
     );
   }
 
   return membership.org_id as string;
-}
+});
 
 /**
  * True when this org's SMS/email/WhatsApp sends should be simulated instead

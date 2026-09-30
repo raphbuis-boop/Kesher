@@ -4,6 +4,9 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getOrgId } from "@/lib/org";
 import { ImportWidget } from "./ImportWidget";
 import { FileText } from "lucide-react";
+import { Pagination, parsePage } from "@/app/components/ui/Pagination";
+
+const PAGE_SIZE = 25;
 
 type ImportRecord = {
   id: string;
@@ -21,14 +24,20 @@ function formatTime(d: string) {
   return new Date(d).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 }
 
-export default async function ImportsPage() {
+export default async function ImportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const page = parsePage((await searchParams).page);
   const supabase = await createSupabaseServerClient();
   const orgId = await getOrgId();
-  const { data: imports } = await supabase
+  const { data: imports, count } = await supabase
     .from("imports")
-    .select("id, file_name, imported_count, failed_count, created_at")
+    .select("id, file_name, imported_count, failed_count, created_at", { count: "exact" })
     .eq("org_id", orgId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 
   const records = (imports ?? []) as ImportRecord[];
 
@@ -113,6 +122,12 @@ export default async function ImportsPage() {
                   })}
                 </tbody>
               </table>
+              <Pagination
+                page={page}
+                pageSize={PAGE_SIZE}
+                total={count ?? records.length}
+                buildHref={(p) => (p === 1 ? "/imports" : `/imports?page=${p}`)}
+              />
             </div>
           )}
         </section>

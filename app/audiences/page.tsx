@@ -6,10 +6,9 @@ import { getOrgId } from "@/lib/org";
 import { isDemoWorkspaceLoaded } from "@/lib/demoWorkspace";
 import { DemoWorkspaceControl } from "@/app/components/DemoWorkspaceControl";
 import { resolveGroupMemberIds, type GroupRow } from "@/lib/audienceMembers";
+import { getCategoryCounts } from "@/lib/categoryCounts";
 import { AddGroupButton } from "@/app/groups/AddGroupButton";
 import { Plus, Users, ArrowRight } from "lucide-react";
-
-type PersonRow = { id: string; categories: string[] | null };
 
 const SYSTEM_AUDIENCES = [
   { slug: "parents", label: "Parents", category: "parent" },
@@ -26,34 +25,33 @@ const SYSTEM_AUDIENCES = [
 export default async function AudiencesPage() {
   const supabase = await createSupabaseServerClient();
   const orgId = await getOrgId();
-  const [peopleResult, groupsResult, demoLoaded] = await Promise.all([
-    supabase.from("people").select("id, categories").eq("org_id", orgId),
+  // Everything runs in parallel: category counts are computed in the DB, and
+  // each group's member count is resolved as soon as the group list arrives
+  // (same resolution the audience detail page and message sends use).
+  const [categoryCounts, customAudiences, demoLoaded] = await Promise.all([
+    getCategoryCounts(supabase, orgId),
     supabase
       .from("groups")
       .select("id, name, description, is_dynamic, filter_config, group_tags ( tag_id )")
       .eq("org_id", orgId)
-      .order("name"),
+      .order("name")
+      .then(({ data }) =>
+        Promise.all(
+          ((data ?? []) as unknown as GroupRow[]).map(async (g) => ({
+            ...g,
+            count: (await resolveGroupMemberIds(supabase, orgId, g)).length,
+          }))
+        )
+      ),
     isDemoWorkspaceLoaded(supabase, orgId),
   ]);
 
-  const people = (peopleResult.data ?? []) as unknown as PersonRow[];
-  const groups = (groupsResult.data ?? []) as unknown as GroupRow[];
-
   const systemAudiences = SYSTEM_AUDIENCES.map((a) => ({
     ...a,
-    count: people.filter((p) => Array.isArray(p.categories) && p.categories.includes(a.category)).length,
+    count: categoryCounts.byCategory[a.category] ?? 0,
   }));
 
-  // Real counts for every group, dynamic or tag-based — resolved the same
-  // way the audience detail page and message sends resolve them.
-  const customAudiences = await Promise.all(
-    groups.map(async (g) => ({
-      ...g,
-      count: (await resolveGroupMemberIds(supabase, orgId, g)).length,
-    }))
-  );
-
-  const totalInSystem = people.length;
+  const totalInSystem = categoryCounts.total;
 
   return (
     <div className="min-h-screen bg-[#fafafa]">

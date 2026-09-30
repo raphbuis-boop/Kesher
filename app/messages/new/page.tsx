@@ -28,11 +28,19 @@ export default async function NewMessagePage({
   const supabase = await createSupabaseServerClient();
   const orgId = await getOrgId();
 
+  // People (for system-audience counts) and groups are fetched in parallel.
   // Fetch all people once — compute system-audience counts in one pass
-  const { data: allPeople } = await supabase
-    .from("people")
-    .select("id, categories, email, phone, whatsapp")
-    .eq("org_id", orgId);
+  const [{ data: allPeople }, { data: groupsData }] = await Promise.all([
+    supabase
+      .from("people")
+      .select("id, categories, email, phone, whatsapp")
+      .eq("org_id", orgId),
+    supabase
+      .from("groups")
+      .select("id, name, is_dynamic, filter_config, group_tags ( tag_id )")
+      .eq("org_id", orgId)
+      .order("name"),
+  ]);
 
   const people = (allPeople ?? []) as {
     id: string;
@@ -71,12 +79,6 @@ export default async function NewMessagePage({
   // Custom audiences — members are resolved with getGroupMembers, the exact
   // function sendMessage uses (tag-based and dynamic groups, org_id-scoped),
   // so this picker's counts never lie about who a send will actually reach.
-  const { data: groupsData } = await supabase
-    .from("groups")
-    .select("id, name, is_dynamic, filter_config, group_tags ( tag_id )")
-    .eq("org_id", orgId)
-    .order("name");
-
   const groups = (groupsData ?? []) as unknown as GroupRow[];
 
   const customAudiences: AudienceOption[] = await Promise.all(

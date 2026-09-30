@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getOrgId } from "@/lib/org";
 
@@ -37,9 +38,10 @@ const KEY_MAP: Record<string, keyof BrandingSettings> = {
 
 /**
  * Fetch branding settings from Supabase, falling back to environment variables
- * if the settings table doesn't exist yet or a field is blank.
+ * if the settings table doesn't exist yet or a field is blank. Memoised per
+ * request with React cache().
  */
-export async function getBrandingSettings(): Promise<BrandingSettings> {
+export const getBrandingSettings = cache(async (): Promise<BrandingSettings> => {
   try {
     const supabase = await createSupabaseServerClient();
     const orgId = await getOrgId();
@@ -71,4 +73,4 @@ export async function getBrandingSettings(): Promise<BrandingSettings> {
     console.error("[getBrandingSettings] Unexpected error:", err);
     return ENV_DEFAULTS;
   }
-}
+});

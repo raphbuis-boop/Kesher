@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getOrgId } from "@/lib/org";
 import { getBrandingSettings } from "@/lib/settings";
 import { isDemoWorkspaceLoaded } from "@/lib/demoWorkspace";
+import { getCategoryCounts } from "@/lib/categoryCounts";
 import { DemoWorkspaceControl } from "@/app/components/DemoWorkspaceControl";
 import {
   Users,
@@ -51,8 +52,6 @@ type RecipRow = {
   opened_at: string | null;
   delivered_at: string | null;
 };
-
-type PersonRow = { categories: string[] | null };
 
 type FeedItem =
   | {
@@ -136,15 +135,13 @@ export default async function OverviewPage() {
   const [
     branding,
     demoLoaded,
-    { count: rawContactCount },
-    { data: rawPeople },
+    categoryCounts,
     { data: rawMessages },
     { data: rawImports },
   ] = await Promise.all([
     getBrandingSettings(),
     isDemoWorkspaceLoaded(supabase, orgId),
-    supabase.from("people").select("*", { count: "exact", head: true }).eq("org_id", orgId),
-    supabase.from("people").select("categories").eq("org_id", orgId),
+    getCategoryCounts(supabase, orgId),
     supabase
       .from("messages")
       .select("id, subject, body, channel, audience_label, recipient_count, sent_count, failed_count, status, sent_at, created_at")
@@ -161,8 +158,7 @@ export default async function OverviewPage() {
 
   const msgList    = (rawMessages ?? []) as MessageRow[];
   const importList = (rawImports  ?? []) as ImportRow[];
-  const peopleList = (rawPeople   ?? []) as PersonRow[];
-  const contacts   = rawContactCount ?? 0;
+  const contacts   = categoryCounts.total;
 
   // ── Phase 2 — recipient stats for known message IDs ──────────────────────────
   const messageIds = msgList.map((m) => m.id);
@@ -209,17 +205,11 @@ export default async function OverviewPage() {
   const hasOpenData = eDel > 0;
 
   // ── Audience breakdown ───────────────────────────────────────────────────────
-  const catCounts: Record<string, number> = {};
-  for (const p of peopleList) {
-    for (const c of p.categories ?? []) {
-      catCounts[c] = (catCounts[c] ?? 0) + 1;
-    }
-  }
-  const audiences = Object.entries(catCounts)
+  const audiences = Object.entries(categoryCounts.byCategory)
+    .filter(([, n]) => n > 0)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 7);
-  const uncategorized =
-    contacts - peopleList.filter((p) => p.categories && p.categories.length > 0).length;
+  const uncategorized = categoryCounts.uncategorized;
 
   // ── Activity feed ─────────────────────────────────────────────────────────────
   const feed: FeedItem[] = [

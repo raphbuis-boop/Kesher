@@ -43,6 +43,8 @@ type FilterKey = "all" | "delivered" | "opened" | "not_opened" | "read" | "repli
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
+const RECIPIENTS_PAGE = 100;
+
 const CHANNEL_META: Record<
   string,
   { label: string; icon: React.FC<{ size?: number; strokeWidth?: number; className?: string }>; color: string; bg: string }
@@ -950,6 +952,11 @@ export function CampaignClient({
 }) {
   const [filter, setFilter]   = useState<FilterKey>("all");
   const [search, setSearch]   = useState("");
+  // Render recipients in pages of 100 so big campaigns don't mount thousands of rows at once
+  // (resets whenever the filter or search changes)
+  const listKey = `${filter}|${search}`;
+  const [shown, setShown] = useState({ key: listKey, count: RECIPIENTS_PAGE });
+  const visibleCount = shown.key === listKey ? shown.count : RECIPIENTS_PAGE;
   const [selected, setSelected] = useState<CampaignRecipient | null>(null);
 
   const channelMeta = CHANNEL_META[message.channel] ?? CHANNEL_META.email;
@@ -1193,9 +1200,9 @@ export function CampaignClient({
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((r, i) => {
+                {filtered.slice(0, visibleCount).map((r, i, shown) => {
                   const status = recipientStatus(r);
-                  const isLast = i === filtered.length - 1;
+                  const isLast = i === shown.length - 1;
                   const la = lastActivity(r);
                   const person = r.people;
                   const tooltipTs = la ? fmt(la) ?? undefined : undefined;
@@ -1287,11 +1294,22 @@ export function CampaignClient({
           )}
 
           {filtered.length > 0 && (
-            <div className="border-t border-[#f5f5f5] px-5 py-3">
+            <div className="flex items-center justify-between gap-3 border-t border-[#f5f5f5] px-5 py-3">
               <p className="text-[11px] text-[#a1a1aa]">
-                {filtered.length.toLocaleString()} recipient{filtered.length !== 1 ? "s" : ""}
+                {filtered.length > visibleCount
+                  ? `Showing ${visibleCount.toLocaleString()} of ${filtered.length.toLocaleString()} recipients`
+                  : `${filtered.length.toLocaleString()} recipient${filtered.length !== 1 ? "s" : ""}`}
                 {" · click any row to inspect"}
               </p>
+              {filtered.length > visibleCount && (
+                <button
+                  type="button"
+                  onClick={() => setShown({ key: listKey, count: visibleCount + RECIPIENTS_PAGE })}
+                  className="rounded-md border border-[#e7e7e7] bg-white px-2.5 py-1 text-[11px] font-medium text-[#71717a] transition-[background-color,color,transform] duration-150 hover:bg-[#f5f5f5] hover:text-[#0f0f0f] active:scale-[0.97]"
+                >
+                  Show more
+                </button>
+              )}
             </div>
           )}
         </div>

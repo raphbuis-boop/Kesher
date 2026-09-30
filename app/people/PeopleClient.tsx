@@ -1,18 +1,18 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useEffect, useRef, useTransition } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Search, X, ChevronLeft, ChevronRight, Mail, Phone,
   MessageSquare, Download, UserX, ArrowUpDown, ArrowUp, ArrowDown,
   Smartphone, Hash, Users, ExternalLink, Check,
 } from "lucide-react";
 import type { PersonRow } from "./page";
-import type { Tag } from "./AddPersonButton";
+import type { CategoryCounts } from "@/lib/categoryCounts";
+import { PEOPLE_PAGE_SIZE as PAGE_SIZE, type PeopleQuery, type PeopleSortKey } from "./query";
 
 // ─── constants ───────────────────────────────────────────────────────────────
-
-const PAGE_SIZE = 50;
 
 const CATEGORY_DEFS = [
   { value: "student",     label: "Student",     plural: "Students",     badge: "bg-blue-50 text-blue-700",     chip: "text-blue-700" },
@@ -27,8 +27,8 @@ const CATEGORY_DEFS = [
 ] as const;
 
 type CategoryValue = typeof CATEGORY_DEFS[number]["value"];
-type SortKey = "name" | "created_at";
-type SortDir = "asc" | "desc";
+type SortKey = PeopleSortKey;
+type SortDir = PeopleQuery["dir"];
 
 function getCategoryDef(value: string) {
   return CATEGORY_DEFS.find((c) => c.value === value);
@@ -347,127 +347,99 @@ function BulkToolbar({
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
+/**
+ * Filtering, search, sorting and pagination live in the URL and run in the
+ * database (see ./query.ts), so only one page of contacts is ever loaded.
+ */
 export function PeopleClient({
   people,
-  tags,
+  matchCount,
+  counts,
+  query,
 }: {
   people: PersonRow[];
-  tags: Tag[];
+  matchCount: number;
+  counts: CategoryCounts;
+  query: PeopleQuery;
 }) {
-  const [categoryFilter, setCategoryFilter] = useState<CategoryValue | null>(null);
-  const [search, setSearch] = useState("");
-  const [sortKey, setSortKey] = useState<SortKey>("name");
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
-  const [page, setPage] = useState(1);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const router = useRouter();
+  const pathname = usePathname();
+  const [isNavigating, startNavigation] = useTransition();
+
+  const categoryFilter = query.cat as CategoryValue | null;
+  const sortKey = query.sort;
+  const sortDir = query.dir;
+  const clampedPage = query.page;
+
+  const [search, setSearch] = useState(query.q);
+  // Selected rows are kept (not just ids) so a selection survives paging
+  const [selected, setSelected] = useState<Map<string, PersonRow>>(new Map());
   const [drawerPerson, setDrawerPerson] = useState<PersonRow | null>(null);
+  const selectedIds = new Set(selected.keys());
 
-  // Category counts
-  const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const def of CATEGORY_DEFS) {
-      counts[def.value] = people.filter(
-        (p) => Array.isArray(p.categories) && p.categories.includes(def.value)
-      ).length;
-    }
-    return counts;
-  }, [people]);
-
-  // Filter + search
-  const filtered = useMemo(() => {
-    let list = people;
-
-    if (categoryFilter) {
-      list = list.filter(
-        (p) => Array.isArray(p.categories) && p.categories.includes(categoryFilter)
-      );
-    }
-
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter(
-        (p) =>
-          p.first_name.toLowerCase().includes(q) ||
-          p.last_name.toLowerCase().includes(q) ||
-          `${p.first_name} ${p.last_name}`.toLowerCase().includes(q) ||
-          (p.email?.toLowerCase().includes(q) ?? false) ||
-          (p.phone?.includes(q) ?? false) ||
-          (p.grade?.toLowerCase().includes(q) ?? false) ||
-          p.person_tags.some((pt) => pt.tags.name.toLowerCase().includes(q)) ||
-          (Array.isArray(p.categories) &&
-            p.categories.some((c) => {
-              const def = getCategoryDef(c);
-              return def?.label.toLowerCase().includes(q) || def?.plural.toLowerCase().includes(q);
-            }))
-      );
-    }
-
-    return list;
-  }, [people, categoryFilter, search]);
-
-  // Sort
-  const sorted = useMemo(() => {
-    const s = [...filtered];
-    s.sort((a, b) => {
-      let cmp = 0;
-      if (sortKey === "name") {
-        cmp =
-          `${a.last_name} ${a.first_name}`.localeCompare(
-            `${b.last_name} ${b.first_name}`
-          );
-      } else {
-        cmp = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-      }
-      return sortDir === "asc" ? cmp : -cmp;
+  function navigate(changes: Partial<Record<"q" | "cat" | "sort" | "dir" | "page", string | null>>) {
+    const params = new URLSearchParams();
+    const next = { q: query.q, cat: query.cat, sort: query.sort, dir: query.dir, page: String(query.page), ...changes };
+    if (next.q) params.set("q", next.q);
+    if (next.cat) params.set("cat", next.cat);
+    if (next.sort && next.sort !== "name") params.set("sort", next.sort);
+    if (next.dir && next.dir !== "asc") params.set("dir", next.dir);
+    if (next.page && next.page !== "1") params.set("page", next.page);
+    const qs = params.toString();
+    startNavigation(() => {
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     });
-    return s;
-  }, [filtered, sortKey, sortDir]);
+  }
 
-  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
-  const clampedPage = Math.min(page, totalPages);
-  const paginated = sorted.slice(
-    (clampedPage - 1) * PAGE_SIZE,
-    clampedPage * PAGE_SIZE
-  );
+  // Debounced server-side search
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function handleSearch(value: string) {
+    setSearch(value);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => navigate({ q: value.trim() || null, page: null }), 250);
+  }
+  useEffect(() => () => { if (searchTimer.current) clearTimeout(searchTimer.current); }, []);
 
-  // Reset page when filter/search/sort changes
-  const resetPage = useCallback(() => setPage(1), []);
+  const categoryCounts = counts.byCategory;
+  const totalPages = Math.max(1, Math.ceil(matchCount / PAGE_SIZE));
+  const paginated = people;
+  const setPage = (p: number) => navigate({ page: String(p) });
 
   function handleSort(key: SortKey) {
     if (sortKey === key) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+      navigate({ dir: sortDir === "asc" ? "desc" : "asc", page: null });
     } else {
-      setSortKey(key);
-      setSortDir("asc");
+      navigate({ sort: key, dir: "asc", page: null });
     }
-    resetPage();
   }
 
   function handleCategoryFilter(value: CategoryValue | null) {
-    setCategoryFilter(value);
     setSearch("");
-    resetPage();
-    setSelectedIds(new Set());
+    setSelected(new Map());
+    navigate({ cat: value, q: null, page: null });
   }
 
-  function toggleSelect(id: string) {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+  function clearFilters() {
+    setSearch("");
+    navigate({ cat: null, q: null, page: null });
+  }
+
+  function toggleSelect(person: PersonRow) {
+    setSelected((prev) => {
+      const next = new Map(prev);
+      if (next.has(person.id)) next.delete(person.id);
+      else next.set(person.id, person);
       return next;
     });
   }
 
   function toggleSelectAll() {
-    const pageIds = paginated.map((p) => p.id);
-    const allSelected = pageIds.every((id) => selectedIds.has(id));
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (allSelected) {
-        pageIds.forEach((id) => next.delete(id));
-      } else {
-        pageIds.forEach((id) => next.add(id));
+    const allSelected = paginated.every((p) => selected.has(p.id));
+    setSelected((prev) => {
+      const next = new Map(prev);
+      for (const p of paginated) {
+        if (allSelected) next.delete(p.id);
+        else next.set(p.id, p);
       }
       return next;
     });
@@ -477,10 +449,11 @@ export function PeopleClient({
   const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selectedIds.has(id));
   const somePageSelected = pageIds.some((id) => selectedIds.has(id)) && !allPageSelected;
 
-  const selectedPeople = people.filter((p) => selectedIds.has(p.id));
+  const selectedPeople = [...selected.values()];
 
   const startIdx = (clampedPage - 1) * PAGE_SIZE + 1;
-  const endIdx = Math.min(clampedPage * PAGE_SIZE, sorted.length);
+  const endIdx = Math.min(clampedPage * PAGE_SIZE, matchCount);
+  const hasFilters = !!(query.q || categoryFilter);
 
   return (
     <>
@@ -498,7 +471,7 @@ export function PeopleClient({
           >
             All
             <span className={`text-[10px] tabular-nums ${categoryFilter === null ? "opacity-60" : "text-[#a1a1aa]"}`}>
-              {people.length}
+              {counts.total}
             </span>
           </button>
 
@@ -537,13 +510,13 @@ export function PeopleClient({
             <input
               type="text"
               value={search}
-              onChange={(e) => { setSearch(e.target.value); resetPage(); setSelectedIds(new Set()); }}
+              onChange={(e) => handleSearch(e.target.value)}
               placeholder="Search name, email, phone, grade, tags…"
               className="w-full rounded-lg border border-[#e7e7e7] bg-[#fafafa] py-1.5 pl-8 pr-8 text-[12px] text-[#0f0f0f] placeholder-[#c4c4c8] outline-none transition-all focus:border-[#a1a1aa] focus:bg-white focus:shadow-sm"
             />
             {search && (
               <button
-                onClick={() => { setSearch(""); resetPage(); }}
+                onClick={() => handleSearch("")}
                 aria-label="Clear search"
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-[#a1a1aa] hover:text-[#0f0f0f] transition-colors"
               >
@@ -552,32 +525,35 @@ export function PeopleClient({
             )}
           </div>
 
-          <span className="ml-auto text-[11px] tabular-nums text-[#a1a1aa]">
-            {sorted.length === people.length
-              ? `${people.length.toLocaleString()} contacts`
-              : `${sorted.length.toLocaleString()} of ${people.length.toLocaleString()}`}
+          <span className="ml-auto inline-flex items-center gap-2 text-[11px] tabular-nums text-[#a1a1aa]" aria-live="polite">
+            {isNavigating && (
+              <span className="h-3 w-3 animate-spin rounded-full border-[1.5px] border-[#d4d4d8] border-t-[#71717a]" aria-label="Loading" />
+            )}
+            {!hasFilters
+              ? `${counts.total.toLocaleString()} contacts`
+              : `${matchCount.toLocaleString()} of ${counts.total.toLocaleString()}`}
           </span>
         </div>
       </div>
 
       {/* Content */}
       <div className="px-6 py-4 pb-20">
-        {sorted.length === 0 ? (
+        {paginated.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#e7e7e7] py-24 text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#e7e7e7] bg-white mb-4">
               <UserX size={18} className="text-[#d4d4d8]" strokeWidth={1.5} />
             </div>
             <p className="text-[13px] font-semibold text-[#0f0f0f]">
-              {search || categoryFilter ? "No contacts match" : "No contacts yet"}
+              {hasFilters ? "No contacts match" : "No contacts yet"}
             </p>
             <p className="mt-1 text-[12px] text-[#a1a1aa]">
-              {search || categoryFilter
+              {hasFilters
                 ? "Try adjusting your search or filters."
                 : "Add your first contact to get started."}
             </p>
-            {(search || categoryFilter) && (
+            {hasFilters && (
               <button
-                onClick={() => { setSearch(""); setCategoryFilter(null); resetPage(); }}
+                onClick={clearFilters}
                 className="mt-4 rounded-lg border border-[#e7e7e7] bg-white px-3 py-1.5 text-[12px] font-medium text-[#71717a] hover:bg-[#fafafa] transition-all"
               >
                 Clear filters
@@ -585,7 +561,7 @@ export function PeopleClient({
             )}
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-[#e7e7e7] bg-white">
+          <div className={`overflow-hidden rounded-xl border border-[#e7e7e7] bg-white transition-opacity duration-150 ${isNavigating ? "opacity-60" : ""}`}>
             <table className="w-full">
               <thead className="sticky top-[57px] z-[5]">
                 <tr className="border-b border-[#f0f0f0] bg-[#fafafa]">
@@ -654,7 +630,7 @@ export function PeopleClient({
                       <td className="py-3.5 pl-4 pr-2 w-10">
                         <Checkbox
                           checked={isSelected}
-                          onChange={() => toggleSelect(person.id)}
+                          onChange={() => toggleSelect(person)}
                         />
                       </td>
 
@@ -747,14 +723,15 @@ export function PeopleClient({
             </table>
 
             {/* Pagination footer */}
-            {sorted.length > PAGE_SIZE && (
+            {matchCount > PAGE_SIZE && (
               <div className="flex items-center justify-between border-t border-[#f0f0f0] bg-[#fafafa] px-5 py-3">
                 <span className="text-[11px] tabular-nums text-[#a1a1aa]">
-                  {startIdx}–{endIdx} of {sorted.length.toLocaleString()}
+                  {startIdx}–{endIdx} of {matchCount.toLocaleString()}
                 </span>
                 <div className="flex items-center gap-1">
                   <button
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    onClick={() => setPage(Math.max(1, clampedPage - 1))}
+                    aria-label="Previous page"
                     disabled={clampedPage === 1}
                     className="flex h-7 w-7 items-center justify-center rounded-md border border-[#e7e7e7] bg-white text-[#71717a] hover:bg-[#f5f5f5] hover:text-[#0f0f0f] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                   >
@@ -783,7 +760,8 @@ export function PeopleClient({
                     )}
                   </div>
                   <button
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    onClick={() => setPage(Math.min(totalPages, clampedPage + 1))}
+                    aria-label="Next page"
                     disabled={clampedPage === totalPages}
                     className="flex h-7 w-7 items-center justify-center rounded-md border border-[#e7e7e7] bg-white text-[#71717a] hover:bg-[#f5f5f5] hover:text-[#0f0f0f] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                   >
@@ -798,9 +776,9 @@ export function PeopleClient({
 
       {/* Floating bulk toolbar */}
       <BulkToolbar
-        count={selectedIds.size}
+        count={selected.size}
         people={selectedPeople}
-        onClear={() => setSelectedIds(new Set())}
+        onClear={() => setSelected(new Map())}
       />
 
       {/* Contact drawer */}

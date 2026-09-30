@@ -6,6 +6,9 @@ import { getOrgId } from "@/lib/org";
 import { isDemoWorkspaceLoaded } from "@/lib/demoWorkspace";
 import { DemoWorkspaceControl } from "@/app/components/DemoWorkspaceControl";
 import { Plus, Mail, Smartphone, MessageSquare, Send } from "lucide-react";
+import { Pagination, parsePage } from "@/app/components/ui/Pagination";
+
+const PAGE_SIZE = 50;
 
 type Message = {
   id: string;
@@ -54,26 +57,29 @@ function CampaignStatusDot({ status }: { status: string }) {
 export default async function MessagesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; page?: string }>;
 }) {
-  const { tab } = await searchParams;
+  const { tab, page: pageParam } = await searchParams;
   const activeTab = tab ?? "sent";
+  const page = parsePage(pageParam);
 
   const supabase = await createSupabaseServerClient();
   const orgId = await getOrgId();
-  const [{ data }, demoLoaded] = await Promise.all([
+  const [{ data, count }, demoLoaded] = await Promise.all([
     supabase
       .from("messages")
-      .select("id, subject, body, channel, audience_label, recipient_count, sent_count, failed_count, status, sent_at, created_at")
+      .select("id, subject, body, channel, audience_label, recipient_count, sent_count, failed_count, status, sent_at, created_at", { count: "exact" })
       .eq("org_id", orgId)
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1),
     isDemoWorkspaceLoaded(supabase, orgId),
   ]);
 
   const messages = (data ?? []) as Message[];
+  const totalMessages = count ?? messages.length;
 
   const TABS = [
-    { key: "sent",      label: "Sent",      count: messages.length },
+    { key: "sent",      label: "Sent",      count: totalMessages },
     { key: "drafts",    label: "Drafts",    count: 0 },
     { key: "scheduled", label: "Scheduled", count: 0 },
     { key: "templates", label: "Templates", count: 0 },
@@ -87,7 +93,7 @@ export default async function MessagesPage({
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
               <h1 className="text-[13px] font-semibold text-[#0f0f0f]">Messages</h1>
-              <p className="text-[11px] text-[#a1a1aa] mt-px">{messages.length.toLocaleString()} sent</p>
+              <p className="text-[11px] text-[#a1a1aa] mt-px">{totalMessages.toLocaleString()} sent</p>
             </div>
             <div className="flex items-center gap-3 shrink-0">
               {demoLoaded && <DemoWorkspaceControl mode="remove" />}
@@ -254,6 +260,12 @@ export default async function MessagesPage({
                 })}
               </tbody>
             </table>
+            <Pagination
+              page={page}
+              pageSize={PAGE_SIZE}
+              total={totalMessages}
+              buildHref={(p) => (p === 1 ? "/messages" : `/messages?page=${p}`)}
+            />
           </div>
         )}
       </div>
