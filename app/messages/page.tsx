@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getOrgId } from "@/lib/org";
 import { isDemoWorkspaceLoaded } from "@/lib/demoWorkspace";
 import { DemoWorkspaceControl } from "@/app/components/DemoWorkspaceControl";
+import { AdminOnly } from "@/app/components/AdminOnly";
 import { Plus, Mail, Smartphone, MessageSquare, Send } from "lucide-react";
 import { Pagination, parsePage } from "@/app/components/ui/Pagination";
 
@@ -96,7 +97,7 @@ export default async function MessagesPage({
               <p className="text-[11px] text-ink-3 mt-px">{totalMessages.toLocaleString()} sent</p>
             </div>
             <div className="flex items-center gap-3 shrink-0">
-              {demoLoaded && <DemoWorkspaceControl mode="remove" />}
+              {demoLoaded && <AdminOnly><DemoWorkspaceControl mode="remove" /></AdminOnly>}
               <Link
                 href="/messages/new"
                 className="inline-flex items-center gap-1.5 rounded-md bg-ink px-3 py-1.5 text-[12px] font-medium text-on-ink hover:bg-ink-hover"

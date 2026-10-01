@@ -6,8 +6,17 @@ import { signIn, signUp } from "./actions";
 
 type Tab = "signin" | "signup";
 
-export function LoginClient({ next }: { next?: string }) {
-  const [tab, setTab]                     = useState<Tab>("signin");
+export function LoginClient({
+  next,
+  initialEmail,
+  initialTab = "signin",
+}: {
+  next?: string;
+  /** Prefilled from an invite link (/login?email=…) */
+  initialEmail?: string;
+  initialTab?: Tab;
+}) {
+  const [tab, setTab]                     = useState<Tab>(initialTab);
   const [showPassword, setShowPassword]   = useState(false);
   const [error, setError]                 = useState<string | null>(null);
   const [success, setSuccess]             = useState<string | null>(null);
@@ -105,6 +114,7 @@ export function LoginClient({ next }: { next?: string }) {
                   id="signin-email"
                   name="email"
                   type="email"
+                  defaultValue={initialEmail}
                   autoComplete="email"
                   required
                   placeholder="you@school.edu"
@@ -168,6 +178,8 @@ export function LoginClient({ next }: { next?: string }) {
           {/* ── Sign up form ── */}
           {tab === "signup" && !success && (
             <form onSubmit={handleSignUp} className="flex flex-col gap-4">
+              {/* Carries an invite link through email confirmation */}
+              <input type="hidden" name="next" value={next ?? ""} />
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="signup-email" className="text-[11px] font-semibold uppercase tracking-wider text-[#a1a1aa]">
                   Email
@@ -176,6 +188,7 @@ export function LoginClient({ next }: { next?: string }) {
                   id="signup-email"
                   name="email"
                   type="email"
+                  defaultValue={initialEmail}
                   autoComplete="email"
                   required
                   placeholder="you@school.edu"

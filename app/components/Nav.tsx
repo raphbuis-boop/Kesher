@@ -168,7 +168,7 @@ export function Nav() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  if (PUBLIC_PATHS.includes(pathname)) return null;
+  if (PUBLIC_PATHS.includes(pathname) || pathname.startsWith("/invite/") || pathname === "/no-workspace") return null;
 
   const closeMobile = () => setMobileOpen(false);
 

@@ -1,16 +1,18 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { getOrgId } from "@/lib/org";
+import { ADMIN_ROLES, PermissionError, requireRole } from "@/lib/org";
 
 /**
  * GET /api/export/contacts — every contact in the caller's org as CSV.
- * Signed-in only (proxy.ts), org-scoped by org_id and RLS; pages through
+ * Owner/admin only, org-scoped by org_id and RLS; pages through
  * PostgREST's 1,000-row limit.
  */
 export async function GET() {
   let orgId: string;
   try {
-    orgId = await getOrgId();
-  } catch {
+    // Full-directory export lives in Settings → Data: owner/admin only
+    ({ orgId } = await requireRole(ADMIN_ROLES));
+  } catch (err) {
+    if (err instanceof PermissionError) return new Response(err.message, { status: 403 });
     return new Response("Not signed in", { status: 401 });
   }
   const supabase = await createSupabaseServerClient();

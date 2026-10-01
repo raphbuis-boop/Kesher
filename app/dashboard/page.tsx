@@ -7,6 +7,7 @@ import { getBrandingSettings } from "@/lib/settings";
 import { isDemoWorkspaceLoaded } from "@/lib/demoWorkspace";
 import { getCategoryCounts } from "@/lib/categoryCounts";
 import { DemoWorkspaceControl } from "@/app/components/DemoWorkspaceControl";
+import { AdminOnly } from "@/app/components/AdminOnly";
 import {
   Users,
   Send,
@@ -249,7 +250,7 @@ export default async function OverviewPage() {
             <p className="text-[11px] text-ink-3 mt-px">{branding.schoolName || "Your Organization"}</p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
-            {demoLoaded && <DemoWorkspaceControl mode="remove" />}
+            {demoLoaded && <AdminOnly><DemoWorkspaceControl mode="remove" /></AdminOnly>}
             <Link
               href="/messages/new"
               className="inline-flex items-center gap-1.5 rounded-md bg-ink px-3 py-1.5 text-[12px] font-medium text-on-ink hover:bg-ink-hover"
@@ -264,7 +265,7 @@ export default async function OverviewPage() {
       <div className="px-6 py-6 space-y-6 max-w-7xl">
 
         {/* ── Load demo workspace (only ever shown when the workspace is empty) ── */}
-        {contacts === 0 && !demoLoaded && <DemoWorkspaceControl mode="load" />}
+        {contacts === 0 && !demoLoaded && <AdminOnly><DemoWorkspaceControl mode="load" /></AdminOnly>}
 
         {/* ── Section 1 — Hero KPIs ────────────────────────────────────────── */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

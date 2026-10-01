@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
-import { getOrgId } from "@/lib/org";
+import { ADMIN_ROLES, PermissionError, getMembership, requireRole } from "@/lib/org";
 
 export type SettingsState = {
   success: boolean;
@@ -35,8 +35,14 @@ export async function saveSettings(
   _prevState: SettingsState,
   formData: FormData
 ): Promise<SettingsState> {
+  let orgId: string;
+  try {
+    ({ orgId } = await requireRole(ADMIN_ROLES));
+  } catch (err) {
+    if (err instanceof PermissionError) return { success: false, error: err.message };
+    throw err;
+  }
   const supabase = await createSupabaseServerClient();
-  const orgId = await getOrgId();
 
   const rows = FIELDS.filter((key) => formData.has(key)).map((key) => ({
     org_id: orgId,
@@ -66,6 +72,16 @@ export async function saveSettings(
   revalidatePath("/messages/new");
   revalidatePath("/dashboard");
   return { success: true, error: null };
+}
+
+/** Owner/admin gate for actions that return ActionResult. */
+async function adminOrgId(): Promise<string | ActionResult> {
+  try {
+    return (await requireRole(ADMIN_ROLES)).orgId;
+  } catch (err) {
+    if (err instanceof PermissionError) return { ok: false, error: err.message };
+    throw err;
+  }
 }
 
 // ─── Logo ─────────────────────────────────────────────────────────────────────
@@ -105,8 +121,9 @@ async function deleteStoredLogo(url: string, orgId: string) {
 /** Saves an uploaded logo URL (from /api/upload) and removes the previous file. */
 export async function saveLogo(url: string): Promise<ActionResult> {
   if (!/^https:\/\//.test(url)) return { ok: false, error: "Invalid logo URL." };
+  const orgId = await adminOrgId();
+  if (typeof orgId !== "string") return orgId;
   const supabase = await createSupabaseServerClient();
-  const orgId = await getOrgId();
   const previous = await currentLogoUrl(orgId);
 
   const { error } = await supabase
@@ -121,8 +138,9 @@ export async function saveLogo(url: string): Promise<ActionResult> {
 
 /** Clears the logo setting and deletes the stored file. */
 export async function removeLogo(): Promise<ActionResult> {
+  const orgId = await adminOrgId();
+  if (typeof orgId !== "string") return orgId;
   const supabase = await createSupabaseServerClient();
-  const orgId = await getOrgId();
   const previous = await currentLogoUrl(orgId);
 
   const { error } = await supabase
@@ -192,7 +210,8 @@ export async function changePassword(_prev: SettingsState, formData: FormData): 
  *   1. the org row, in one atomic statement that cascades (ON DELETE CASCADE)
  *      to people (→ person_tags, relationships), groups (→ group_tags), tags,
  *      messages (→ message_recipients), imports, import_jobs, message_threads
- *      (→ thread_messages), inbound_messages, settings and memberships
+ *      (→ thread_messages), inbound_messages, settings, org_invites and
+ *      memberships — so every teammate loses access too
  *   2. the stored logo file (Vercel Blob)
  *   3. the auth user (their login)
  */
@@ -200,16 +219,15 @@ export async function deleteAccount(_prev: SettingsState, formData: FormData): P
   const confirmation = ((formData.get("confirmation") as string | null) ?? "").trim();
 
   const supabase = await createSupabaseServerClient();
-  const orgId = await getOrgId();
-  const { data: claimsData } = await supabase.auth.getClaims();
-  const userId = claimsData?.claims?.sub;
-  if (!userId) return { success: false, error: "Your session has expired. Please sign in again." };
+  const { orgId, userId, role } = await getMembership();
+  if (role !== "owner") return { success: false, error: "Only the account owner can delete it." };
 
-  const [{ data: membership }, { data: nameRow }] = await Promise.all([
-    supabase.from("memberships").select("role").eq("user_id", userId).eq("org_id", orgId).maybeSingle(),
-    supabase.from("settings").select("value").eq("org_id", orgId).eq("key", "school_name").maybeSingle(),
-  ]);
-  if (membership?.role !== "owner") return { success: false, error: "Only the account owner can delete it." };
+  const { data: nameRow } = await supabase
+    .from("settings")
+    .select("value")
+    .eq("org_id", orgId)
+    .eq("key", "school_name")
+    .maybeSingle();
 
   const schoolName = (nameRow?.value as string | undefined)?.trim() ?? "";
   const expected = schoolName || "delete my account";

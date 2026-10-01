@@ -29,6 +29,10 @@ export async function signUp(
 ): Promise<{ error?: string; success?: string }> {
   const email    = formData.get("email")    as string;
   const password = formData.get("password") as string;
+  // Where to land after confirming the email (e.g. back to /invite/<token>).
+  // Same open-redirect guard as signIn.
+  const nextRaw  = (formData.get("next") as string | null) ?? "";
+  const next     = nextRaw.startsWith("/") && !nextRaw.startsWith("//") ? nextRaw : "";
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.signUp({
@@ -38,7 +42,7 @@ export async function signUp(
       // Must be registered in Supabase Dashboard → Auth → URL Configuration.
       emailRedirectTo: `${
         process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.kesherhq.co"
-      }/auth/callback`,
+      }/auth/callback${next ? `?next=${encodeURIComponent(next)}` : ""}`,
     },
   });
 

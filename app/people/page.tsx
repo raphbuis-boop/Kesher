@@ -5,6 +5,7 @@ import { getOrgId } from "@/lib/org";
 import { isDemoWorkspaceLoaded } from "@/lib/demoWorkspace";
 import { getCategoryCounts } from "@/lib/categoryCounts";
 import { DemoWorkspaceControl } from "@/app/components/DemoWorkspaceControl";
+import { AdminOnly } from "@/app/components/AdminOnly";
 import { AddPersonButton, type Tag } from "./AddPersonButton";
 import { PeopleClient } from "./PeopleClient";
 import { listPeople, parsePeopleQuery } from "./query";
@@ -58,7 +59,7 @@ export default async function PeoplePage({
             </p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
-            {demoLoaded && <DemoWorkspaceControl mode="remove" />}
+            {demoLoaded && <AdminOnly><DemoWorkspaceControl mode="remove" /></AdminOnly>}
             <AddPersonButton tags={tags} />
           </div>
         </div>

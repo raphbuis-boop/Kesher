@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getOrgId } from "@/lib/org";
 import { isDemoWorkspaceLoaded } from "@/lib/demoWorkspace";
 import { DemoWorkspaceControl } from "@/app/components/DemoWorkspaceControl";
+import { AdminOnly } from "@/app/components/AdminOnly";
 import { resolveGroupMemberIds, type GroupRow } from "@/lib/audienceMembers";
 import { getCategoryCounts } from "@/lib/categoryCounts";
 import { AddGroupButton } from "@/app/groups/AddGroupButton";
@@ -65,7 +66,7 @@ export default async function AudiencesPage() {
             </p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
-            {demoLoaded && <DemoWorkspaceControl mode="remove" />}
+            {demoLoaded && <AdminOnly><DemoWorkspaceControl mode="remove" /></AdminOnly>}
             <Link
               href="/messages/new"
               className="inline-flex items-center gap-1.5 rounded-md bg-ink px-3 py-1.5 text-[12px] font-medium text-on-ink transition-colors duration-150 hover:bg-ink-hover active:bg-black"

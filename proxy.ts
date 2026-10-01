@@ -14,7 +14,8 @@ export async function proxy(request: NextRequest) {
 
   // Allow unauthenticated access to the public landing page, login, legal pages,
   // auth callback (required for OAuth + magic link + password reset), email
-  // unsubscribe links (clicked by logged-out parents), and webhooks
+  // unsubscribe links (clicked by logged-out parents), team invite links
+  // (/invite/[token] — the page itself handles signed-out vs signed-in), and webhooks
   if (
     pathname === "/" ||
     pathname === "/login" ||
@@ -31,6 +32,7 @@ export async function proxy(request: NextRequest) {
     pathname === "/sample-form" ||
     pathname === "/unsubscribe" ||
     pathname === "/api/unsubscribe" ||
+    pathname.startsWith("/invite/") ||
     pathname.startsWith("/api/webhooks/")
   ) {
     return NextResponse.next();

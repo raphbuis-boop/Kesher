@@ -17,7 +17,6 @@ import {
   Moon,
   Monitor,
   ArrowRight,
-  Lock,
 } from "lucide-react";
 import type { BrandingSettings } from "@/lib/settings";
 import type { ChannelStatus } from "./channels";
@@ -32,6 +31,15 @@ import {
   updateProfileName,
   type SettingsState,
 } from "./actions";
+import {
+  changeMemberRole,
+  inviteMember,
+  removeMember,
+  resendInvite,
+  revokeInvite,
+  transferOwnership,
+  type TeamResult,
+} from "./teamActions";
 import { toast, useActionToast } from "@/app/components/ui/toast";
 import { Spinner } from "@/app/components/ui/Spinner";
 import { GlassDropzone, postWithProgress } from "@/app/components/ui/GlassDropzone";
@@ -338,32 +346,252 @@ function SchoolSection({ branding, uploadsEnabled }: { branding: BrandingSetting
 
 // ─── Team ─────────────────────────────────────────────────────────────────────
 
-function TeamSection({ profile, role, memberSince }: { profile: { name: string; email: string }; role: string; memberSince: string | null }) {
+export type TeamMember = {
+  user_id: string;
+  email: string;
+  full_name: string;
+  role: "owner" | "admin" | "member";
+  joined_at: string;
+};
+
+export type TeamInvite = {
+  id: string;
+  email: string;
+  role: "admin" | "member";
+  created_at: string;
+  expires_at: string;
+  expired: boolean;
+};
+
+const ROLE_HELP: Record<string, string> = {
+  owner: "Everything, including deleting the account and transferring ownership",
+  admin: "Invite and remove members, change settings, send messages",
+  member: "Manage people and audiences and send messages — no settings or team",
+};
+
+function shortDate(d: string) {
+  return new Date(d).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+function useTeamAction() {
+  const [isPending, start] = useTransition();
+  function run(fn: () => Promise<TeamResult>, after?: () => void) {
+    start(async () => {
+      const res = await fn();
+      if (res.ok) {
+        toast.success(res.message);
+        after?.();
+      } else toast.error(res.error);
+    });
+  }
+  return { isPending, run };
+}
+
+function InviteForm() {
+  const [state, action, isPending] = useActionState(inviteMember, null);
+  useActionToast(state, (s) => (s ? (s.ok ? { success: s.message } : { error: s.error }) : {}));
+  const formRef = useRef<HTMLFormElement>(null);
+  useEffect(() => {
+    if (state?.ok) formRef.current?.reset();
+  }, [state]);
+
   return (
-    <Card title="Team" description="People who can sign in to this school's workspace.">
-      <div className="flex items-center gap-3 rounded-lg border border-line px-4 py-3">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted-2 text-[11px] font-semibold text-ink-2">
-          {(profile.name || profile.email || "?").slice(0, 1).toUpperCase()}
+    <form ref={formRef} action={action}>
+      <Card
+        title="Invite someone"
+        description="They'll get an email with a link to join. Invites expire after 7 days and work once."
+        footer={<SubmitButton pending={isPending} pendingLabel="Sending…">Send invite</SubmitButton>}
+      >
+        <div className="grid gap-4 sm:grid-cols-[1fr_160px]">
+          <Field label="Email" htmlFor="invite_email">
+            <input id="invite_email" name="email" type="email" required placeholder="secretary@yourschool.org" className={inputCls} autoComplete="off" disabled={isPending} />
+          </Field>
+          <Field label="Role" htmlFor="invite_role">
+            <select id="invite_role" name="role" defaultValue="member" className={inputCls} disabled={isPending}>
+              <option value="member">Member</option>
+              <option value="admin">Admin</option>
+            </select>
+          </Field>
+        </div>
+        {state && !state.ok && <p className="mt-3 text-[12px] text-red-600" role="alert">{state.error}</p>}
+        <dl className="mt-4 grid gap-1 text-[11.5px] text-ink-3">
+          <div><dt className="inline font-medium text-ink-2">Member: </dt><dd className="inline">{ROLE_HELP.member}</dd></div>
+          <div><dt className="inline font-medium text-ink-2">Admin: </dt><dd className="inline">{ROLE_HELP.admin}</dd></div>
+        </dl>
+      </Card>
+    </form>
+  );
+}
+
+function MemberRow({ member, viewerRole, isSelf }: { member: TeamMember; viewerRole: string; isSelf: boolean }) {
+  const { isPending, run } = useTeamAction();
+  const [confirm, setConfirm] = useState<null | "remove" | "owner">(null);
+  const name = member.full_name || member.email;
+  const viewerIsAdmin = viewerRole === "owner" || viewerRole === "admin";
+  const canEditRole = viewerIsAdmin && !isSelf && member.role !== "owner";
+  const canRemove = viewerIsAdmin && !isSelf && (member.role !== "owner" || viewerRole === "owner");
+  const canTransfer = viewerRole === "owner" && !isSelf;
+
+  return (
+    <li className="py-3 first:pt-0 last:pb-0">
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted-2 text-[11px] font-semibold text-ink-2">
+          {name.slice(0, 1).toUpperCase()}
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-[13px] font-medium text-ink">
-            {profile.name || profile.email} <span className="font-normal text-ink-3">(you)</span>
+            {name} {isSelf && <span className="font-normal text-ink-3">(you)</span>}
           </p>
           <p className="truncate text-[11px] text-ink-3">
-            {profile.email}
-            {memberSince ? ` · since ${new Date(memberSince).toLocaleDateString(undefined, { month: "short", year: "numeric" })}` : ""}
+            {member.full_name ? `${member.email} · ` : ""}joined {shortDate(member.joined_at)}
           </p>
         </div>
-        <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium capitalize text-ink-2">{role}</span>
+
+        {canEditRole ? (
+          <label className="sr-only" htmlFor={`role-${member.user_id}`}>Role for {name}</label>
+        ) : null}
+        {canEditRole ? (
+          <select
+            id={`role-${member.user_id}`}
+            value={member.role}
+            disabled={isPending}
+            onChange={(e) => {
+              const next = e.target.value;
+              run(() => changeMemberRole(member.user_id, next));
+            }}
+            className="rounded-md border border-line bg-card px-2 py-1 text-[12px] text-ink-2 outline-none focus:border-ink-3 disabled:opacity-50"
+          >
+            <option value="admin">Admin</option>
+            <option value="member">Member</option>
+          </select>
+        ) : (
+          <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium capitalize text-ink-2" title={ROLE_HELP[member.role]}>
+            {member.role}
+          </span>
+        )}
+
+        {(canRemove || canTransfer) && !confirm && (
+          <div className="flex items-center gap-1">
+            {canTransfer && (
+              <button type="button" onClick={() => setConfirm("owner")} disabled={isPending} className="btn btn-ghost btn-sm">
+                Make owner
+              </button>
+            )}
+            {canRemove && (
+              <button type="button" onClick={() => setConfirm("remove")} disabled={isPending} className="btn btn-ghost btn-sm hover:!text-red-600" aria-label={`Remove ${name}`}>
+                Remove
+              </button>
+            )}
+          </div>
+        )}
+        {isPending && <Spinner className="text-ink-3" />}
       </div>
-      <div className="mt-4 flex gap-2.5 rounded-lg bg-canvas px-4 py-3 text-[12px] leading-relaxed text-ink-2">
-        <Lock size={14} strokeWidth={1.75} className="mt-0.5 shrink-0 text-ink-3" />
-        <p>
-          Inviting teammates isn&apos;t available yet. Right now each Kesher login has its own school workspace, so
-          invites, roles and removing users will arrive with shared-workspace support.
+
+      {confirm && (
+        <div className="animate-pop-in mt-2.5 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line bg-canvas px-3 py-2.5">
+          <p className="text-[12px] text-ink-soft">
+            {confirm === "remove"
+              ? `Remove ${name}? They lose access immediately.`
+              : `Make ${name} the owner? You'll become an admin.`}
+          </p>
+          <div className="flex gap-1.5">
+            <button type="button" onClick={() => setConfirm(null)} disabled={isPending} className="btn btn-ghost btn-sm">Cancel</button>
+            <button
+              type="button"
+              disabled={isPending}
+              onClick={() =>
+                run(
+                  () => (confirm === "remove" ? removeMember(member.user_id) : transferOwnership(member.user_id)),
+                  () => setConfirm(null)
+                )
+              }
+              className={`btn btn-sm ${confirm === "remove" ? "btn-danger" : "btn-primary"}`}
+            >
+              {isPending && <Spinner size={10} />}
+              {confirm === "remove" ? "Remove" : "Transfer ownership"}
+            </button>
+          </div>
+        </div>
+      )}
+    </li>
+  );
+}
+
+function InviteRow({ invite }: { invite: TeamInvite }) {
+  const { isPending, run } = useTeamAction();
+  const [which, setWhich] = useState<"resend" | "revoke" | null>(null);
+  const expired = invite.expired;
+
+  return (
+    <li className="flex flex-wrap items-center gap-3 py-3 first:pt-0 last:pb-0">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[13px] font-medium text-ink">{invite.email}</p>
+        <p className="text-[11px] text-ink-3">
+          <span className="capitalize">{invite.role}</span> · sent {shortDate(invite.created_at)} ·{" "}
+          {expired ? <span className="font-medium text-amber-600">expired</span> : `expires ${shortDate(invite.expires_at)}`}
         </p>
       </div>
-    </Card>
+      <button
+        type="button"
+        disabled={isPending}
+        onClick={() => { setWhich("resend"); run(() => resendInvite(invite.id)); }}
+        className="btn btn-secondary btn-sm"
+      >
+        {isPending && which === "resend" && <Spinner size={10} />}
+        Resend
+      </button>
+      <button
+        type="button"
+        disabled={isPending}
+        onClick={() => { setWhich("revoke"); run(() => revokeInvite(invite.id)); }}
+        className="btn btn-ghost btn-sm hover:!text-red-600"
+      >
+        {isPending && which === "revoke" && <Spinner size={10} />}
+        Revoke
+      </button>
+    </li>
+  );
+}
+
+function TeamSection({
+  currentUserId,
+  role,
+  members,
+  invites,
+}: {
+  currentUserId: string;
+  role: string;
+  members: TeamMember[];
+  invites: TeamInvite[];
+}) {
+  return (
+    <div className="space-y-5">
+      <InviteForm />
+
+      <Card title={`Members (${members.length})`} description="Everyone who can sign in to this school's workspace.">
+        {members.length === 0 ? (
+          <p className="text-[12px] text-ink-3">No members found.</p>
+        ) : (
+          <ul className="divide-y divide-line">
+            {members.map((m) => (
+              <MemberRow key={m.user_id} member={m} viewerRole={role} isSelf={m.user_id === currentUserId} />
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      <Card title={`Pending invites (${invites.length})`} description="Resending creates a new link (the old one stops working) and resets the 7 days.">
+        {invites.length === 0 ? (
+          <p className="text-[12px] text-ink-3">No pending invites.</p>
+        ) : (
+          <ul className="divide-y divide-line">
+            {invites.map((i) => (
+              <InviteRow key={i.id} invite={i} />
+            ))}
+          </ul>
+        )}
+      </Card>
+    </div>
   );
 }
 
@@ -587,6 +815,7 @@ function DangerSection({ schoolName, role }: { schoolName: string; role: string 
         <li>All contacts, tags, relationships and audiences</li>
         <li>All sent messages and their delivery/recipient history</li>
         <li>Import history, school settings and the uploaded logo</li>
+        <li>Every teammate&apos;s access to this school, and pending invites</li>
         <li>Your Kesher login</li>
       </ul>
 
@@ -632,24 +861,34 @@ function isSection(v: string): v is SectionId {
 }
 
 export function SettingsShell({
+  currentUserId,
   profile,
   branding,
   role,
-  memberSince,
   channels,
   simulated,
   imports,
+  members,
+  invites,
   logoUploadsEnabled,
 }: {
+  currentUserId: string;
   profile: { name: string; email: string };
   branding: BrandingSettings;
-  role: string;
-  memberSince: string | null;
+  role: "owner" | "admin" | "member";
   channels: ChannelStatus[];
   simulated: boolean;
   imports: ImportRow[];
+  members: TeamMember[];
+  invites: TeamInvite[];
   logoUploadsEnabled: boolean;
 }) {
+  // What each role can open (the server actions enforce the same rules)
+  const visible = SECTIONS.filter((s) =>
+    role === "owner" ? true : role === "admin" ? s.id !== "danger" : s.id === "profile" || s.id === "appearance"
+  );
+  const isVisible = (v: string): v is SectionId => visible.some((s) => s.id === v);
+
   // Active section lives in the URL hash (/settings#school) so it deep-links
   const active = useSyncExternalStore(
     (cb) => {
@@ -658,7 +897,7 @@ export function SettingsShell({
     },
     () => {
       const h = window.location.hash.slice(1);
-      return isSection(h) ? h : "profile";
+      return isSection(h) && isVisible(h) ? h : "profile";
     },
     () => "profile" as SectionId
   );
@@ -668,15 +907,15 @@ export function SettingsShell({
     window.dispatchEvent(new HashChangeEvent("hashchange"));
   }
 
-  const current = SECTIONS.find((s) => s.id === active)!;
+  const current = visible.find((s) => s.id === active) ?? visible[0];
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-5 sm:px-6 sm:py-6 md:grid md:grid-cols-[190px_1fr] md:gap-8">
       {/* Section list — left column on desktop, scrolling tabs on mobile */}
       <nav aria-label="Settings sections" className="mb-5 md:mb-0">
         <div role="tablist" aria-orientation="vertical" className="-mx-4 flex gap-1 overflow-x-auto px-4 pb-1 md:sticky md:top-20 md:mx-0 md:flex-col md:overflow-visible md:px-0">
-          {SECTIONS.map(({ id, label, icon: Icon }) => {
-            const isActive = id === active;
+          {visible.map(({ id, label, icon: Icon }) => {
+            const isActive = id === current.id;
             return (
               <button
                 key={id}
@@ -704,12 +943,12 @@ export function SettingsShell({
         </div>
       </nav>
 
-      <div id="settings-panel" role="tabpanel" aria-labelledby={`tab-${active}`} className="min-w-0">
+      <div id="settings-panel" role="tabpanel" aria-labelledby={`tab-${current.id}`} className="min-w-0">
         <h2 className="mb-4 text-[15px] font-semibold tracking-tight text-ink">{current.label}</h2>
         <div key={active} className="animate-page-in">
           {active === "profile" && <ProfileSection profile={profile} />}
           {active === "school" && <SchoolSection branding={branding} uploadsEnabled={logoUploadsEnabled} />}
-          {active === "team" && <TeamSection profile={profile} role={role} memberSince={memberSince} />}
+          {active === "team" && <TeamSection currentUserId={currentUserId} role={role} members={members} invites={invites} />}
           {active === "channels" && <ChannelsSection channels={channels} simulated={simulated} />}
           {active === "data" && <DataSection imports={imports} logoUrl={branding.logoUrl} />}
           {active === "appearance" && <AppearanceSection />}

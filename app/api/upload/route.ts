@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { put } from "@vercel/blob";
-import { getOrgId } from "@/lib/org";
+import { ADMIN_ROLES, requireRole } from "@/lib/org";
 
 const EMAIL_ALLOWED = new Set([
   "image/jpeg", "image/png", "image/gif", "image/webp",
@@ -47,7 +47,12 @@ export async function POST(req: NextRequest) {
       if (file.size > 2 * 1024 * 1024) {
         return NextResponse.json({ error: "The logo is too large. Please use an image under 2 MB." }, { status: 400 });
       }
-      const orgId = await getOrgId();
+      let orgId: string;
+      try {
+        ({ orgId } = await requireRole(ADMIN_ROLES));
+      } catch {
+        return NextResponse.json({ error: "Only the owner or an admin can change the school logo." }, { status: 403 });
+      }
       const blob = await put(`logos/${orgId}/${file.name}`, file, {
         access: "public",
         contentType: file.type,
