@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { getOrgId } from "@/lib/org";
+import { ADMIN_ROLES, requireRole } from "@/lib/org";
 import { isWorkspaceEmpty, loadDemoWorkspace, removeDemoWorkspace } from "@/lib/demoWorkspace";
 
 export type DemoActionState = {
@@ -25,7 +25,8 @@ function revalidateAffectedPaths() {
 export async function loadDemoDataAction(): Promise<DemoActionState> {
   try {
     const supabase = await createSupabaseServerClient();
-    const orgId = await getOrgId();
+    // Writes school settings and bulk data — owner/admin only
+    const { orgId } = await requireRole(ADMIN_ROLES);
 
     if (!(await isWorkspaceEmpty(supabase, orgId))) {
       return { success: false, error: "This workspace already has data — demo data can only be loaded into an empty workspace.", message: null };
@@ -48,7 +49,8 @@ export async function loadDemoDataAction(): Promise<DemoActionState> {
 export async function removeDemoDataAction(): Promise<DemoActionState> {
   try {
     const supabase = await createSupabaseServerClient();
-    const orgId = await getOrgId();
+    // Writes school settings and bulk data — owner/admin only
+    const { orgId } = await requireRole(ADMIN_ROLES);
 
     const result = await removeDemoWorkspace(supabase, orgId);
     revalidateAffectedPaths();

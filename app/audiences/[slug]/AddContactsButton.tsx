@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Plus, Search, X, Loader2, Check } from "lucide-react";
 import { addContactsToGroup } from "@/app/groups/actions";
+import { toast } from "@/app/components/ui/toast";
 
 type Person = {
   id: string;
@@ -120,9 +121,11 @@ export function AddContactsButton({
       const result = await addContactsToGroup(groupId, [...selected]);
       if (result.success) {
         setOpen(false);
+        toast.success(`Added ${selected.size} contact${selected.size === 1 ? "" : "s"}`);
         router.refresh();
       } else {
         setError(result.error ?? "Failed to add contacts.");
+        toast.error(result.error ?? "Failed to add contacts.");
       }
     });
   }
@@ -131,7 +134,7 @@ export function AddContactsButton({
     return (
       <button
         disabled
-        className="inline-flex items-center gap-1.5 rounded-md border border-[#e7e7e7] bg-white px-3 py-1.5 text-[12px] font-medium text-[#a1a1aa] cursor-not-allowed"
+        className="inline-flex items-center gap-1.5 rounded-md border border-line bg-card px-3 py-1.5 text-[12px] font-medium text-ink-3 cursor-not-allowed"
         title="All contacts are already in this audience"
       >
         <Plus size={13} strokeWidth={2} />
@@ -144,7 +147,7 @@ export function AddContactsButton({
     <>
       <button
         onClick={openModal}
-        className="inline-flex items-center gap-1.5 rounded-md border border-[#e7e7e7] bg-white px-3 py-1.5 text-[12px] font-medium text-[#0f0f0f] hover:bg-[#fafafa] hover:border-[#d4d4d8]"
+        className="inline-flex items-center gap-1.5 rounded-md border border-line bg-card px-3 py-1.5 text-[12px] font-medium text-ink hover:bg-canvas hover:border-line-strong"
       >
         <Plus size={13} strokeWidth={2} />
         Add Contacts
@@ -159,7 +162,7 @@ export function AddContactsButton({
           className="animate-backdrop fixed inset-0 z-[9999] flex items-center justify-center bg-black/25 p-4"
         >
           <div
-            className="animate-fade-up w-full max-w-[740px] rounded-xl border border-[#e7e7e7] bg-white shadow-2xl shadow-black/10"
+            className="animate-pop-in w-full max-w-[740px] rounded-xl border border-line bg-card shadow-pop"
             style={{
               display: "grid",
               gridTemplateRows: "auto minmax(0,1fr) auto",
@@ -167,24 +170,24 @@ export function AddContactsButton({
             }}
           >
             {/* ── Header ── */}
-            <div className="flex items-center justify-between border-b border-[#f0f0f0] px-6 py-4">
+            <div className="flex items-center justify-between border-b border-muted-2 px-6 py-4">
               <div>
-                <h2 className="text-[13px] font-semibold text-[#0f0f0f]">
+                <h2 className="text-[13px] font-semibold text-ink">
                   Add Contacts
                   {selected.size > 0 && (
-                    <span className="ml-2 rounded-full bg-[#eff6ff] px-2 py-0.5 text-[11px] font-medium text-[#2563eb]">
+                    <span className="ml-2 rounded-full bg-brand-tint px-2 py-0.5 text-[11px] font-medium text-brand">
                       {selected.size} selected
                     </span>
                   )}
                 </h2>
-                <p className="mt-px text-[11px] text-[#a1a1aa]">
+                <p className="mt-px text-[11px] text-ink-3">
                   {nonMembers.length.toLocaleString()} contacts available to add
                 </p>
               </div>
               <button
                 onClick={() => setOpen(false)}
                 aria-label="Close"
-                className="rounded-md p-1.5 text-[#a1a1aa] hover:bg-[#f5f5f5] hover:text-[#71717a]"
+                className="rounded-md p-1.5 text-ink-3 hover:bg-muted hover:text-ink-2"
               >
                 <X size={15} strokeWidth={1.75} />
               </button>
@@ -193,12 +196,12 @@ export function AddContactsButton({
             {/* ── Middle: search + scrollable list (single grid row) ── */}
             <div className="flex min-h-0 flex-col">
             {/* Search + bulk actions */}
-            <div className="shrink-0 border-b border-[#f0f0f0] px-6 py-3 space-y-2.5">
+            <div className="shrink-0 border-b border-muted-2 px-6 py-3 space-y-2.5">
               <div className="relative">
                 <Search
                   size={13}
                   strokeWidth={1.75}
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#a1a1aa]"
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-3"
                 />
                 <input
                   ref={searchRef}
@@ -206,13 +209,13 @@ export function AddContactsButton({
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search by name or email…"
-                  className="w-full rounded-lg border border-[#e7e7e7] bg-[#fafafa] py-2 pl-8 pr-3 text-[13px] text-[#0f0f0f] placeholder-[#a1a1aa] outline-none focus:border-[#a1a1aa] focus:bg-white"
+                  className="w-full rounded-lg border border-line bg-canvas py-2 pl-8 pr-3 text-[13px] text-ink placeholder-ink-3 outline-none focus:border-ink-3 focus:bg-card"
                 />
                 {query && (
                   <button
                     onClick={() => setQuery("")}
                     aria-label="Clear search"
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-[#a1a1aa] hover:text-[#71717a]"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-ink-3 hover:text-ink-2"
                   >
                     <X size={12} />
                   </button>
@@ -223,18 +226,18 @@ export function AddContactsButton({
                   <button
                     type="button"
                     onClick={handleSelectAll}
-                    className="text-[11px] font-medium text-[#2563eb] hover:text-[#1d4ed8]"
+                    className="text-[11px] font-medium text-brand hover:text-brand-strong"
                   >
                     {allFilteredSelected ? "Deselect All" : "Select All"}
                     {!allFilteredSelected && filtered.length < nonMembers.length && ` (${filtered.length})`}
                   </button>
                   {selected.size > 0 && (
                     <>
-                      <span className="text-[#e7e7e7]">·</span>
+                      <span className="text-line">·</span>
                       <button
                         type="button"
                         onClick={handleClearSelection}
-                        className="text-[11px] font-medium text-[#71717a] hover:text-[#0f0f0f]"
+                        className="text-[11px] font-medium text-ink-2 hover:text-ink"
                       >
                         Clear Selection
                       </button>
@@ -248,10 +251,10 @@ export function AddContactsButton({
             <div className="min-h-0 flex-1 overflow-y-auto">
               {filtered.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <p className="text-[13px] font-medium text-[#0f0f0f]">
+                  <p className="text-[13px] font-medium text-ink">
                     {query.trim() ? "No matches found" : "No contacts available"}
                   </p>
-                  <p className="mt-1 text-[12px] text-[#a1a1aa]">
+                  <p className="mt-1 text-[12px] text-ink-3">
                     {query.trim()
                       ? "Try a different name or email"
                       : "All contacts are already in this audience"}
@@ -268,10 +271,10 @@ export function AddContactsButton({
                           onClick={() => toggle(person.id)}
                           className={[
                             "flex w-full items-center gap-3 px-6 text-left transition-colors",
-                            "border-b border-[#f0f0f0] last:border-b-0",
+                            "border-b border-muted-2 last:border-b-0",
                             isSelected
-                              ? "bg-[#eff6ff] hover:bg-[#e8f0fe]"
-                              : "hover:bg-[#fafafa]",
+                              ? "bg-brand-tint hover:bg-brand-tint-2"
+                              : "hover:bg-canvas",
                           ].join(" ")}
                           style={{ height: 54 }}
                         >
@@ -280,8 +283,8 @@ export function AddContactsButton({
                             className={[
                               "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold uppercase",
                               isSelected
-                                ? "bg-[#dbeafe] text-[#1d4ed8]"
-                                : "bg-[#f0f0f0] text-[#71717a]",
+                                ? "bg-brand-soft text-brand-strong"
+                                : "bg-muted-2 text-ink-2",
                             ].join(" ")}
                           >
                             {initials(person)}
@@ -291,12 +294,12 @@ export function AddContactsButton({
                           <div className="min-w-0 flex-1">
                             <p className={[
                               "truncate text-[13px] font-medium",
-                              isSelected ? "text-[#1d4ed8]" : "text-[#0f0f0f]",
+                              isSelected ? "text-brand-strong" : "text-ink",
                             ].join(" ")}>
                               {person.first_name} {person.last_name}
                             </p>
                             {person.email && (
-                              <p className="truncate text-[11px] text-[#a1a1aa]">
+                              <p className="truncate text-[11px] text-ink-3">
                                 {person.email}
                               </p>
                             )}
@@ -307,8 +310,8 @@ export function AddContactsButton({
                             className={[
                               "flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-all",
                               isSelected
-                                ? "bg-[#2563eb]"
-                                : "border border-[#d4d4d8]",
+                                ? "bg-brand"
+                                : "border border-line-strong",
                             ].join(" ")}
                           >
                             {isSelected && (
@@ -325,21 +328,21 @@ export function AddContactsButton({
             </div>{/* end middle grid row */}
 
             {/* ── Footer ── */}
-            <div className="border-t border-[#e7e7e7] px-6 py-4">
+            <div className="border-t border-line px-6 py-4">
               {error && (
                 <p className="mb-3 text-[12px] text-red-600">{error}</p>
               )}
               <div className="flex items-center justify-between gap-4">
                 {/* Left zone: availability */}
-                <p className="text-[12px] text-[#a1a1aa]">
+                <p className="text-[12px] text-ink-3">
                   {nonMembers.length.toLocaleString()} available
                 </p>
 
                 {/* Center zone: selection count */}
-                <p className="text-[12px] font-medium text-[#0f0f0f]">
+                <p className="text-[12px] font-medium text-ink">
                   {selected.size > 0
                     ? `${selected.size} contact${selected.size !== 1 ? "s" : ""} selected`
-                    : <span className="text-[#a1a1aa]">None selected</span>}
+                    : <span className="text-ink-3">None selected</span>}
                 </p>
 
                 {/* Right zone: actions */}
@@ -347,7 +350,7 @@ export function AddContactsButton({
                   <button
                     type="button"
                     onClick={() => setOpen(false)}
-                    className="rounded-md px-3 py-1.5 text-[12px] font-medium text-[#71717a] hover:text-[#0f0f0f] hover:bg-[#f5f5f5]"
+                    className="rounded-md px-3 py-1.5 text-[12px] font-medium text-ink-2 hover:text-ink hover:bg-muted"
                   >
                     Cancel
                   </button>
@@ -355,7 +358,7 @@ export function AddContactsButton({
                     type="button"
                     onClick={handleAdd}
                     disabled={selected.size === 0 || isPending}
-                    className="inline-flex items-center gap-1.5 rounded-md bg-[#0f0f0f] px-4 py-1.5 text-[12px] font-medium text-white hover:bg-[#1a1a1a] disabled:cursor-not-allowed disabled:opacity-40"
+                    className="inline-flex items-center gap-1.5 rounded-md bg-ink px-4 py-1.5 text-[12px] font-medium text-on-ink hover:bg-ink-hover disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {isPending ? (
                       <>

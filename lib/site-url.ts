@@ -56,3 +56,14 @@ export function getSiteUrl(): string {
 export function getAuthCallbackUrl(): string {
   return `${getSiteUrl()}/auth/callback`;
 }
+
+/**
+ * Absolute origin for links inside emails (server-side). Falls back to
+ * Vercel's production URL when NEXT_PUBLIC_SITE_URL is unset; "" if neither.
+ */
+export function getAbsoluteBaseUrl(): string {
+  const site = getSiteUrl();
+  if (site) return site;
+  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  return vercel ? `https://${vercel}` : "";
+}
