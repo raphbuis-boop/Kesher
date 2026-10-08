@@ -1,52 +1,92 @@
 @import "tailwindcss";
 
 /* ─── KESHER DESIGN SYSTEM ───────────────────────────────────────────────────
- * Hallmark · warm editorial · cream + charcoal + deep-teal/emerald
- * Paper: oklch(97.5% 0.006 80) · Accent: oklch(58% 0.135 162)
+ * The single source of truth for colour. Components never use raw hex or
+ * Tailwind palette classes (zinc-*, red-*, …) — they use the semantic
+ * utilities exposed in `@theme inline` below (bg-surface, text-text-muted,
+ * border-border, bg-primary, text-danger, bg-success-tint, …).
+ *
+ * Light values live on :root; dark values are swapped in under
+ * `prefers-color-scheme: dark`. The marketing landing page (.kesher-landing)
+ * is intentionally light-only and re-scopes its own palette further down.
+ *
+ * Text contrast (on --surface and --surface-2) is WCAG AA ≥ 4.5:1 for
+ * primary/secondary/muted/subtle. --text-faint is for decorative icons only.
  * ─────────────────────────────────────────────────────────────────────────── */
 
 :root {
+  color-scheme: light dark;
+
   /* ── Backgrounds ─────────────────────────────────────────────────────── */
-  --bg:             oklch(97.5% 0.006 80);   /* warm cream — page bg         */
-  --surface:        oklch(99.5% 0.003 80);   /* warm white — cards, panels   */
-  --surface-2:      oklch(96.0% 0.008 78);   /* deeper cream — inputs, aside */
+  --bg:             #fafafa;   /* page canvas                               */
+  --surface:        #ffffff;   /* cards, panels, sticky headers             */
+  --surface-2:      #f5f5f5;   /* chips, subtle fills, table headers        */
+  --surface-3:      #ececee;   /* stronger fills, tracks, pressed           */
+  --surface-hover:  #fafafa;   /* row / item hover on a surface             */
+  --overlay:        rgb(10 10 12 / 0.28); /* modal + drawer backdrop        */
 
   /* ── Borders ─────────────────────────────────────────────────────────── */
-  --border:         oklch(89.0% 0.010 75);   /* standard border              */
-  --border-subtle:  oklch(93.5% 0.006 78);   /* subtle row separator         */
+  --border:         #e7e7e7;   /* standard card / divider border            */
+  --border-subtle:  #f0f0f0;   /* row separators                            */
+  --border-strong:  #d4d4d8;   /* hover borders, emphasised dividers        */
+  --border-input:   #898992;   /* form-control boundary (≥ 3:1)             */
 
   /* ── Text ────────────────────────────────────────────────────────────── */
-  --text-primary:   oklch(17.0% 0.008 280);  /* near-black charcoal          */
-  --text-secondary: oklch(42.0% 0.010 260);  /* secondary labels             */
-  --text-muted:     oklch(63.0% 0.008 255);  /* placeholder / captions       */
+  --text-primary:   #0f0f0f;
+  --text-secondary: #3f3f46;
+  --text-muted:     #5b5b64;
+  --text-subtle:    #66666e;   /* captions, meta, placeholders (AA)         */
+  --text-faint:     #a1a1aa;   /* decorative icons only — not for text      */
 
-  /* ── Accent — deep-teal / emerald brand system ───────────────────────── */
-  --accent:         oklch(58.0% 0.135 162);  /* primary CTA / brand (emerald) */
-  --accent-hover:   oklch(51.0% 0.130 162);  /* accent on hover              */
-  --accent-fg:      oklch(98.0% 0.004 80);   /* text on accent bg            */
-  --accent-tint:    oklch(94.5% 0.045 160);  /* subtle accent fill           */
-  --accent-border:  oklch(84.0% 0.070 160);  /* accent-tinted border         */
+  /* ── Primary action (near-black button) ──────────────────────────────── */
+  --primary:        #0f0f0f;
+  --primary-hover:  #2a2a2e;
+  --primary-fg:     #ffffff;
+  --on-solid:       #ffffff;   /* text on saturated fills (danger, etc.)    */
 
-  /* ── Deep teal — closing CTA / footer / analytics bands ──────────────── */
-  --ink-teal:       oklch(27.0% 0.035 200);  /* deep teal section bg         */
-  --ink-teal-2:     oklch(32.0% 0.038 198);  /* teal card / raised surface   */
-  --ink-teal-border: oklch(38.0% 0.040 198); /* border on teal               */
-  --ink-teal-fg:    oklch(97.0% 0.010 95);   /* warm-white text on teal      */
-  --ink-teal-fg-muted: oklch(78.0% 0.020 130); /* muted text on teal         */
+  /* ── Accent — active nav, links, focus ───────────────────────────────── */
+  --accent:         #2563eb;
+  --accent-hover:   #1d4ed8;
+  --accent-fg:      #ffffff;
+  --accent-tint:    #eff6ff;
+  --accent-border:  #bfdbfe;
+  --focus-ring:     #2563eb;
 
-  /* ── Sage — soft alt section band (connected-audience, etc.) ─────────── */
+  /* ── Status ──────────────────────────────────────────────────────────── */
+  --success:        #047857;  --success-solid: #10b981;  --success-tint: #ecfdf5;  --success-border: #a7f3d0;
+  --danger:         #b91c1c;  --danger-solid:  #dc2626;  --danger-tint:  #fef2f2;  --danger-border:  #fecaca;
+  --danger-solid-hover: #b91c1c;
+  --warning:        #a16207;  --warning-solid: #f59e0b;  --warning-tint: #fffbeb;  --warning-border: #fde68a;
+  --info:           #0369a1;  --info-solid:    #0ea5e9;  --info-tint:    #f0f9ff;  --info-border:    #bae6fd;
+
+  /* ── Categorical (audience categories, event types, AI) ──────────────── */
+  --cat-blue:    #1d4ed8;  --cat-blue-tint:    #eff6ff;  --cat-blue-solid:    #3b82f6;
+  --cat-violet:  #6d28d9;  --cat-violet-tint:  #f5f3ff;  --cat-violet-solid:  #7c3aed;
+  --cat-violet-border: #ddd6fe;  --cat-violet-solid-hover: #6d28d9;
+  --cat-purple:  #7e22ce;  --cat-purple-tint:  #faf5ff;
+  --cat-indigo:  #4338ca;  --cat-indigo-tint:  #eef2ff;
+  --cat-amber:   #a16207;  --cat-amber-tint:   #fffbeb;
+  --cat-orange:  #c2410c;  --cat-orange-tint:  #fff7ed;  --cat-orange-solid:  #f97316;
+  --cat-rose:    #be123c;  --cat-rose-tint:    #fff1f2;  --cat-rose-solid:    #f43f5e;  --cat-rose-border: #fecdd3;
+  --cat-emerald: #047857;  --cat-emerald-tint: #ecfdf5;
+  --cat-teal:    #0f766e;  --cat-teal-tint:    #f0fdfa;
+
+  /* ── WhatsApp preview wallpaper ──────────────────────────────────────── */
+  --whatsapp-wallpaper: #e5ddd5;
+
+  /* ── Deep teal — closing CTA / footer / analytics bands (landing) ────── */
+  --ink-teal:       oklch(27.0% 0.035 200);
+  --ink-teal-2:     oklch(32.0% 0.038 198);
+  --ink-teal-border: oklch(38.0% 0.040 198);
+  --ink-teal-fg:    oklch(97.0% 0.010 95);
+  --ink-teal-fg-muted: oklch(78.0% 0.020 130);
+
+  /* ── Sage — soft alt section band (landing) ──────────────────────────── */
   --surface-sage:        oklch(94.5% 0.020 155);
   --surface-sage-border: oklch(88.0% 0.025 155);
 
   /* ── Sidebar (interior app) ──────────────────────────────────────────── */
-  --sidebar-bg:     oklch(96.0% 0.008 78);
-  --sidebar-border: oklch(91.0% 0.009 76);
-
-  /* ── Semantic ────────────────────────────────────────────────────────── */
-  --color-error:    oklch(52.0% 0.185 24);
-  --color-error-bg: oklch(97.0% 0.018 20);
-  --color-success:  oklch(54.0% 0.140 148);
-  --color-warning:  oklch(70.0% 0.150 72);
+  --sidebar-bg:     #f5f5f5;
 
   /* ── Typography ──────────────────────────────────────────────────────── */
   --font-display: var(--font-geist-sans);
@@ -86,11 +126,11 @@
   --radius-xl:   20px;
   --radius-full: 9999px;
 
-  /* ── Shadows (warm-tinted) ───────────────────────────────────────────── */
-  --shadow-xs: 0 1px 2px oklch(17% 0.008 280 / 0.05);
-  --shadow-sm: 0 1px 3px oklch(17% 0.008 280 / 0.07), 0 1px 2px oklch(17% 0.008 280 / 0.04);
-  --shadow-md: 0 4px 12px oklch(17% 0.008 280 / 0.09), 0 2px 4px oklch(17% 0.008 280 / 0.04);
-  --shadow-lg: 0 12px 32px oklch(17% 0.008 280 / 0.10), 0 4px 8px oklch(17% 0.008 280 / 0.05);
+  /* ── Shadows ─────────────────────────────────────────────────────────── */
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px rgb(0 0 0 / 0.07), 0 1px 2px rgb(0 0 0 / 0.04);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 0.09), 0 2px 4px rgb(0 0 0 / 0.04);
+  --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.10), 0 4px 8px rgb(0 0 0 / 0.05);
 
   /* ── Motion ──────────────────────────────────────────────────────────── */
   --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
@@ -103,21 +143,120 @@
   --dur-slow:    400ms;
 }
 
+/* ── Dark mode ─────────────────────────────────────────────────────────────
+ * Skipped when a light-only marketing page (.kesher-landing / .theme-light)
+ * is mounted. */
+@media (prefers-color-scheme: dark) {
+  :root:not(:has(.kesher-landing, .theme-light)) {
+    --bg:             #0c0c0e;
+    --surface:        #151518;
+    --surface-2:      #1d1d21;
+    --surface-3:      #27272c;
+    --surface-hover:  #1b1b1f;
+    --overlay:        rgb(0 0 0 / 0.6);
+
+    --border:         #2a2a2f;
+    --border-subtle:  #212125;
+    --border-strong:  #3f3f46;
+    --border-input:   #6e6e78;
+
+    --text-primary:   #f4f4f5;
+    --text-secondary: #d4d4d8;
+    --text-muted:     #b0b0b8;
+    --text-subtle:    #9a9aa3;
+    --text-faint:     #5f5f68;
+
+    --primary:        #f4f4f5;
+    --primary-hover:  #d4d4d8;
+    --primary-fg:     #0f0f0f;
+    --on-solid:       #ffffff;
+
+    --accent:         #60a5fa;
+    --accent-hover:   #93c5fd;
+    --accent-fg:      #0b1120;
+    --accent-tint:    #172036;
+    --accent-border:  #1e3a8a;
+    --focus-ring:     #60a5fa;
+
+    --success:        #34d399;  --success-solid: #10b981;  --success-tint: #0c2a20;  --success-border: #065f46;
+    --danger:         #f87171;  --danger-solid:  #dc2626;  --danger-tint:  #2c1315;  --danger-border:  #7f1d1d;
+    --danger-solid-hover: #ef4444;
+    --warning:        #fbbf24;  --warning-solid: #f59e0b;  --warning-tint: #2a1f0a;  --warning-border: #78350f;
+    --info:           #38bdf8;  --info-solid:    #0ea5e9;  --info-tint:    #0b2230;  --info-border:    #075985;
+
+    --cat-blue:    #93c5fd;  --cat-blue-tint:    #172036;  --cat-blue-solid:    #3b82f6;
+    --cat-violet:  #c4b5fd;  --cat-violet-tint:  #221a3a;  --cat-violet-solid:  #7c3aed;
+    --cat-violet-border: #4c1d95;  --cat-violet-solid-hover: #8b5cf6;
+    --cat-purple:  #d8b4fe;  --cat-purple-tint:  #261a36;
+    --cat-indigo:  #a5b4fc;  --cat-indigo-tint:  #1b1d3a;
+    --cat-amber:   #fcd34d;  --cat-amber-tint:   #2a1f0a;
+    --cat-orange:  #fdba74;  --cat-orange-tint:  #2c1a0c;  --cat-orange-solid:  #f97316;
+    --cat-rose:    #fda4af;  --cat-rose-tint:    #2c1219;  --cat-rose-solid:    #f43f5e;  --cat-rose-border: #881337;
+    --cat-emerald: #6ee7b7;  --cat-emerald-tint: #0c2a20;
+    --cat-teal:    #5eead4;  --cat-teal-tint:    #0b2826;
+
+    --whatsapp-wallpaper: #1b1f1d;
+
+    --sidebar-bg:     #111114;
+
+    --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-sm: 0 1px 3px rgb(0 0 0 / 0.5);
+    --shadow-md: 0 4px 12px rgb(0 0 0 / 0.5);
+    --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.6);
+  }
+}
+
 @theme inline {
   --color-background: var(--bg);
   --color-foreground: var(--text-primary);
   --color-surface:    var(--surface);
   --color-surface-2:  var(--surface-2);
+  --color-surface-3:  var(--surface-3);
+  --color-surface-hover: var(--surface-hover);
+  --color-overlay:    var(--overlay);
   --color-border:     var(--border);
   --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  --color-border-input: var(--border-input);
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-muted: var(--text-muted);
+  --color-text-subtle: var(--text-subtle);
+  --color-text-faint: var(--text-faint);
+  --color-primary:    var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-fg: var(--primary-fg);
+  --color-on-solid:   var(--on-solid);
   --color-accent:     var(--accent);
   --color-accent-hover: var(--accent-hover);
   --color-accent-fg:  var(--accent-fg);
   --color-accent-tint: var(--accent-tint);
   --color-accent-border: var(--accent-border);
+  --color-focus-ring: var(--focus-ring);
+
+  --color-success: var(--success);  --color-success-solid: var(--success-solid);
+  --color-success-tint: var(--success-tint);  --color-success-border: var(--success-border);
+  --color-danger: var(--danger);  --color-danger-solid: var(--danger-solid);
+  --color-danger-tint: var(--danger-tint);  --color-danger-border: var(--danger-border);
+  --color-danger-solid-hover: var(--danger-solid-hover);
+  --color-warning: var(--warning);  --color-warning-solid: var(--warning-solid);
+  --color-warning-tint: var(--warning-tint);  --color-warning-border: var(--warning-border);
+  --color-info: var(--info);  --color-info-solid: var(--info-solid);
+  --color-info-tint: var(--info-tint);  --color-info-border: var(--info-border);
+
+  --color-cat-blue: var(--cat-blue);  --color-cat-blue-tint: var(--cat-blue-tint);  --color-cat-blue-solid: var(--cat-blue-solid);
+  --color-cat-violet: var(--cat-violet);  --color-cat-violet-tint: var(--cat-violet-tint);  --color-cat-violet-solid: var(--cat-violet-solid);
+  --color-cat-violet-border: var(--cat-violet-border);  --color-cat-violet-solid-hover: var(--cat-violet-solid-hover);
+  --color-cat-purple: var(--cat-purple);  --color-cat-purple-tint: var(--cat-purple-tint);
+  --color-cat-indigo: var(--cat-indigo);  --color-cat-indigo-tint: var(--cat-indigo-tint);
+  --color-cat-amber: var(--cat-amber);  --color-cat-amber-tint: var(--cat-amber-tint);
+  --color-cat-orange: var(--cat-orange);  --color-cat-orange-tint: var(--cat-orange-tint);  --color-cat-orange-solid: var(--cat-orange-solid);
+  --color-cat-rose: var(--cat-rose);  --color-cat-rose-tint: var(--cat-rose-tint);  --color-cat-rose-solid: var(--cat-rose-solid);
+  --color-cat-rose-border: var(--cat-rose-border);
+  --color-cat-emerald: var(--cat-emerald);  --color-cat-emerald-tint: var(--cat-emerald-tint);
+  --color-cat-teal: var(--cat-teal);  --color-cat-teal-tint: var(--cat-teal-tint);
+  --color-whatsapp-wallpaper: var(--whatsapp-wallpaper);
+
   --color-ink-teal:   var(--ink-teal);
   --color-ink-teal-2: var(--ink-teal-2);
   --color-ink-teal-border: var(--ink-teal-border);
@@ -136,7 +275,10 @@
  * `.kesher-landing`, so the rest of the app — including the real product
  * screens the landing page depicts — keeps its own teal/emerald identity.
  * ─────────────────────────────────────────────────────────────────────────── */
+.theme-light { color-scheme: light; }
+
 .kesher-landing {
+  color-scheme: light;
   --bg:             oklch(98.8% 0.003 85);
   --surface:        oklch(99.6% 0.002 90);
   --surface-2:      oklch(96.2% 0.009 250);
@@ -236,14 +378,14 @@ body {
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: var(--radius-full); }
-::-webkit-scrollbar-thumb:hover { background: oklch(78% 0.010 75); }
+::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
 
 /* ── Focus ring ─────────────────────────────────────────────────────────── */
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
-  border-radius: var(--radius-xs);
 }
+
 
 /* ── Animations ─────────────────────────────────────────────────────────── */
 
@@ -297,16 +439,18 @@ body {
 
 /* ── Skeleton loader ────────────────────────────────────────────────────── */
 
-.skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--surface-2) 25%,
-    var(--border-subtle) 50%,
-    var(--surface-2) 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.4s ease-in-out infinite;
-  border-radius: var(--radius-sm);
+@layer components {
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--surface-2) 25%,
+      var(--surface-3) 50%,
+      var(--surface-2) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+    border-radius: var(--radius-sm);
+  }
 }
 
 /* ── Transition defaults ────────────────────────────────────────────────── */

@@ -15,24 +15,24 @@ const WEBSITE = "https://www.kesherhq.co";
 
 export default function SampleFormPage() {
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-surface flex flex-col">
       <PublicHeader />
 
-      <main className="flex-1 max-w-[860px] mx-auto w-full px-6 py-14">
+      <div className="flex-1 max-w-[860px] mx-auto w-full px-6 py-14">
 
         {/* ── Reviewer notice ─────────────────────────────────────────── */}
-        <div className="mb-10 rounded-xl border border-blue-200 bg-blue-50 px-6 py-5">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-600 mb-1">
+        <div className="mb-10 rounded-xl border border-info-border bg-info-tint px-6 py-5">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-info mb-1">
             For Carrier &amp; Compliance Reviewers
           </p>
-          <p className="text-[13px] text-blue-800 leading-relaxed">
+          <p className="text-[13px] text-info leading-relaxed">
             This page demonstrates the compliant call-to-action (CTA) language that Kesher
             provides to schools for use on their enrollment forms and parent portals. It
             represents what a parent or guardian sees when providing SMS consent to receive
             school communications. This is the opt-in point-of-consent form for the Kesher
             A2P 10DLC SMS program.
           </p>
-          <p className="text-[12px] text-blue-700 mt-2">
+          <p className="text-[12px] text-info mt-2">
             Full documentation:{" "}
             <Link href="/cta" className="underline underline-offset-2">CTA Documentation</Link>
             {" "}·{" "}
@@ -46,13 +46,13 @@ export default function SampleFormPage() {
 
         {/* ── Page heading ────────────────────────────────────────────── */}
         <div className="mb-10">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-text-subtle mb-2">
             Sample Opt-In Form
           </p>
-          <h1 className="text-2xl font-semibold text-zinc-900 tracking-tight mb-3">
+          <h1 className="text-2xl font-semibold text-text-primary tracking-tight mb-3">
             School Enrollment SMS Consent
           </h1>
-          <p className="text-[14px] text-zinc-500 leading-relaxed max-w-[600px]">
+          <p className="text-[14px] text-text-muted leading-relaxed max-w-[600px]">
             The following is a representative example of how a school collects SMS consent
             from parents and guardians using the Kesher platform. Schools are required to
             use language substantially similar to this before importing phone numbers.
@@ -64,7 +64,7 @@ export default function SampleFormPage() {
 
         {/* ── What the school admin sees ───────────────────────────────── */}
         <div className="mb-10">
-          <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+          <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
             What Happens After the Form Is Submitted
           </h2>
           <div className="space-y-4">
@@ -91,12 +91,12 @@ export default function SampleFormPage() {
               },
             ].map(({ step, title, body }) => (
               <div key={step} className="flex gap-4">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900 text-white text-[12px] font-bold shrink-0 mt-0.5">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-fg text-[12px] font-bold shrink-0 mt-0.5">
                   {step}
                 </div>
                 <div>
-                  <p className="text-[13px] font-semibold text-zinc-800 mb-1">{title}</p>
-                  <p className="text-[13px] text-zinc-500 leading-relaxed">{body}</p>
+                  <p className="text-[13px] font-semibold text-text-primary mb-1">{title}</p>
+                  <p className="text-[13px] text-text-muted leading-relaxed">{body}</p>
                 </div>
               </div>
             ))}
@@ -105,30 +105,30 @@ export default function SampleFormPage() {
 
         {/* ── Web / parent portal variant ─────────────────────────────── */}
         <div className="mb-10">
-          <h2 className="text-[15px] font-semibold text-zinc-900 mb-2 tracking-tight">
+          <h2 className="text-[15px] font-semibold text-text-primary mb-2 tracking-tight">
             Alternative: Online Parent Portal Opt-In
           </h2>
-          <p className="text-[13px] text-zinc-500 mb-5 leading-relaxed">
+          <p className="text-[13px] text-text-muted mb-5 leading-relaxed">
             Schools with online parent portals or re-enrollment websites use the following
             CTA language on their digital registration page:
           </p>
 
-          <div className="rounded-xl border-2 border-zinc-200 bg-white overflow-hidden">
-            <div className="bg-zinc-50 border-b border-zinc-200 px-6 py-4">
-              <p className="text-[12px] font-semibold text-zinc-600">
+          <div className="rounded-xl border-2 border-border bg-surface overflow-hidden">
+            <div className="bg-background border-b border-border px-6 py-4">
+              <p className="text-[12px] font-semibold text-text-secondary">
                 Online Parent Portal — Account Registration
               </p>
-              <p className="text-[11px] text-zinc-400 mt-0.5">portal.mapleridgedayschool.edu / Account Setup</p>
+              <p className="text-[11px] text-text-subtle mt-0.5">portal.mapleridgedayschool.edu / Account Setup</p>
             </div>
             <div className="px-6 py-6">
               <div className="flex gap-3 items-start">
-                <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 border-zinc-300 bg-white">
+                <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 border-border-strong bg-surface">
                 </div>
                 <div>
-                  <p className="text-[13px] font-semibold text-zinc-700 mb-1">
+                  <p className="text-[13px] font-semibold text-text-secondary mb-1">
                     Text Alerts — Optional
                   </p>
-                  <p className="text-[13px] text-zinc-600 leading-relaxed">
+                  <p className="text-[13px] text-text-secondary leading-relaxed">
                     I agree to receive text (SMS) messages from{" "}
                     <strong>Maple Ridge Day School</strong> to the mobile number provided
                     above. These messages are sent through{" "}
@@ -138,15 +138,15 @@ export default function SampleFormPage() {
                     Frequency varies by school activity. Reply <strong>STOP</strong> to
                     opt out at any time. For support, reply <strong>HELP</strong> or
                     contact{" "}
-                    <a href={`mailto:${CONTACT_EMAIL}`} className="underline underline-offset-2 text-blue-600">
+                    <a href={`mailto:${CONTACT_EMAIL}`} className="underline underline-offset-2 text-info">
                       {CONTACT_EMAIL}
                     </a>
                     . View our{" "}
-                    <Link href="/privacy" className="underline underline-offset-2 text-blue-600">
+                    <Link href="/privacy" className="underline underline-offset-2 text-info">
                       Privacy Policy
                     </Link>
                     {" "}and{" "}
-                    <Link href="/sms-terms" className="underline underline-offset-2 text-blue-600">
+                    <Link href="/sms-terms" className="underline underline-offset-2 text-info">
                       SMS Terms
                     </Link>
                     .{" "}
@@ -162,7 +162,7 @@ export default function SampleFormPage() {
 
         {/* ── Keyword response reference ───────────────────────────────── */}
         <div className="mb-10">
-          <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+          <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
             Automated Keyword Responses
           </h2>
           <div className="space-y-3">
@@ -185,36 +185,36 @@ export default function SampleFormPage() {
                   "[Maple Ridge Day School] via Kesher: You have been re-subscribed. Messages will resume. Msg & data rates may apply. Reply STOP to opt out at any time.",
               },
             ].map(({ keyword, label, response }) => (
-              <div key={keyword} className="rounded-lg border border-zinc-200 p-4">
+              <div key={keyword} className="rounded-lg border border-border p-4">
                 <div className="flex items-center gap-3 mb-2">
-                  <span className="rounded bg-zinc-900 px-2 py-0.5 text-[11px] font-bold text-white font-mono">
+                  <span className="rounded bg-primary px-2 py-0.5 text-[11px] font-bold text-primary-fg font-mono">
                     {keyword}
                   </span>
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-text-subtle">
                     {label}
                   </span>
                 </div>
-                <p className="text-[13px] text-zinc-700 italic leading-relaxed">&ldquo;{response}&rdquo;</p>
+                <p className="text-[13px] text-text-secondary italic leading-relaxed">&ldquo;{response}&rdquo;</p>
               </div>
             ))}
           </div>
         </div>
 
         {/* ── Contact ─────────────────────────────────────────────────── */}
-        <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-6 py-5">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-3">
+        <div className="rounded-xl border border-border bg-background px-6 py-5">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-text-subtle mb-3">
             Contact for Compliance Questions
           </p>
-          <p className="text-[13px] text-zinc-700 mb-1">
+          <p className="text-[13px] text-text-secondary mb-1">
             <strong>Kesher</strong>
           </p>
-          <p className="text-[13px] text-zinc-600">
+          <p className="text-[13px] text-text-secondary">
             Email:{" "}
             <a href={`mailto:${CONTACT_EMAIL}`} className="underline underline-offset-2">
               {CONTACT_EMAIL}
             </a>
           </p>
-          <p className="text-[13px] text-zinc-600 mt-1">
+          <p className="text-[13px] text-text-secondary mt-1">
             Website:{" "}
             <a href={WEBSITE} className="underline underline-offset-2">
               {WEBSITE}
@@ -222,7 +222,7 @@ export default function SampleFormPage() {
           </p>
         </div>
 
-      </main>
+      </div>
 
       <PublicFooter />
     </div>

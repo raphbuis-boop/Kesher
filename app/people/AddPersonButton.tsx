@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Plus, X, Loader2 } from "lucide-react";
+import { useDialogFocus } from "@/app/components/useDialogFocus";
 import { addPerson, type AddPersonState } from "./actions";
 
 export type Tag = {
@@ -27,20 +28,20 @@ const initialState: AddPersonState = { success: false, error: null };
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
 const inputCls =
-  "w-full rounded-lg border border-[#e7e7e7] bg-[#fafafa] px-3 py-2 text-[13px] text-[#0f0f0f] placeholder-[#a1a1aa] outline-none transition-colors focus:border-[#a1a1aa] focus:bg-white disabled:opacity-50";
+  "w-full rounded-lg border border-border-input bg-background px-3 py-2 text-[13px] text-text-primary placeholder-text-subtle transition-colors focus:border-focus-ring focus:bg-surface disabled:opacity-50";
 
-const labelCls = "block text-[11px] font-medium text-[#71717a] mb-1.5";
+const labelCls = "block text-[11px] font-medium text-text-muted mb-1.5";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">
+    <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-text-subtle">
       {children}
     </p>
   );
 }
 
 function Divider() {
-  return <div className="border-t border-[#f5f5f5] my-5" />;
+  return <div className="border-t border-border-subtle my-5" />;
 }
 
 // ─── Form ────────────────────────────────────────────────────────────────────
@@ -85,7 +86,7 @@ function AddPersonForm({
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div>
           <label htmlFor="ap_first_name" className={labelCls}>
-            First Name <span className="text-[#d4d4d8]">*</span>
+            First Name <span aria-hidden className="text-text-subtle">*</span>
           </label>
           <input
             id="ap_first_name"
@@ -100,7 +101,7 @@ function AddPersonForm({
         </div>
         <div>
           <label htmlFor="ap_last_name" className={labelCls}>
-            Last Name <span className="text-[#d4d4d8]">*</span>
+            Last Name <span aria-hidden className="text-text-subtle">*</span>
           </label>
           <input
             id="ap_last_name"
@@ -148,8 +149,8 @@ function AddPersonForm({
       <SectionLabel>School Information</SectionLabel>
 
       <div className="mb-3">
-        <p className={labelCls}>Category</p>
-        <div className="flex flex-wrap gap-1.5">
+        <p id="category-label" className={labelCls}>Category</p>
+        <div role="group" aria-labelledby="category-label" className="flex flex-wrap gap-1.5">
           {AUDIENCE_OPTIONS.map(({ value, label }) => {
             const selected = selectedCategories.includes(value);
             return (
@@ -157,12 +158,13 @@ function AddPersonForm({
                 key={value}
                 type="button"
                 onClick={() => toggleCategory(value)}
+                aria-pressed={selected}
                 disabled={isPending}
                 className={[
                   "rounded-full px-3 py-1.5 text-[11px] font-medium transition-colors disabled:opacity-50",
                   selected
-                    ? "bg-[#0f0f0f] text-white"
-                    : "bg-[#f5f5f5] text-[#71717a] hover:bg-[#e7e7e7] hover:text-[#0f0f0f]",
+                    ? "bg-primary text-primary-fg"
+                    : "bg-surface-2 text-text-muted hover:bg-surface-3 hover:text-text-primary",
                 ].join(" ")}
               >
                 {label}
@@ -200,12 +202,13 @@ function AddPersonForm({
                   key={tag.id}
                   type="button"
                   onClick={() => toggleTag(tag.id)}
+                  aria-pressed={selected}
                   disabled={isPending}
                   className={[
                     "rounded-full px-3 py-1.5 text-[11px] font-medium transition-colors disabled:opacity-50",
                     selected
-                      ? "bg-[#0f0f0f] text-white"
-                      : "bg-[#f5f5f5] text-[#71717a] hover:bg-[#e7e7e7]",
+                      ? "bg-primary text-primary-fg"
+                      : "bg-surface-2 text-text-muted hover:bg-surface-3",
                   ].join(" ")}
                 >
                   {tag.name}
@@ -221,25 +224,25 @@ function AddPersonForm({
 
       {/* ── Error ─────────────────────────────────────────────────────── */}
       {state.error && (
-        <div className="mt-5 rounded-lg border border-red-100 bg-red-50 px-3 py-2.5 text-[12px] text-red-600">
+        <div role="alert" className="mt-5 rounded-lg border border-danger-border bg-danger-tint px-3 py-2.5 text-[12px] text-danger">
           {state.error}
         </div>
       )}
 
       {/* ── Footer buttons ────────────────────────────────────────────── */}
-      <div className="mt-6 flex items-center justify-end gap-2 border-t border-[#f5f5f5] pt-5">
+      <div className="mt-6 flex items-center justify-end gap-2 border-t border-border-subtle pt-5">
         <button
           type="button"
           onClick={onCancel}
           disabled={isPending}
-          className="rounded-md px-3 py-1.5 text-[12px] font-medium text-[#71717a] hover:bg-[#f5f5f5] hover:text-[#0f0f0f] disabled:opacity-50"
+          className="rounded-md px-3 py-1.5 text-[12px] font-medium text-text-muted hover:bg-surface-2 hover:text-text-primary disabled:opacity-50"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isPending}
-          className="inline-flex items-center gap-1.5 rounded-md bg-[#0f0f0f] px-4 py-1.5 text-[12px] font-medium text-white hover:bg-[#1a1a1a] disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-1.5 text-[12px] font-medium text-primary-fg hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-40"
         >
           {isPending ? (
             <>
@@ -260,12 +263,16 @@ function AddPersonForm({
 export function AddPersonButton({
   tags,
   defaultCategories = [],
+  variant = "primary",
 }: {
   tags: Tag[];
   defaultCategories?: string[];
+  variant?: "primary" | "secondary";
 }) {
   const [open, setOpen] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(open, panelRef);
 
   useEffect(() => {
     if (!open) return;
@@ -298,10 +305,15 @@ export function AddPersonButton({
   return (
     <>
       <button
+        type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-md bg-[#0f0f0f] px-3.5 py-2 text-[12px] font-medium text-white hover:bg-[#1a1a1a]"
+        className={
+          variant === "primary"
+            ? "inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-fg hover:bg-primary-hover"
+            : "inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-[12px] font-medium text-text-primary hover:border-border-strong hover:bg-surface-hover"
+        }
       >
-        <Plus size={13} strokeWidth={2} />
+        <Plus aria-hidden size={13} strokeWidth={2} />
         Add Contact
       </button>
 
@@ -309,10 +321,14 @@ export function AddPersonButton({
         <div
           ref={overlayRef}
           onClick={(e) => { if (e.target === overlayRef.current) setOpen(false); }}
-          className="animate-backdrop fixed inset-0 z-[9999] flex items-center justify-center bg-black/25 p-4"
+          className="animate-backdrop fixed inset-0 z-[9999] flex items-center justify-center bg-overlay p-4"
         >
           <div
-            className="animate-fade-up w-full max-w-[480px] rounded-xl border border-[#e7e7e7] bg-white shadow-2xl shadow-black/10"
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-person-title"
+            className="animate-fade-up w-full max-w-[480px] rounded-xl border border-border bg-surface shadow-2xl shadow-black/10"
             style={{
               display: "grid",
               gridTemplateRows: "auto minmax(0,1fr)",
@@ -320,17 +336,18 @@ export function AddPersonButton({
             }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-[#f0f0f0] px-6 py-4">
+            <div className="flex items-center justify-between border-b border-border-subtle px-6 py-4">
               <div>
-                <h2 className="text-[13px] font-semibold text-[#0f0f0f]">Add Contact</h2>
-                <p className="mt-px text-[11px] text-[#a1a1aa]">Add a new contact to the directory.</p>
+                <h2 id="add-person-title" className="text-[13px] font-semibold text-text-primary">Add Contact</h2>
+                <p className="mt-px text-[11px] text-text-subtle">Add a new contact to the directory.</p>
               </div>
               <button
+                type="button"
                 onClick={() => setOpen(false)}
-                className="rounded-md p-1.5 text-[#a1a1aa] hover:bg-[#f5f5f5] hover:text-[#71717a]"
+                className="rounded-md p-1.5 text-text-subtle hover:bg-surface-2 hover:text-text-muted"
                 aria-label="Close"
               >
-                <X size={15} strokeWidth={1.75} />
+                <X aria-hidden size={15} strokeWidth={1.75} />
               </button>
             </div>
 

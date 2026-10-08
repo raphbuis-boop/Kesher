@@ -15,10 +15,10 @@ const WEBSITE        = "https://www.kesherhq.co";
 
 export default function PrivacyPolicy() {
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-surface flex flex-col">
       <PublicHeader />
 
-      <main className="flex-1 max-w-[860px] mx-auto w-full px-6 py-14">
+      <div className="flex-1 max-w-[860px] mx-auto w-full px-6 py-14">
 
         <LegalPageHeader
           title="Privacy Policy"
@@ -26,11 +26,11 @@ export default function PrivacyPolicy() {
           lastUpdated={EFFECTIVE_DATE}
         />
 
-        <div className="text-[14px] text-zinc-600 space-y-12 leading-relaxed">
+        <div className="text-[14px] text-text-secondary space-y-12 leading-relaxed">
 
           {/* 1. Introduction */}
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               1. About This Policy
             </h2>
             <p>
@@ -53,11 +53,11 @@ export default function PrivacyPolicy() {
 
           {/* 2. Information We Collect */}
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               2. Information We Collect
             </h2>
 
-            <h3 className="text-[13px] font-semibold text-zinc-800 mb-3">From School Administrators</h3>
+            <h3 className="text-[13px] font-semibold text-text-primary mb-3">From School Administrators</h3>
             <ul className="list-disc list-outside ml-4 space-y-2">
               <li>Name, email address, and login credentials</li>
               <li>School name, address, and contact information</li>
@@ -65,7 +65,7 @@ export default function PrivacyPolicy() {
               <li>Usage data and activity logs within the platform</li>
             </ul>
 
-            <h3 className="text-[13px] font-semibold text-zinc-800 mt-6 mb-3">
+            <h3 className="text-[13px] font-semibold text-text-primary mt-6 mb-3">
               From School Community Members (Recipients)
             </h3>
             <p className="mb-3">
@@ -80,7 +80,7 @@ export default function PrivacyPolicy() {
               <li>Mailing address</li>
             </ul>
 
-            <h3 className="text-[13px] font-semibold text-zinc-800 mt-6 mb-3">
+            <h3 className="text-[13px] font-semibold text-text-primary mt-6 mb-3">
               Automatically Collected Information
             </h3>
             <ul className="list-disc list-outside ml-4 space-y-2">
@@ -93,7 +93,7 @@ export default function PrivacyPolicy() {
 
           {/* 3. How We Use Information */}
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               3. How We Use Your Information
             </h2>
             <ul className="list-disc list-outside ml-4 space-y-2">
@@ -107,12 +107,12 @@ export default function PrivacyPolicy() {
           </section>
 
           {/* 4. SMS Messaging — CRITICAL 10DLC SECTION */}
-          <section className="border border-zinc-200 rounded-xl p-6 bg-zinc-50">
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-5 tracking-tight">
+          <section className="border border-border rounded-xl p-6 bg-background">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-5 tracking-tight">
               4. SMS Text Messaging Program
             </h2>
 
-            <h3 className="text-[13px] font-semibold text-zinc-800 mb-3">Program Description</h3>
+            <h3 className="text-[13px] font-semibold text-text-primary mb-3">Program Description</h3>
             <p>
               Kesher enables schools to send SMS text messages to parents, guardians, students,
               staff, alumni, and other authorized community members. Message types include school
@@ -122,7 +122,7 @@ export default function PrivacyPolicy() {
               its community members before sending SMS through Kesher.
             </p>
 
-            <h3 className="text-[13px] font-semibold text-zinc-800 mt-6 mb-3">SMS Consent</h3>
+            <h3 className="text-[13px] font-semibold text-text-primary mt-6 mb-3">SMS Consent</h3>
             <p>
               Recipients receive SMS messages because their school has their phone number on file
               and has determined they have consented to receive school communications. Message
@@ -130,12 +130,12 @@ export default function PrivacyPolicy() {
               maintaining accurate consent records for their community.
             </p>
 
-            <h3 className="text-[13px] font-semibold text-zinc-800 mt-6 mb-3">Message and Data Rates</h3>
+            <h3 className="text-[13px] font-semibold text-text-primary mt-6 mb-3">Message and Data Rates</h3>
             <p>
               Message and data rates may apply. Contact your mobile carrier for details.
             </p>
 
-            <h3 className="text-[13px] font-semibold text-zinc-800 mt-6 mb-3">How to Opt Out of SMS</h3>
+            <h3 className="text-[13px] font-semibold text-text-primary mt-6 mb-3">How to Opt Out of SMS</h3>
             <p>
               You may opt out of SMS messages at any time by replying{" "}
               <strong>STOP</strong> to any text message you receive. You will receive a single
@@ -145,8 +145,8 @@ export default function PrivacyPolicy() {
               <a href={`mailto:${CONTACT_EMAIL}`} className="underline underline-offset-2">{CONTACT_EMAIL}</a>.
             </p>
 
-            <h3 className="text-[13px] font-semibold text-zinc-800 mt-6 mb-3">SMS Data — Sharing Restrictions</h3>
-            <p className="font-semibold text-zinc-800">
+            <h3 className="text-[13px] font-semibold text-text-primary mt-6 mb-3">SMS Data — Sharing Restrictions</h3>
+            <p className="font-semibold text-text-primary">
               No mobile information will be shared with third parties or affiliates for
               marketing or promotional purposes.
             </p>
@@ -162,7 +162,7 @@ export default function PrivacyPolicy() {
               the number.
             </p>
 
-            <h3 className="text-[13px] font-semibold text-zinc-800 mt-6 mb-3">Supported Keywords</h3>
+            <h3 className="text-[13px] font-semibold text-text-primary mt-6 mb-3">Supported Keywords</h3>
             <div className="space-y-2">
               <p><strong>STOP</strong> — Opt out of all messages. Confirmation sent immediately. No further messages.</p>
               <p><strong>UNSTOP / START</strong> — Re-subscribe to messages.</p>
@@ -172,7 +172,7 @@ export default function PrivacyPolicy() {
 
           {/* 5. How We Share Information */}
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               5. How We Share Information
             </h2>
             <p className="mb-4">
@@ -201,7 +201,7 @@ export default function PrivacyPolicy() {
                 in advance.
               </li>
             </ul>
-            <p className="mt-4 font-medium text-zinc-700">
+            <p className="mt-4 font-medium text-text-secondary">
               As stated in Section 4, mobile phone numbers and SMS opt-in data are explicitly
               excluded from any third-party sharing for marketing or promotional purposes.
             </p>
@@ -209,7 +209,7 @@ export default function PrivacyPolicy() {
 
           {/* 6. FERPA */}
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               6. Student Data and FERPA
             </h2>
             <p>
@@ -224,7 +224,7 @@ export default function PrivacyPolicy() {
 
           {/* 7. Data Security */}
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               7. Data Security
             </h2>
             <p>
@@ -238,7 +238,7 @@ export default function PrivacyPolicy() {
 
           {/* 8. Data Retention */}
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               8. Data Retention
             </h2>
             <p>
@@ -252,7 +252,7 @@ export default function PrivacyPolicy() {
 
           {/* 9. Your Rights */}
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               9. Your Rights
             </h2>
             <p className="mb-4">
@@ -274,7 +274,7 @@ export default function PrivacyPolicy() {
 
           {/* 10. Children */}
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               10. Children&apos;s Privacy
             </h2>
             <p>
@@ -288,7 +288,7 @@ export default function PrivacyPolicy() {
 
           {/* 11. Changes */}
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               11. Changes to This Policy
             </h2>
             <p>
@@ -302,7 +302,7 @@ export default function PrivacyPolicy() {
 
           {/* 12. Contact */}
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               12. Contact Us
             </h2>
             <p>
@@ -329,7 +329,7 @@ export default function PrivacyPolicy() {
           </section>
 
         </div>
-      </main>
+      </div>
 
       <PublicFooter />
     </div>

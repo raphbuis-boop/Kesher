@@ -16,10 +16,10 @@ const WEBSITE        = "https://www.kesherhq.co";
 
 export default function SmsTerms() {
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-surface flex flex-col">
       <PublicHeader />
 
-      <main className="flex-1 max-w-[860px] mx-auto w-full px-6 py-14">
+      <div className="flex-1 max-w-[860px] mx-auto w-full px-6 py-14">
 
         <LegalPageHeader
           title="SMS Terms & Conditions"
@@ -27,11 +27,11 @@ export default function SmsTerms() {
           lastUpdated={EFFECTIVE_DATE}
         />
 
-        <div className="text-[14px] text-zinc-600 space-y-12 leading-relaxed">
+        <div className="text-[14px] text-text-secondary space-y-12 leading-relaxed">
 
           {/* Program description */}
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               Program Description
             </h2>
             <p>
@@ -50,8 +50,8 @@ export default function SmsTerms() {
           </section>
 
           {/* Consent */}
-          <section className="border border-zinc-200 rounded-xl p-6 bg-zinc-50">
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+          <section className="border border-border rounded-xl p-6 bg-background">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               Consent to Receive Messages
             </h2>
             <p>
@@ -69,7 +69,7 @@ export default function SmsTerms() {
 
           {/* Frequency */}
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               Message Frequency
             </h2>
             <p>
@@ -80,7 +80,7 @@ export default function SmsTerms() {
 
           {/* Costs */}
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               Message and Data Rates
             </h2>
             <p>
@@ -88,7 +88,7 @@ export default function SmsTerms() {
               service provider for details about your plan's SMS rates. {COMPANY_NAME} and your
               school do not charge a fee for SMS messages, but your carrier may.
             </p>
-            <p className="mt-4 text-[13px] text-zinc-400">
+            <p className="mt-4 text-[13px] text-text-subtle">
               Participating carriers include AT&amp;T, T-Mobile, Verizon, and others. Carrier
               availability and rates may vary. Carriers are not liable for delayed or undelivered
               messages.
@@ -96,8 +96,8 @@ export default function SmsTerms() {
           </section>
 
           {/* Opt-out */}
-          <section className="border-l-[3px] border-zinc-900 pl-5">
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+          <section className="border-l-[3px] border-primary pl-5">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               How to Opt Out (STOP)
             </h2>
             <p>
@@ -117,7 +117,7 @@ export default function SmsTerms() {
 
           {/* HELP */}
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               How to Get Help (HELP)
             </h2>
             <p>
@@ -142,10 +142,10 @@ export default function SmsTerms() {
 
           {/* Data */}
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               Your Phone Number and Privacy
             </h2>
-            <p className="font-semibold text-zinc-800">
+            <p className="font-semibold text-text-primary">
               No mobile information will be shared with third parties or affiliates for
               marketing or promotional purposes.
             </p>
@@ -163,7 +163,7 @@ export default function SmsTerms() {
 
           {/* Liability */}
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               Limitation of Liability
             </h2>
             <p>
@@ -176,7 +176,7 @@ export default function SmsTerms() {
 
           {/* Changes */}
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               Changes to These Terms
             </h2>
             <p>
@@ -188,7 +188,7 @@ export default function SmsTerms() {
 
           {/* Contact */}
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               Contact
             </h2>
             <address className="not-italic space-y-1.5">
@@ -205,32 +205,32 @@ export default function SmsTerms() {
           </section>
 
           {/* Quick reference */}
-          <section className="border border-zinc-200 rounded-xl p-6">
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-5 tracking-tight">
+          <section className="border border-border rounded-xl p-6">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-5 tracking-tight">
               Quick Reference
             </h2>
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-zinc-50 rounded-lg p-4">
-                <p className="text-[13px] font-semibold text-zinc-800">STOP</p>
-                <p className="text-[12px] text-zinc-400 mt-1">Opt out of all messages</p>
+              <div className="bg-background rounded-lg p-4">
+                <p className="text-[13px] font-semibold text-text-primary">STOP</p>
+                <p className="text-[12px] text-text-subtle mt-1">Opt out of all messages</p>
               </div>
-              <div className="bg-zinc-50 rounded-lg p-4">
-                <p className="text-[13px] font-semibold text-zinc-800">UNSTOP / START</p>
-                <p className="text-[12px] text-zinc-400 mt-1">Re-subscribe to messages</p>
+              <div className="bg-background rounded-lg p-4">
+                <p className="text-[13px] font-semibold text-text-primary">UNSTOP / START</p>
+                <p className="text-[12px] text-text-subtle mt-1">Re-subscribe to messages</p>
               </div>
-              <div className="bg-zinc-50 rounded-lg p-4">
-                <p className="text-[13px] font-semibold text-zinc-800">HELP</p>
-                <p className="text-[12px] text-zinc-400 mt-1">Get support information</p>
+              <div className="bg-background rounded-lg p-4">
+                <p className="text-[13px] font-semibold text-text-primary">HELP</p>
+                <p className="text-[12px] text-text-subtle mt-1">Get support information</p>
               </div>
-              <div className="bg-zinc-50 rounded-lg p-4">
-                <p className="text-[13px] font-semibold text-zinc-800">Msg &amp; Data Rates May Apply</p>
-                <p className="text-[12px] text-zinc-400 mt-1">Check with your carrier</p>
+              <div className="bg-background rounded-lg p-4">
+                <p className="text-[13px] font-semibold text-text-primary">Msg &amp; Data Rates May Apply</p>
+                <p className="text-[12px] text-text-subtle mt-1">Check with your carrier</p>
               </div>
             </div>
           </section>
 
         </div>
-      </main>
+      </div>
 
       <PublicFooter />
     </div>

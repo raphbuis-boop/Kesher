@@ -15,10 +15,10 @@ const WEBSITE        = "https://www.kesherhq.co";
 
 export default function OptInDocumentation() {
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-surface flex flex-col">
       <PublicHeader />
 
-      <main className="flex-1 max-w-[860px] mx-auto w-full px-6 py-14">
+      <div className="flex-1 max-w-[860px] mx-auto w-full px-6 py-14">
 
         <LegalPageHeader
           title="SMS Opt-In Documentation"
@@ -26,10 +26,10 @@ export default function OptInDocumentation() {
           lastUpdated={EFFECTIVE_DATE}
         />
 
-        <div className="text-[14px] text-zinc-600 space-y-12 leading-relaxed">
+        <div className="text-[14px] text-text-secondary space-y-12 leading-relaxed">
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               1. Purpose
             </h2>
             <p>
@@ -48,7 +48,7 @@ export default function OptInDocumentation() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               2. Consent Model
             </h2>
             <p className="mb-4">
@@ -58,9 +58,9 @@ export default function OptInDocumentation() {
 
             <div className="space-y-4">
               <div className="flex gap-4">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900 text-white text-[12px] font-bold shrink-0 mt-0.5">1</div>
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-fg text-[12px] font-bold shrink-0 mt-0.5">1</div>
                 <div>
-                  <p className="font-semibold text-zinc-800 mb-1">School Collects Consent</p>
+                  <p className="font-semibold text-text-primary mb-1">School Collects Consent</p>
                   <p>
                     The school (Message Originator) collects explicit written or digital SMS
                     consent directly from the recipient via an enrollment form, parent portal,
@@ -73,9 +73,9 @@ export default function OptInDocumentation() {
               </div>
 
               <div className="flex gap-4">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900 text-white text-[12px] font-bold shrink-0 mt-0.5">2</div>
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-fg text-[12px] font-bold shrink-0 mt-0.5">2</div>
                 <div>
-                  <p className="font-semibold text-zinc-800 mb-1">School Imports Contacts to Kesher</p>
+                  <p className="font-semibold text-text-primary mb-1">School Imports Contacts to Kesher</p>
                   <p>
                     The school administrator imports consented phone numbers into the Kesher
                     platform via CSV upload or manual entry. At the time of import, the
@@ -86,9 +86,9 @@ export default function OptInDocumentation() {
               </div>
 
               <div className="flex gap-4">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900 text-white text-[12px] font-bold shrink-0 mt-0.5">3</div>
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-fg text-[12px] font-bold shrink-0 mt-0.5">3</div>
                 <div>
-                  <p className="font-semibold text-zinc-800 mb-1">Kesher Records and Processes Consent</p>
+                  <p className="font-semibold text-text-primary mb-1">Kesher Records and Processes Consent</p>
                   <p>
                     Upon import, Kesher records the timestamp, importing administrator, and
                     the certification acknowledgment in its database. This creates an auditable
@@ -98,9 +98,9 @@ export default function OptInDocumentation() {
               </div>
 
               <div className="flex gap-4">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900 text-white text-[12px] font-bold shrink-0 mt-0.5">4</div>
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-fg text-[12px] font-bold shrink-0 mt-0.5">4</div>
                 <div>
-                  <p className="font-semibold text-zinc-800 mb-1">Messages Are Sent</p>
+                  <p className="font-semibold text-text-primary mb-1">Messages Are Sent</p>
                   <p>
                     School administrators compose and send SMS campaigns through Kesher to
                     consented recipients. Kesher automatically appends "Reply STOP to opt out."
@@ -110,9 +110,9 @@ export default function OptInDocumentation() {
               </div>
 
               <div className="flex gap-4">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900 text-white text-[12px] font-bold shrink-0 mt-0.5">5</div>
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-fg text-[12px] font-bold shrink-0 mt-0.5">5</div>
                 <div>
-                  <p className="font-semibold text-zinc-800 mb-1">Opt-Outs Are Processed Immediately</p>
+                  <p className="font-semibold text-text-primary mb-1">Opt-Outs Are Processed Immediately</p>
                   <p>
                     Any recipient who replies STOP (or another recognized opt-out keyword)
                     is immediately removed from all future messaging for that school. The
@@ -125,7 +125,7 @@ export default function OptInDocumentation() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               3. Opt-In Verification
             </h2>
             <p>
@@ -155,8 +155,8 @@ export default function OptInDocumentation() {
             </ul>
           </section>
 
-          <section className="border border-zinc-200 rounded-xl p-6 bg-zinc-50">
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-5 tracking-tight">
+          <section className="border border-border rounded-xl p-6 bg-background">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-5 tracking-tight">
               4. Automated Keyword Responses
             </h2>
             <p className="mb-5">
@@ -164,31 +164,31 @@ export default function OptInDocumentation() {
             </p>
 
             <div className="space-y-4">
-              <div className="border border-zinc-200 rounded-lg bg-white p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-2">
+              <div className="border border-border rounded-lg bg-surface p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-text-subtle mb-2">
                   STOP Response (opt-out confirmation)
                 </p>
-                <p className="text-[14px] text-zinc-700 italic">
+                <p className="text-[14px] text-text-secondary italic">
                   "You have been unsubscribed from [School Name] via Kesher. No further messages
                   will be sent to this number. Reply UNSTOP to re-subscribe."
                 </p>
               </div>
 
-              <div className="border border-zinc-200 rounded-lg bg-white p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-2">
+              <div className="border border-border rounded-lg bg-surface p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-text-subtle mb-2">
                   HELP Response (support information)
                 </p>
-                <p className="text-[14px] text-zinc-700 italic">
+                <p className="text-[14px] text-text-secondary italic">
                   &ldquo;[School Name] via Kesher School Comms. For support:{" "}
                   {CONTACT_EMAIL} or {WEBSITE}. Msg &amp; data rates may apply. Reply STOP to opt out.&rdquo;
                 </p>
               </div>
 
-              <div className="border border-zinc-200 rounded-lg bg-white p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-2">
+              <div className="border border-border rounded-lg bg-surface p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-text-subtle mb-2">
                   UNSTOP / START Response (re-subscribe confirmation)
                 </p>
-                <p className="text-[14px] text-zinc-700 italic">
+                <p className="text-[14px] text-text-secondary italic">
                   "You have been re-subscribed to [School Name] via Kesher. Messages will
                   resume. Msg &amp; data rates may apply. Reply STOP to opt out at any time."
                 </p>
@@ -197,7 +197,7 @@ export default function OptInDocumentation() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               5. Consent Record Keeping
             </h2>
             <p>
@@ -228,15 +228,15 @@ export default function OptInDocumentation() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               6. Message Footer
             </h2>
             <p>
               Kesher automatically appends the following opt-out footer to every outbound
               SMS message:
             </p>
-            <div className="border border-zinc-200 rounded-lg p-4 bg-zinc-50 mt-4">
-              <p className="text-[14px] text-zinc-700 font-mono">Reply STOP to opt out.</p>
+            <div className="border border-border rounded-lg p-4 bg-background mt-4">
+              <p className="text-[14px] text-text-secondary font-mono">Reply STOP to opt out.</p>
             </div>
             <p className="mt-4">
               This footer is appended automatically and cannot be removed by school
@@ -246,7 +246,7 @@ export default function OptInDocumentation() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               7. Prohibited Practices
             </h2>
             <p className="mb-4">
@@ -266,7 +266,7 @@ export default function OptInDocumentation() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               8. Compliance References
             </h2>
             <ul className="list-disc list-outside ml-4 space-y-2">
@@ -279,7 +279,7 @@ export default function OptInDocumentation() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               9. Related Documents
             </h2>
             <ul className="list-disc list-outside ml-4 space-y-2">
@@ -303,7 +303,7 @@ export default function OptInDocumentation() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               10. Contact
             </h2>
             <p>
@@ -323,7 +323,7 @@ export default function OptInDocumentation() {
           </section>
 
         </div>
-      </main>
+      </div>
 
       <PublicFooter />
     </div>

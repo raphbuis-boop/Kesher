@@ -15,10 +15,10 @@ const WEBSITE        = "https://www.kesherhq.co";
 
 export default function TermsOfService() {
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-surface flex flex-col">
       <PublicHeader />
 
-      <main className="flex-1 max-w-[860px] mx-auto w-full px-6 py-14">
+      <div className="flex-1 max-w-[860px] mx-auto w-full px-6 py-14">
 
         <LegalPageHeader
           title="Terms of Service"
@@ -26,10 +26,10 @@ export default function TermsOfService() {
           lastUpdated={EFFECTIVE_DATE}
         />
 
-        <div className="text-[14px] text-zinc-600 space-y-12 leading-relaxed">
+        <div className="text-[14px] text-text-secondary space-y-12 leading-relaxed">
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               1. Acceptance of Terms
             </h2>
             <p>
@@ -47,7 +47,7 @@ export default function TermsOfService() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               2. Description of Service
             </h2>
             <p>
@@ -59,7 +59,7 @@ export default function TermsOfService() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               3. Account Registration
             </h2>
             <p>
@@ -73,7 +73,7 @@ export default function TermsOfService() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               4. Acceptable Use
             </h2>
             <p className="mb-4">
@@ -92,7 +92,7 @@ export default function TermsOfService() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               5. SMS Messaging
             </h2>
             <p>
@@ -114,7 +114,7 @@ export default function TermsOfService() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               6. Data and Privacy
             </h2>
             <p>
@@ -127,7 +127,7 @@ export default function TermsOfService() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               7. Intellectual Property
             </h2>
             <p>
@@ -139,7 +139,7 @@ export default function TermsOfService() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               8. Service Availability
             </h2>
             <p>
@@ -151,7 +151,7 @@ export default function TermsOfService() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               9. Disclaimers
             </h2>
             <p>
@@ -167,7 +167,7 @@ export default function TermsOfService() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               10. Limitation of Liability
             </h2>
             <p>
@@ -180,7 +180,7 @@ export default function TermsOfService() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               11. Termination
             </h2>
             <p>
@@ -192,7 +192,7 @@ export default function TermsOfService() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               12. Modifications
             </h2>
             <p>
@@ -203,7 +203,7 @@ export default function TermsOfService() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               13. Governing Law
             </h2>
             <p>
@@ -215,7 +215,7 @@ export default function TermsOfService() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               14. Contact
             </h2>
             <p>Questions about these Terms? Contact us:</p>
@@ -234,7 +234,7 @@ export default function TermsOfService() {
           </section>
 
         </div>
-      </main>
+      </div>
 
       <PublicFooter />
     </div>

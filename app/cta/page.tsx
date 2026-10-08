@@ -15,10 +15,10 @@ const WEBSITE        = "https://www.kesherhq.co";
 
 export default function CtaDocumentation() {
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-surface flex flex-col">
       <PublicHeader />
 
-      <main className="flex-1 max-w-[860px] mx-auto w-full px-6 py-14">
+      <div className="flex-1 max-w-[860px] mx-auto w-full px-6 py-14">
 
         <LegalPageHeader
           title="Call-to-Action (CTA) Documentation"
@@ -26,10 +26,10 @@ export default function CtaDocumentation() {
           lastUpdated={EFFECTIVE_DATE}
         />
 
-        <div className="text-[14px] text-zinc-600 space-y-12 leading-relaxed">
+        <div className="text-[14px] text-text-secondary space-y-12 leading-relaxed">
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               1. Program Overview
             </h2>
             <p>
@@ -52,7 +52,7 @@ export default function CtaDocumentation() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               2. Opt-In Method
             </h2>
             <p className="mb-4">
@@ -85,8 +85,8 @@ export default function CtaDocumentation() {
             </ul>
           </section>
 
-          <section className="border border-zinc-200 rounded-xl p-6 bg-zinc-50">
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-5 tracking-tight">
+          <section className="border border-border rounded-xl p-6 bg-background">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-5 tracking-tight">
               3. Sample Call-to-Action Language
             </h2>
             <p className="mb-5">
@@ -96,11 +96,11 @@ export default function CtaDocumentation() {
               similar to the following before importing phone numbers into Kesher:
             </p>
 
-            <div className="border border-zinc-300 rounded-lg p-5 bg-white">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-3">
+            <div className="border border-border-strong rounded-lg p-5 bg-surface">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-text-subtle mb-3">
                 Sample CTA — Enrollment Form
               </p>
-              <p className="text-[14px] text-zinc-700 leading-relaxed">
+              <p className="text-[14px] text-text-secondary leading-relaxed">
                 ☐ <strong>I consent to receive SMS text messages</strong> from{" "}
                 <em>[School Name]</em> via Kesher, our school communications platform. Messages may
                 include school announcements, emergency alerts, event reminders, attendance
@@ -113,11 +113,11 @@ export default function CtaDocumentation() {
               </p>
             </div>
 
-            <div className="border border-zinc-300 rounded-lg p-5 bg-white mt-4">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-3">
+            <div className="border border-border-strong rounded-lg p-5 bg-surface mt-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-text-subtle mb-3">
                 Sample CTA — School Website / Parent Portal
               </p>
-              <p className="text-[14px] text-zinc-700 leading-relaxed">
+              <p className="text-[14px] text-text-secondary leading-relaxed">
                 ☐ <strong>Text Alerts:</strong> I agree to receive text (SMS) messages from{" "}
                 <em>[School Name]</em> to the mobile number provided above. These messages
                 are sent through Kesher, a school communications platform, and may include
@@ -134,7 +134,7 @@ export default function CtaDocumentation() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               4. Required CTA Elements
             </h2>
             <p className="mb-4">
@@ -155,15 +155,15 @@ export default function CtaDocumentation() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               5. Import Certification
             </h2>
             <p>
               Before importing any phone number list into Kesher, school administrators
               must affirmatively certify the following:
             </p>
-            <div className="border border-zinc-200 rounded-xl p-5 bg-zinc-50 mt-4">
-              <p className="text-[14px] text-zinc-700 leading-relaxed italic">
+            <div className="border border-border rounded-xl p-5 bg-background mt-4">
+              <p className="text-[14px] text-text-secondary leading-relaxed italic">
                 "By importing these contacts, I certify that all individuals on this list have
                 provided explicit, written or digital consent to receive SMS text messages from
                 our school via the Kesher platform. I acknowledge that it is the school's
@@ -179,7 +179,7 @@ export default function CtaDocumentation() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               6. Message Types
             </h2>
             <p className="mb-4">
@@ -202,7 +202,7 @@ export default function CtaDocumentation() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               7. Sample Messages
             </h2>
             <p className="mb-5">
@@ -210,30 +210,30 @@ export default function CtaDocumentation() {
               Kesher platform on behalf of schools:
             </p>
             <div className="space-y-4">
-              <div className="border border-zinc-200 rounded-lg p-4 bg-zinc-50">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-2">
+              <div className="border border-border rounded-lg p-4 bg-background">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-text-subtle mb-2">
                   Sample Message 1 — Event Reminder
                 </p>
-                <p className="text-[14px] text-zinc-700">
+                <p className="text-[14px] text-text-secondary">
                   [School Name]: Parent-Teacher conferences are tomorrow, Thu 3/20, 4–8 PM.
                   Sign up at school.edu/conferences. Reply STOP to opt out.
                 </p>
               </div>
-              <div className="border border-zinc-200 rounded-lg p-4 bg-zinc-50">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-2">
+              <div className="border border-border rounded-lg p-4 bg-background">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-text-subtle mb-2">
                   Sample Message 2 — Emergency Alert
                 </p>
-                <p className="text-[14px] text-zinc-700">
+                <p className="text-[14px] text-text-secondary">
                   [School Name] ALERT: School will be closed tomorrow, Fri 1/17, due to inclement
                   weather. All after-school programs are also cancelled. Stay safe.
                   Reply STOP to opt out.
                 </p>
               </div>
-              <div className="border border-zinc-200 rounded-lg p-4 bg-zinc-50">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 mb-2">
+              <div className="border border-border rounded-lg p-4 bg-background">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-text-subtle mb-2">
                   Sample Message 3 — General Announcement
                 </p>
-                <p className="text-[14px] text-zinc-700">
+                <p className="text-[14px] text-text-secondary">
                   [School Name]: Registration for the 2025–26 school year opens next Monday.
                   Visit school.edu/register or contact the office at 555-000-0000.
                   Reply STOP to opt out.
@@ -243,7 +243,7 @@ export default function CtaDocumentation() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               8. Opt-Out Processing
             </h2>
             <p>
@@ -268,15 +268,15 @@ export default function CtaDocumentation() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               9. HELP Response
             </h2>
             <p>
               When a recipient replies HELP, the system automatically sends the following
               response:
             </p>
-            <div className="border border-zinc-200 rounded-lg p-4 bg-zinc-50 mt-4">
-              <p className="text-[14px] text-zinc-700 italic">
+            <div className="border border-border rounded-lg p-4 bg-background mt-4">
+              <p className="text-[14px] text-text-secondary italic">
                 &ldquo;[School Name] via Kesher School Comms. For support:{" "}
                 {CONTACT_EMAIL} or {WEBSITE}. Msg &amp; data rates may apply. Reply STOP to opt out.&rdquo;
               </p>
@@ -284,7 +284,7 @@ export default function CtaDocumentation() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               10. Privacy and Data Handling
             </h2>
             <p>
@@ -300,7 +300,7 @@ export default function CtaDocumentation() {
           </section>
 
           <section>
-            <h2 className="text-[15px] font-semibold text-zinc-900 mb-4 tracking-tight">
+            <h2 className="text-[15px] font-semibold text-text-primary mb-4 tracking-tight">
               11. Contact
             </h2>
             <address className="not-italic space-y-1.5">
@@ -317,7 +317,7 @@ export default function CtaDocumentation() {
           </section>
 
         </div>
-      </main>
+      </div>
 
       <PublicFooter />
     </div>

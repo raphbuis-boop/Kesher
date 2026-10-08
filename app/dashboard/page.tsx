@@ -81,9 +81,9 @@ const CHANNEL_META: Record<
     bg: string;
   }
 > = {
-  email:    { label: "Email",    Icon: Mail,          color: "text-zinc-500",    bg: "bg-[#f5f5f5]"  },
-  sms:      { label: "SMS",      Icon: Smartphone,    color: "text-blue-500",    bg: "bg-blue-50"     },
-  whatsapp: { label: "WhatsApp", Icon: MessageSquare, color: "text-emerald-500", bg: "bg-emerald-50"  },
+  email:    { label: "Email",    Icon: Mail,          color: "text-text-muted",    bg: "bg-surface-2"  },
+  sms:      { label: "SMS",      Icon: Smartphone,    color: "text-info",    bg: "bg-info-tint"     },
+  whatsapp: { label: "WhatsApp", Icon: MessageSquare, color: "text-success", bg: "bg-success-tint"  },
 };
 
 const AUDIENCE_LABELS: Record<string, string> = {
@@ -93,7 +93,6 @@ const AUDIENCE_LABELS: Record<string, string> = {
 };
 
 const QUICK_ACTIONS = [
-  { href: "/messages/new", Icon: PenLine,  label: "Compose Message",   sub: "Send to any audience"   },
   { href: "/imports",      Icon: Upload,   label: "Import Contacts",   sub: "Upload a CSV file"      },
   { href: "/people",       Icon: UserPlus, label: "Add Contact",        sub: "Add a single person"    },
   { href: "/audiences",    Icon: Layers,   label: "Manage Audiences",  sub: "View and create groups" },
@@ -249,20 +248,20 @@ export default async function OverviewPage() {
 
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#fafafa]">
+    <div className="min-h-screen bg-background">
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-10 border-b border-[#e7e7e7] bg-white/95 backdrop-blur-sm px-6 py-3.5">
+      <header className="sticky top-0 z-10 border-b border-border bg-surface/95 backdrop-blur-sm px-6 py-3.5">
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-[13px] font-semibold text-[#0f0f0f]">Overview</h1>
-            <p className="text-[11px] text-[#a1a1aa] mt-px">{branding.schoolName || "Your Organization"}</p>
+            <h1 className="text-[13px] font-semibold text-text-primary">Overview</h1>
+            <p className="text-[11px] text-text-subtle mt-px">{branding.schoolName || "Your Organization"}</p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
-            {demoLoaded && <DemoWorkspaceControl mode="remove" />}
+            {demoLoaded && <DemoWorkspaceControl mode="badge" />}
             <Link
               href="/messages/new"
-              className="inline-flex items-center gap-1.5 rounded-md bg-[#0f0f0f] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#27272a]"
+              className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-fg hover:bg-primary-hover"
             >
               <PenLine size={12} strokeWidth={2} />
               Compose
@@ -282,54 +281,54 @@ export default async function OverviewPage() {
           {/* Active Contacts */}
           <Link
             href="/people"
-            className="group rounded-xl border border-[#e7e7e7] bg-white px-4 py-4 transition-all duration-150 hover:border-[#d4d4d8] hover:shadow-sm"
+            className="group rounded-xl border border-border bg-surface px-4 py-4 transition-all duration-150 hover:border-border-strong hover:shadow-sm"
           >
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">Active Contacts</p>
-            <p className="mt-2.5 text-[30px] font-semibold tracking-tight tabular-nums leading-none text-[#0f0f0f]">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-text-subtle">Active Contacts</p>
+            <p className="mt-2.5 text-[30px] font-semibold tracking-tight tabular-nums leading-none text-text-primary">
               {contacts.toLocaleString()}
             </p>
-            <p className="mt-2 flex items-center justify-between text-[11px] text-[#a1a1aa]">
+            <p className="mt-2 flex items-center justify-between text-[11px] text-text-subtle">
               <span>in directory</span>
-              <ArrowRight size={10} className="text-[#d4d4d8] group-hover:text-[#a1a1aa] transition-colors" />
+              <ArrowRight aria-hidden size={10} className="text-text-faint group-hover:text-text-subtle transition-colors" />
             </p>
           </Link>
 
           {/* Campaigns This Week */}
           <Link
             href="/messages"
-            className="group rounded-xl border border-[#e7e7e7] bg-white px-4 py-4 transition-all duration-150 hover:border-[#d4d4d8] hover:shadow-sm"
+            className="group rounded-xl border border-border bg-surface px-4 py-4 transition-all duration-150 hover:border-border-strong hover:shadow-sm"
           >
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">This Week</p>
-            <p className="mt-2.5 text-[30px] font-semibold tracking-tight tabular-nums leading-none text-[#0f0f0f]">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-text-subtle">This Week</p>
+            <p className="mt-2.5 text-[30px] font-semibold tracking-tight tabular-nums leading-none text-text-primary">
               {weekCount}
             </p>
-            <p className="mt-2 flex items-center justify-between text-[11px] text-[#a1a1aa]">
+            <p className="mt-2 flex items-center justify-between text-[11px] text-text-subtle">
               <span>campaigns sent</span>
-              <ArrowRight size={10} className="text-[#d4d4d8] group-hover:text-[#a1a1aa] transition-colors" />
+              <ArrowRight aria-hidden size={10} className="text-text-faint group-hover:text-text-subtle transition-colors" />
             </p>
           </Link>
 
           {/* Delivery Rate */}
-          <div className="rounded-xl border border-t-2 border-t-emerald-500 border-[#e7e7e7] bg-white px-4 py-4">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">Delivery Rate</p>
-            <p className="mt-2.5 text-[30px] font-semibold tracking-tight tabular-nums leading-none text-[#0f0f0f]">
+          <div className="rounded-xl border border-t-2 border-t-success-solid border-border bg-surface px-4 py-4">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-text-subtle">Delivery Rate</p>
+            <p className="mt-2.5 text-[30px] font-semibold tracking-tight tabular-nums leading-none text-text-primary">
               {delivRate ?? "—"}
             </p>
-            <p className="mt-2 text-[11px] text-[#a1a1aa]">last 30 days</p>
+            <p className="mt-2 text-[11px] text-text-subtle">last 30 days</p>
           </div>
 
           {/* Open Rate */}
           <div
             className={[
-              "rounded-xl border bg-white px-4 py-4",
-              hasOpenData ? "border-t-2 border-t-sky-500 border-[#e7e7e7]" : "border-[#e7e7e7]",
+              "rounded-xl border bg-surface px-4 py-4",
+              hasOpenData ? "border-t-2 border-t-info-solid border-border" : "border-border",
             ].join(" ")}
           >
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">Open Rate</p>
-            <p className="mt-2.5 text-[30px] font-semibold tracking-tight tabular-nums leading-none text-[#0f0f0f]">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-text-subtle">Open Rate</p>
+            <p className="mt-2.5 text-[30px] font-semibold tracking-tight tabular-nums leading-none text-text-primary">
               {openRate ?? "—"}
             </p>
-            <p className="mt-2 text-[11px] text-[#a1a1aa]">email, last 30d</p>
+            <p className="mt-2 text-[11px] text-text-subtle">email, last 30d</p>
           </div>
         </div>
 
@@ -337,32 +336,32 @@ export default async function OverviewPage() {
         <div className="grid gap-5 lg:grid-cols-5">
 
           {/* ── Section 2 — Activity Feed (3/5) ──────────────────────────── */}
-          <div className="lg:col-span-3 rounded-xl border border-[#e7e7e7] bg-white overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#f0f0f0]">
+          <div className="lg:col-span-3 rounded-xl border border-border bg-surface overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle">
               <div>
-                <h2 className="text-[13px] font-semibold text-[#0f0f0f]">Activity</h2>
-                <p className="mt-0.5 text-[11px] text-[#a1a1aa]">Campaigns, imports, and contact changes</p>
+                <h2 className="text-[13px] font-semibold text-text-primary">Activity</h2>
+                <p className="mt-0.5 text-[11px] text-text-subtle">Campaigns, imports, and contact changes</p>
               </div>
               <Link
                 href="/activity"
-                className="inline-flex items-center gap-1 text-[11px] font-medium text-[#a1a1aa] hover:text-[#71717a] transition-colors"
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-text-subtle hover:text-text-muted transition-colors"
               >
-                View all <ArrowRight size={10} />
+                View all<span className="sr-only"> activity</span> <ArrowRight aria-hidden size={10} />
               </Link>
             </div>
 
             {feed.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center px-6">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#e7e7e7] bg-[#fafafa] mb-4">
-                  <Send size={17} className="text-[#d4d4d8]" strokeWidth={1.5} />
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-border bg-background mb-4">
+                  <Send size={17} className="text-text-faint" strokeWidth={1.5} />
                 </div>
-                <p className="text-[13px] font-semibold text-[#0f0f0f]">No activity yet</p>
-                <p className="mt-1 text-[12px] text-[#a1a1aa]">
+                <p className="text-[13px] font-semibold text-text-primary">No activity yet</p>
+                <p className="mt-1 text-[12px] text-text-subtle">
                   Send your first message to get started.
                 </p>
                 <Link
                   href="/messages/new"
-                  className="mt-4 inline-flex items-center gap-1.5 rounded-md border border-[#e7e7e7] bg-white px-3 py-1.5 text-[12px] font-medium text-[#0f0f0f] hover:bg-[#fafafa] transition-colors"
+                  className="mt-4 inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-[12px] font-medium text-text-primary hover:bg-surface-hover transition-colors"
                 >
                   <Plus size={11} strokeWidth={2.5} /> Compose
                 </Link>
@@ -371,21 +370,21 @@ export default async function OverviewPage() {
               <div>
                 {feed.map((item, i) => {
                   const isLast = i === feed.length - 1;
-                  const rowCls = `flex items-start gap-3 px-5 py-4 transition-colors hover:bg-[#fafafa] ${!isLast ? "border-b border-[#f5f5f5]" : ""}`;
+                  const rowCls = `flex items-start gap-3 px-5 py-4 transition-colors hover:bg-surface-hover ${!isLast ? "border-b border-border-subtle" : ""}`;
 
                   if (item.kind === "import") {
                     return (
                       <div key={item.id} className={rowCls}>
-                        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#f5f5f5]">
-                          <Upload size={12} className="text-[#a1a1aa]" strokeWidth={2} />
+                        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-2">
+                          <Upload size={12} className="text-text-subtle" strokeWidth={2} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[13px] text-[#0f0f0f] leading-snug">
+                          <p className="text-[13px] text-text-primary leading-snug">
                             <span className="font-medium">Imported {item.count.toLocaleString()} contacts</span>
-                            <span className="text-[#71717a]"> · {item.fileName}</span>
+                            <span className="text-text-muted"> · {item.fileName}</span>
                           </p>
                         </div>
-                        <span className="mt-0.5 shrink-0 text-[11px] tabular-nums text-[#a1a1aa]">
+                        <span className="mt-0.5 shrink-0 text-[11px] tabular-nums text-text-subtle">
                           {timeAgo(item.time)}
                         </span>
                       </div>
@@ -399,12 +398,12 @@ export default async function OverviewPage() {
                   const delivPct   = item.recipients > 0 ? pctNum(item.sent, item.recipients) : null;
 
                   const iconEl = hasFailed ? (
-                    <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-50">
-                      <AlertCircle size={12} className="text-red-400" strokeWidth={2} />
+                    <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-danger-tint">
+                      <AlertCircle size={12} className="text-danger" strokeWidth={2} />
                     </div>
                   ) : item.status === "sent" ? (
-                    <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-50">
-                      <CheckCircle2 size={12} className="text-emerald-500" strokeWidth={2} />
+                    <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-success-tint">
+                      <CheckCircle2 size={12} className="text-success" strokeWidth={2} />
                     </div>
                   ) : (
                     <div className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${meta.bg}`}>
@@ -421,33 +420,33 @@ export default async function OverviewPage() {
                       {iconEl}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 min-w-0">
-                          <p className="text-[13px] font-medium text-[#0f0f0f] truncate leading-snug">
+                          <p className="text-[13px] font-medium text-text-primary truncate leading-snug">
                             {item.subject}
                           </p>
                           <span
-                            className={`shrink-0 inline-flex items-center gap-[3px] rounded-full px-1.5 py-px text-[9px] font-semibold ${meta.bg} ${meta.color}`}
+                            className={`shrink-0 inline-flex items-center gap-[3px] rounded-full px-1.5 py-px text-[10px] font-semibold ${meta.bg} ${meta.color}`}
                           >
                             <CIcon size={8} strokeWidth={2.5} />
                             {meta.label}
                           </span>
                         </div>
-                        <p className="mt-0.5 text-[11px] text-[#a1a1aa] leading-snug">
+                        <p className="mt-0.5 text-[11px] text-text-subtle leading-snug">
                           {item.audience}
                           {item.recipients > 0 && (
                             <> · <span className="tabular-nums">{item.recipients.toLocaleString()}</span> recipients</>
                           )}
                           {delivPct !== null && (
-                            <> · <span className="text-emerald-600 font-medium">{delivPct}% delivered</span></>
+                            <> · <span className="text-success font-medium">{delivPct}% delivered</span></>
                           )}
                           {item.channel === "email" && item.opened > 0 && (
-                            <> · <span className="text-sky-600">{item.opened.toLocaleString()} opened</span></>
+                            <> · <span className="text-info">{item.opened.toLocaleString()} opened</span></>
                           )}
                           {hasFailed && (
-                            <> · <span className="text-red-500">{item.failed} failed</span></>
+                            <> · <span className="text-danger">{item.failed} failed</span></>
                           )}
                         </p>
                       </div>
-                      <span className="mt-0.5 shrink-0 text-[11px] tabular-nums text-[#a1a1aa]">
+                      <span className="mt-0.5 shrink-0 text-[11px] tabular-nums text-text-subtle">
                         {timeAgo(item.time)}
                       </span>
                     </Link>
@@ -461,27 +460,27 @@ export default async function OverviewPage() {
           <div className="lg:col-span-2 flex flex-col gap-5">
 
             {/* Section 5 — Quick Actions */}
-            <div className="rounded-xl border border-[#e7e7e7] bg-white overflow-hidden">
-              <div className="px-5 py-3.5 border-b border-[#f0f0f0]">
-                <h2 className="text-[13px] font-semibold text-[#0f0f0f]">Quick Actions</h2>
+            <div className="rounded-xl border border-border bg-surface overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-border-subtle">
+                <h2 className="text-[13px] font-semibold text-text-primary">Quick Actions</h2>
               </div>
-              <div className="divide-y divide-[#f5f5f5]">
+              <div className="divide-y divide-border-subtle">
                 {QUICK_ACTIONS.map(({ href, Icon, label, sub }) => (
                   <Link
                     key={href}
                     href={href}
-                    className="group flex items-center gap-3.5 px-5 py-3 transition-colors hover:bg-[#fafafa]"
+                    className="group flex items-center gap-3.5 px-5 py-3 transition-colors hover:bg-surface-hover"
                   >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#e7e7e7] bg-white group-hover:border-[#d4d4d8] transition-colors">
-                      <Icon size={13} className="text-[#71717a]" strokeWidth={1.75} />
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-surface group-hover:border-border-strong transition-colors">
+                      <Icon size={13} className="text-text-muted" strokeWidth={1.75} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-medium text-[#0f0f0f]">{label}</p>
-                      <p className="text-[11px] text-[#a1a1aa]">{sub}</p>
+                      <p className="text-[13px] font-medium text-text-primary">{label}</p>
+                      <p className="text-[11px] text-text-subtle">{sub}</p>
                     </div>
                     <ChevronRight
                       size={13}
-                      className="text-[#d4d4d8] group-hover:text-[#a1a1aa] shrink-0 transition-colors"
+                      className="text-text-subtle group-hover:text-text-subtle shrink-0 transition-colors"
                     />
                   </Link>
                 ))}
@@ -489,26 +488,26 @@ export default async function OverviewPage() {
             </div>
 
             {/* Section 4 — Audience Breakdown / Directory */}
-            <div className="rounded-xl border border-[#e7e7e7] bg-white overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#f0f0f0]">
-                <h2 className="text-[13px] font-semibold text-[#0f0f0f]">Directory</h2>
+            <div className="rounded-xl border border-border bg-surface overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-border-subtle">
+                <h2 className="text-[13px] font-semibold text-text-primary">Directory</h2>
                 <Link
                   href="/people"
-                  className="inline-flex items-center gap-1 text-[11px] font-medium text-[#a1a1aa] hover:text-[#71717a] transition-colors"
+                  className="inline-flex items-center gap-1 text-[11px] font-medium text-text-subtle hover:text-text-muted transition-colors"
                 >
-                  View all <ArrowRight size={10} />
+                  View all<span className="sr-only"> contacts</span> <ArrowRight aria-hidden size={10} />
                 </Link>
               </div>
 
               {audiences.length === 0 ? (
                 <div className="px-5 py-10 text-center">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e7e7e7] bg-[#fafafa] mx-auto mb-3">
-                    <Users size={14} className="text-[#d4d4d8]" strokeWidth={1.5} />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background mx-auto mb-3">
+                    <Users size={14} className="text-text-faint" strokeWidth={1.5} />
                   </div>
-                  <p className="text-[12px] text-[#71717a] font-medium">No contacts yet</p>
+                  <p className="text-[12px] text-text-muted font-medium">No contacts yet</p>
                   <Link
                     href="/imports"
-                    className="mt-1.5 inline-block text-[11px] text-[#a1a1aa] hover:text-[#71717a] transition-colors"
+                    className="mt-1.5 inline-block text-[11px] text-text-subtle hover:text-text-muted transition-colors"
                   >
                     Import contacts →
                   </Link>
@@ -518,17 +517,17 @@ export default async function OverviewPage() {
                   {audiences.map(([cat, count]) => {
                     const share = contacts > 0 ? count / contacts : 0;
                     return (
-                      <div key={cat} className="flex items-center gap-3 py-2.5 border-b border-[#f5f5f5] last:border-0">
-                        <span className="flex-1 text-[12px] text-[#71717a]">
+                      <div key={cat} className="flex items-center gap-3 py-2.5 border-b border-border-subtle last:border-0">
+                        <span className="flex-1 text-[12px] text-text-muted">
                           {AUDIENCE_LABELS[cat] ?? cat}
                         </span>
-                        <div className="w-16 h-1 rounded-full bg-[#f0f0f0] overflow-hidden">
+                        <div className="w-16 h-1 rounded-full bg-surface-3 overflow-hidden">
                           <div
-                            className="h-full rounded-full bg-[#d4d4d8]"
+                            className="h-full rounded-full bg-border-strong"
                             style={{ width: `${Math.round(share * 100)}%` }}
                           />
                         </div>
-                        <span className="w-8 text-right text-[13px] font-medium tabular-nums text-[#0f0f0f]">
+                        <span className="w-8 text-right text-[13px] font-medium tabular-nums text-text-primary">
                           {count.toLocaleString()}
                         </span>
                       </div>
@@ -536,14 +535,14 @@ export default async function OverviewPage() {
                   })}
                   {uncategorized > 0 && (
                     <div className="flex items-center gap-3 py-2.5">
-                      <span className="flex-1 text-[12px] text-[#a1a1aa]">Uncategorized</span>
-                      <div className="w-16 h-1 rounded-full bg-[#f0f0f0] overflow-hidden">
+                      <span className="flex-1 text-[12px] text-text-subtle">Uncategorized</span>
+                      <div className="w-16 h-1 rounded-full bg-surface-3 overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-[#e7e7e7]"
+                          className="h-full rounded-full bg-surface-3"
                           style={{ width: `${Math.round((uncategorized / contacts) * 100)}%` }}
                         />
                       </div>
-                      <span className="w-8 text-right text-[13px] font-medium tabular-nums text-[#a1a1aa]">
+                      <span className="w-8 text-right text-[13px] font-medium tabular-nums text-text-subtle">
                         {uncategorized.toLocaleString()}
                       </span>
                     </div>

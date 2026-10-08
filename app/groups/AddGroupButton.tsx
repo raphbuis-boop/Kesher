@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { addGroup, type AddGroupState } from "./actions";
 import type { FilterNode } from "@/lib/resolveAudience";
+import { useDialogFocus } from "@/app/components/useDialogFocus";
 
 export type Tag = {
   id: string;
@@ -120,8 +121,8 @@ function FilterBuilder({
     );
   }
 
-  const SELECT = "rounded-md border border-zinc-200 bg-white px-2.5 py-1.5 text-sm text-zinc-900 outline-none focus:border-zinc-400 transition-colors";
-  const INPUT = "w-20 rounded-md border border-zinc-200 bg-white px-2.5 py-1.5 text-sm text-zinc-900 outline-none focus:border-zinc-400 transition-colors";
+  const SELECT = "rounded-md border border-border-input bg-surface px-2.5 py-1.5 text-sm text-text-primary focus:border-focus-ring transition-colors";
+  const INPUT = "w-20 rounded-md border border-border-input bg-surface px-2.5 py-1.5 text-sm text-text-primary focus:border-focus-ring transition-colors";
 
   return (
     <div className="space-y-3">
@@ -130,6 +131,7 @@ function FilterBuilder({
           <div key={cond.id} className="flex items-center gap-2 flex-wrap">
             {i > 0 && (
               <select
+                aria-label="Match all or any conditions"
                 className={SELECT + " w-16"}
                 value={combinator}
                 onChange={(e) => updateCombinator(e.target.value as "and" | "or")}
@@ -138,10 +140,11 @@ function FilterBuilder({
                 <option value="or">OR</option>
               </select>
             )}
-            {i === 0 && <span className="text-sm text-zinc-400 w-16">WHERE</span>}
+            {i === 0 && <span className="text-sm text-text-subtle w-16">WHERE</span>}
 
             {/* Field type */}
             <select
+              aria-label="Condition field"
               className={SELECT}
               value={cond.type}
               onChange={(e) => setType(cond.id, e.target.value as FilterCondition["type"])}
@@ -154,6 +157,7 @@ function FilterBuilder({
             {/* Value(s) */}
             {cond.type === "category" && (
               <select
+                aria-label="Category"
                 className={SELECT}
                 value={cond.value}
                 onChange={(e) =>
@@ -172,6 +176,7 @@ function FilterBuilder({
 
             {cond.type === "grad_year_eq" && (
               <input
+                aria-label="Graduating year"
                 type="number"
                 className={INPUT}
                 value={cond.value}
@@ -192,6 +197,7 @@ function FilterBuilder({
             {cond.type === "grad_year_range" && (
               <>
                 <input
+                  aria-label="From graduating year"
                   type="number"
                   className={INPUT}
                   value={cond.min}
@@ -207,8 +213,9 @@ function FilterBuilder({
                     )
                   }
                 />
-                <span className="text-sm text-zinc-400">–</span>
+                <span className="text-sm text-text-subtle">–</span>
                 <input
+                  aria-label="To graduating year"
                   type="number"
                   className={INPUT}
                   value={cond.max}
@@ -231,9 +238,10 @@ function FilterBuilder({
               <button
                 type="button"
                 onClick={() => removeCondition(cond.id)}
-                className="ml-auto rounded p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
+                aria-label="Remove condition"
+                className="ml-auto rounded p-1 text-text-subtle transition-colors hover:bg-surface-2 hover:text-text-secondary"
               >
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg aria-hidden className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -246,15 +254,15 @@ function FilterBuilder({
         <button
           type="button"
           onClick={addCondition}
-          className="text-xs text-zinc-500 transition-colors hover:text-zinc-800"
+          className="text-xs text-text-muted transition-colors hover:text-text-primary"
         >
           + Add condition
         </button>
-        <span className="text-xs text-zinc-400">
+        <span className="text-xs text-text-subtle">
           {counting ? (
             "Counting…"
           ) : matchCount !== null ? (
-            <span className={matchCount > 0 ? "text-zinc-700 font-medium" : "text-zinc-400"}>
+            <span className={matchCount > 0 ? "text-text-secondary font-medium" : "text-text-subtle"}>
               {matchCount.toLocaleString()} {matchCount === 1 ? "contact" : "contacts"} match
             </span>
           ) : null}
@@ -284,15 +292,15 @@ function AddGroupForm({
       <div className="space-y-4">
         {/* Name */}
         <div>
-          <label htmlFor="ag-name" className="block text-sm font-medium text-zinc-700 mb-1">
-            Audience Name <span className="text-red-500">*</span>
+          <label htmlFor="ag-name" className="block text-sm font-medium text-text-secondary mb-1">
+            Audience Name <span className="text-danger">*</span>
           </label>
           <input
             id="ag-name"
             name="name"
             type="text"
             required
-            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-zinc-400 transition-colors disabled:opacity-50"
+            className="w-full rounded-md border border-border-input bg-surface px-3 py-2 text-sm text-text-primary placeholder-text-subtle focus:border-focus-ring transition-colors disabled:opacity-50"
             placeholder="Class of 2028 Families"
             disabled={isPending}
           />
@@ -300,14 +308,14 @@ function AddGroupForm({
 
         {/* Description */}
         <div>
-          <label htmlFor="ag-desc" className="block text-sm font-medium text-zinc-700 mb-1">
+          <label htmlFor="ag-desc" className="block text-sm font-medium text-text-secondary mb-1">
             Description
           </label>
           <textarea
             id="ag-desc"
             name="description"
             rows={2}
-            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-zinc-400 transition-colors disabled:opacity-50 resize-none"
+            className="w-full rounded-md border border-border-input bg-surface px-3 py-2 text-sm text-text-primary placeholder-text-subtle focus:border-focus-ring transition-colors disabled:opacity-50 resize-none"
             placeholder="Optional description…"
             disabled={isPending}
           />
@@ -315,13 +323,13 @@ function AddGroupForm({
 
         {/* Mode tabs */}
         <div>
-          <div className="flex gap-1 rounded-lg border border-zinc-200 bg-zinc-50 p-1 w-fit">
+          <div className="flex gap-1 rounded-lg border border-border bg-background p-1 w-fit">
             <button
               type="button"
               onClick={() => setMode("manual")}
               className={
                 "rounded-md px-3 py-1.5 text-xs font-medium transition-colors " +
-                (mode === "manual" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-700")
+                (mode === "manual" ? "bg-surface text-text-primary shadow-sm" : "text-text-muted hover:text-text-secondary")
               }
             >
               Manual
@@ -331,14 +339,14 @@ function AddGroupForm({
               onClick={() => setMode("dynamic")}
               className={
                 "rounded-md px-3 py-1.5 text-xs font-medium transition-colors " +
-                (mode === "dynamic" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-700")
+                (mode === "dynamic" ? "bg-surface text-text-primary shadow-sm" : "text-text-muted hover:text-text-secondary")
               }
             >
               Dynamic rules
             </button>
           </div>
 
-          <p className="mt-1.5 text-xs text-zinc-400">
+          <p className="mt-1.5 text-xs text-text-subtle">
             {mode === "manual"
               ? "After creating, you'll add contacts from the audience page."
               : "Membership is computed live from contact data — always stays current."}
@@ -347,7 +355,7 @@ function AddGroupForm({
 
         {/* Dynamic filter builder */}
         {mode === "dynamic" && (
-          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+          <div className="rounded-lg border border-border bg-background p-4">
             <FilterBuilder onConfigChange={setFilterConfig} />
             {filterConfig && (
               <input
@@ -360,7 +368,7 @@ function AddGroupForm({
         )}
 
         {state.error && (
-          <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+          <p role="alert" className="rounded-md border border-danger-border bg-danger-tint px-3 py-2 text-sm text-danger">
             {state.error}
           </p>
         )}
@@ -370,11 +378,11 @@ function AddGroupForm({
         <button
           type="submit"
           disabled={isPending || (mode === "dynamic" && !filterConfig)}
-          className="inline-flex items-center gap-2 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-fg transition-colors hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isPending ? (
             <>
-              <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+              <svg aria-hidden className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
               </svg>
@@ -391,9 +399,11 @@ function AddGroupForm({
 
 // ─── Button + modal ────────────────────────────────────────────────────────────
 
-export function AddGroupButton() {
+export function AddGroupButton({ variant = "secondary" }: { variant?: "primary" | "secondary" }) {
   const [open, setOpen] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(open, panelRef);
 
   useEffect(() => {
     if (!open) return;
@@ -407,10 +417,15 @@ export function AddGroupButton() {
   return (
     <>
       <button
+        type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-md bg-zinc-900 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700"
+        className={
+          variant === "primary"
+            ? "inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-fg transition-colors hover:bg-primary-hover"
+            : "inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-[12px] font-medium text-text-primary transition-colors hover:border-border-strong hover:bg-surface-hover"
+        }
       >
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg aria-hidden className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
         </svg>
         Add Custom Audience
@@ -420,20 +435,25 @@ export function AddGroupButton() {
         <div
           ref={overlayRef}
           onClick={(e) => { if (e.target === overlayRef.current) setOpen(false); }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-overlay px-4"
         >
-          <div className="w-full max-w-lg rounded-xl border border-zinc-200 bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4">
+          <div
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-group-title" className="w-full max-w-lg rounded-xl border border-border bg-surface shadow-xl">
+            <div className="flex items-center justify-between border-b border-border-subtle px-6 py-4">
               <div>
-                <h2 className="text-sm font-semibold text-zinc-900">Add Custom Audience</h2>
-                <p className="text-xs text-zinc-500 mt-0.5">Tag-based or dynamic rule-based.</p>
+                <h2 id="add-group-title" className="text-sm font-semibold text-text-primary">Add Custom Audience</h2>
+                <p className="text-xs text-text-muted mt-0.5">Tag-based or dynamic rule-based.</p>
               </div>
               <button
+                type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Close"
-                className="rounded-md p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
+                className="rounded-md p-1 text-text-subtle transition-colors hover:bg-surface-2 hover:text-text-secondary"
               >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg aria-hidden className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -441,8 +461,8 @@ export function AddGroupButton() {
             <div className="px-6 py-5">
               <AddGroupForm onSuccess={() => setOpen(false)} />
             </div>
-            <div className="border-t border-zinc-100 px-6 py-3">
-              <button onClick={() => setOpen(false)} className="text-sm text-zinc-500 hover:text-zinc-700 transition-colors">
+            <div className="border-t border-border-subtle px-6 py-3">
+              <button onClick={() => setOpen(false)} className="text-sm text-text-muted hover:text-text-secondary transition-colors">
                 Cancel
               </button>
             </div>

@@ -20,7 +20,7 @@ export function AppFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="mt-auto border-t border-zinc-100 bg-white">
+    <footer className="mt-auto border-t border-border-subtle bg-surface">
 
       {/* ── Main row ─────────────────────────────────────────────────── */}
       <div className="px-6 py-10 flex flex-col gap-10 sm:flex-row sm:items-start sm:justify-between">
@@ -28,15 +28,15 @@ export function AppFooter() {
         {/* Left — brand identity */}
         <div className="flex flex-col gap-3 min-w-0">
           <div className="inline-flex items-center gap-2.5 w-fit">
-            <div className="flex h-7 w-7 items-center justify-center rounded-[7px] bg-[#0f0f0f] shrink-0">
-              <span className="text-[11px] font-bold text-white tracking-tight select-none">K</span>
+            <div className="flex h-7 w-7 items-center justify-center rounded-[7px] bg-primary shrink-0">
+              <span className="text-[11px] font-bold text-primary-fg tracking-tight select-none">K</span>
             </div>
-            <span className="text-[13px] font-semibold text-[#0f0f0f] tracking-tight">Kesher</span>
+            <span className="text-[13px] font-semibold text-text-primary tracking-tight">Kesher</span>
           </div>
-          <p className="text-[12px] text-zinc-400 leading-relaxed max-w-[210px]">
+          <p className="text-[12px] text-text-subtle leading-relaxed max-w-[210px]">
             The modern communications platform for schools.
           </p>
-          <p className="text-[11px] text-zinc-300 tracking-wide">
+          <p className="text-[11px] text-text-subtle tracking-wide">
             Email · SMS · WhatsApp
           </p>
         </div>
@@ -46,24 +46,24 @@ export function AppFooter() {
 
           {/* Column 1 — Legal */}
           <nav aria-label="Legal" className="flex flex-col gap-2.5">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-0.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-text-subtle mb-0.5">
               Legal
             </p>
             <Link
               href="/privacy"
-              className="text-[12px] text-zinc-500 hover:text-zinc-900 transition-colors duration-150"
+              className="text-[12px] text-text-muted hover:text-text-primary transition-colors duration-150"
             >
               Privacy Policy
             </Link>
             <Link
               href="/sms-terms"
-              className="text-[12px] text-zinc-500 hover:text-zinc-900 transition-colors duration-150"
+              className="text-[12px] text-text-muted hover:text-text-primary transition-colors duration-150"
             >
               SMS Terms
             </Link>
             <Link
               href="/terms"
-              className="text-[12px] text-zinc-500 hover:text-zinc-900 transition-colors duration-150"
+              className="text-[12px] text-text-muted hover:text-text-primary transition-colors duration-150"
             >
               Terms of Service
             </Link>
@@ -71,18 +71,18 @@ export function AppFooter() {
 
           {/* Column 2 — Contact */}
           <div className="flex flex-col gap-2.5">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 mb-0.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-text-subtle mb-0.5">
               Contact
             </p>
             <Link
               href="/contact"
-              className="text-[12px] text-zinc-500 hover:text-zinc-900 transition-colors duration-150"
+              className="text-[12px] text-text-muted hover:text-text-primary transition-colors duration-150"
             >
               Contact Us
             </Link>
             <a
               href={`mailto:${CONTACT_EMAIL}`}
-              className="text-[12px] text-zinc-500 hover:text-zinc-900 transition-colors duration-150"
+              className="text-[12px] text-text-muted hover:text-text-primary transition-colors duration-150"
             >
               {CONTACT_EMAIL}
             </a>
@@ -92,8 +92,8 @@ export function AppFooter() {
       </div>
 
       {/* ── Bottom bar ───────────────────────────────────────────────── */}
-      <div className="border-t border-zinc-100 px-6 py-4">
-        <p className="text-[11px] text-zinc-400">
+      <div className="border-t border-border-subtle px-6 py-4">
+        <p className="text-[11px] text-text-subtle">
           © {year} Kesher. Kesher is a product of La Voral LLC. All rights reserved.
         </p>
       </div>

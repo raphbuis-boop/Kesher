@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { addRelationship, type AddRelationshipState } from "./actions";
+import { useDialogFocus } from "@/app/components/useDialogFocus";
 
 export type PersonOption = {
   id: string;
@@ -72,6 +73,7 @@ function PersonSearch({
   return (
     <div ref={containerRef} className="relative">
       <input
+        aria-label="Search people by name"
         type="text"
         role="combobox"
         aria-expanded={open && results.length > 0}
@@ -90,7 +92,7 @@ function PersonSearch({
         placeholder="Search by name…"
         disabled={isPending}
         autoComplete="off"
-        className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-zinc-400 disabled:opacity-50"
+        className="w-full rounded-md border border-border-input bg-surface px-3 py-2 text-sm text-text-primary placeholder-text-subtle focus:border-focus-ring disabled:opacity-50"
       />
       {/* Carries the resolved person ID into the form */}
       <input type="hidden" name="related_person_id" value={selectedId} />
@@ -99,7 +101,7 @@ function PersonSearch({
         <div
           id={listboxId}
           role="listbox"
-          className="absolute top-full left-0 right-0 z-10 mt-1 overflow-hidden rounded-md border border-zinc-200 bg-white shadow-lg"
+          className="absolute top-full left-0 right-0 z-10 mt-1 overflow-hidden rounded-md border border-border bg-surface shadow-lg"
         >
           {results.map((p) => (
             <button
@@ -112,7 +114,7 @@ function PersonSearch({
                 e.preventDefault();
               }}
               onClick={() => select(p)}
-              className="w-full px-3 py-2.5 text-left text-sm text-zinc-900 hover:bg-zinc-50 transition-colors"
+              className="w-full px-3 py-2.5 text-left text-sm text-text-primary hover:bg-surface-hover transition-colors"
             >
               {p.first_name} {p.last_name}
             </button>
@@ -151,9 +153,9 @@ function AddRelationshipForm({
         <div>
           <label
             htmlFor="relationship_type"
-            className="block text-sm font-medium text-zinc-700 mb-1"
+            className="block text-sm font-medium text-text-secondary mb-1"
           >
-            Relationship Type <span className="text-red-500">*</span>
+            Relationship Type <span className="text-danger">*</span>
           </label>
           <select
             id="relationship_type"
@@ -161,7 +163,7 @@ function AddRelationshipForm({
             defaultValue=""
             required
             disabled={isPending}
-            className="w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-zinc-400 disabled:opacity-50"
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text-primary focus:border-border-strong disabled:opacity-50"
           >
             <option value="" disabled>
               Select type…
@@ -175,14 +177,14 @@ function AddRelationshipForm({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-zinc-700 mb-1">
-            Related Person <span className="text-red-500">*</span>
+          <label className="block text-sm font-medium text-text-secondary mb-1">
+            Related Person <span className="text-danger">*</span>
           </label>
           <PersonSearch allPeople={allPeople} isPending={isPending} />
         </div>
 
         {state.error && (
-          <p className="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
+          <p role="alert" className="rounded-md bg-danger-tint border border-danger-border px-3 py-2 text-sm text-danger">
             {state.error}
           </p>
         )}
@@ -192,11 +194,11 @@ function AddRelationshipForm({
         <button
           type="submit"
           disabled={isPending}
-          className="inline-flex items-center gap-2 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-fg transition-colors hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isPending ? (
             <>
-              <svg
+              <svg aria-hidden
                 className="h-3.5 w-3.5 animate-spin"
                 viewBox="0 0 24 24"
                 fill="none"
@@ -237,6 +239,8 @@ export function AddRelationshipButton({
 }) {
   const [open, setOpen] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(open, panelRef);
 
   useEffect(() => {
     if (!open) return;
@@ -255,9 +259,9 @@ export function AddRelationshipButton({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50 hover:border-zinc-300"
+        className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-surface-hover hover:border-border-strong"
       >
-        <svg
+        <svg aria-hidden
           className="h-3.5 w-3.5"
           fill="none"
           viewBox="0 0 24 24"
@@ -277,24 +281,29 @@ export function AddRelationshipButton({
         <div
           ref={overlayRef}
           onClick={handleOverlayClick}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-overlay px-4"
         >
-          <div className="w-full max-w-md rounded-xl border border-zinc-200 bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4">
+          <div
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-relationship-title" className="w-full max-w-md rounded-xl border border-border bg-surface shadow-xl">
+            <div className="flex items-center justify-between border-b border-border-subtle px-6 py-4">
               <div>
-                <h2 className="text-sm font-semibold text-zinc-900">
+                <h2 id="add-relationship-title" className="text-sm font-semibold text-text-primary">
                   Add Relationship
                 </h2>
-                <p className="text-xs text-zinc-500 mt-0.5">
+                <p className="text-xs text-text-muted mt-0.5">
                   Connect this person to someone else in the directory.
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => setOpen(false)}
-                className="rounded-md p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
+                className="rounded-md p-1 text-text-subtle transition-colors hover:bg-surface-2 hover:text-text-secondary"
                 aria-label="Close"
               >
-                <svg
+                <svg aria-hidden
                   className="h-4 w-4"
                   fill="none"
                   viewBox="0 0 24 24"
@@ -319,10 +328,11 @@ export function AddRelationshipButton({
               />
             </div>
 
-            <div className="border-t border-zinc-100 px-6 py-3">
+            <div className="border-t border-border-subtle px-6 py-3">
               <button
+                type="button"
                 onClick={() => setOpen(false)}
-                className="text-sm text-zinc-500 hover:text-zinc-700 transition-colors"
+                className="text-sm text-text-muted hover:text-text-secondary transition-colors"
               >
                 Cancel
               </button>

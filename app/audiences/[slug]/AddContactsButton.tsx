@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Plus, Search, X, Loader2, Check } from "lucide-react";
 import { addContactsToGroup } from "@/app/groups/actions";
+import { useDialogFocus } from "@/app/components/useDialogFocus";
 
 type Person = {
   id: string;
@@ -31,6 +32,8 @@ export function AddContactsButton({
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const overlayRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(open, panelRef);
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Keyboard handler + body scroll lock
@@ -131,7 +134,7 @@ export function AddContactsButton({
     return (
       <button
         disabled
-        className="inline-flex items-center gap-1.5 rounded-md border border-[#e7e7e7] bg-white px-3 py-1.5 text-[12px] font-medium text-[#a1a1aa] cursor-not-allowed"
+        className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-[12px] font-medium text-text-subtle cursor-not-allowed"
         title="All contacts are already in this audience"
       >
         <Plus size={13} strokeWidth={2} />
@@ -144,7 +147,7 @@ export function AddContactsButton({
     <>
       <button
         onClick={openModal}
-        className="inline-flex items-center gap-1.5 rounded-md border border-[#e7e7e7] bg-white px-3 py-1.5 text-[12px] font-medium text-[#0f0f0f] hover:bg-[#fafafa] hover:border-[#d4d4d8]"
+        className="inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-[12px] font-medium text-text-primary hover:bg-surface-hover hover:border-border-strong"
       >
         <Plus size={13} strokeWidth={2} />
         Add Contacts
@@ -156,10 +159,14 @@ export function AddContactsButton({
           onClick={(e) => {
             if (e.target === overlayRef.current) setOpen(false);
           }}
-          className="animate-backdrop fixed inset-0 z-[9999] flex items-center justify-center bg-black/25 p-4"
+          className="animate-backdrop fixed inset-0 z-[9999] flex items-center justify-center bg-overlay p-4"
         >
           <div
-            className="animate-fade-up w-full max-w-[740px] rounded-xl border border-[#e7e7e7] bg-white shadow-2xl shadow-black/10"
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-contacts-title"
+            className="animate-fade-up w-full max-w-[740px] rounded-xl border border-border bg-surface shadow-2xl shadow-black/10"
             style={{
               display: "grid",
               gridTemplateRows: "auto minmax(0,1fr) auto",
@@ -167,24 +174,25 @@ export function AddContactsButton({
             }}
           >
             {/* ── Header ── */}
-            <div className="flex items-center justify-between border-b border-[#f0f0f0] px-6 py-4">
+            <div className="flex items-center justify-between border-b border-border-subtle px-6 py-4">
               <div>
-                <h2 className="text-[13px] font-semibold text-[#0f0f0f]">
+                <h2 id="add-contacts-title" className="text-[13px] font-semibold text-text-primary">
                   Add Contacts
                   {selected.size > 0 && (
-                    <span className="ml-2 rounded-full bg-[#eff6ff] px-2 py-0.5 text-[11px] font-medium text-[#2563eb]">
+                    <span className="ml-2 rounded-full bg-accent-tint px-2 py-0.5 text-[11px] font-medium text-accent">
                       {selected.size} selected
                     </span>
                   )}
                 </h2>
-                <p className="mt-px text-[11px] text-[#a1a1aa]">
+                <p className="mt-px text-[11px] text-text-subtle">
                   {nonMembers.length.toLocaleString()} contacts available to add
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Close"
-                className="rounded-md p-1.5 text-[#a1a1aa] hover:bg-[#f5f5f5] hover:text-[#71717a]"
+                className="rounded-md p-1.5 text-text-subtle hover:bg-surface-2 hover:text-text-muted"
               >
                 <X size={15} strokeWidth={1.75} />
               </button>
@@ -193,26 +201,27 @@ export function AddContactsButton({
             {/* ── Middle: search + scrollable list (single grid row) ── */}
             <div className="flex min-h-0 flex-col">
             {/* Search + bulk actions */}
-            <div className="shrink-0 border-b border-[#f0f0f0] px-6 py-3 space-y-2.5">
+            <div className="shrink-0 border-b border-border-subtle px-6 py-3 space-y-2.5">
               <div className="relative">
                 <Search
                   size={13}
                   strokeWidth={1.75}
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#a1a1aa]"
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle"
                 />
                 <input
+                  aria-label="Search contacts"
                   ref={searchRef}
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search by name or email…"
-                  className="w-full rounded-lg border border-[#e7e7e7] bg-[#fafafa] py-2 pl-8 pr-3 text-[13px] text-[#0f0f0f] placeholder-[#a1a1aa] outline-none focus:border-[#a1a1aa] focus:bg-white"
+                  className="w-full rounded-lg border border-border-input bg-background py-2 pl-8 pr-3 text-[13px] text-text-primary placeholder-text-subtle focus:border-focus-ring focus:bg-surface"
                 />
                 {query && (
                   <button
                     onClick={() => setQuery("")}
                     aria-label="Clear search"
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-[#a1a1aa] hover:text-[#71717a]"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-text-subtle hover:text-text-muted"
                   >
                     <X size={12} />
                   </button>
@@ -223,18 +232,18 @@ export function AddContactsButton({
                   <button
                     type="button"
                     onClick={handleSelectAll}
-                    className="text-[11px] font-medium text-[#2563eb] hover:text-[#1d4ed8]"
+                    className="text-[11px] font-medium text-accent hover:text-accent-hover"
                   >
                     {allFilteredSelected ? "Deselect All" : "Select All"}
                     {!allFilteredSelected && filtered.length < nonMembers.length && ` (${filtered.length})`}
                   </button>
                   {selected.size > 0 && (
                     <>
-                      <span className="text-[#e7e7e7]">·</span>
+                      <span className="text-text-faint">·</span>
                       <button
                         type="button"
                         onClick={handleClearSelection}
-                        className="text-[11px] font-medium text-[#71717a] hover:text-[#0f0f0f]"
+                        className="text-[11px] font-medium text-text-muted hover:text-text-primary"
                       >
                         Clear Selection
                       </button>
@@ -248,10 +257,10 @@ export function AddContactsButton({
             <div className="min-h-0 flex-1 overflow-y-auto">
               {filtered.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <p className="text-[13px] font-medium text-[#0f0f0f]">
+                  <p className="text-[13px] font-medium text-text-primary">
                     {query.trim() ? "No matches found" : "No contacts available"}
                   </p>
-                  <p className="mt-1 text-[12px] text-[#a1a1aa]">
+                  <p className="mt-1 text-[12px] text-text-subtle">
                     {query.trim()
                       ? "Try a different name or email"
                       : "All contacts are already in this audience"}
@@ -266,12 +275,13 @@ export function AddContactsButton({
                         <button
                           type="button"
                           onClick={() => toggle(person.id)}
+                          aria-pressed={isSelected}
                           className={[
                             "flex w-full items-center gap-3 px-6 text-left transition-colors",
-                            "border-b border-[#f0f0f0] last:border-b-0",
+                            "border-b border-border-subtle last:border-b-0",
                             isSelected
-                              ? "bg-[#eff6ff] hover:bg-[#e8f0fe]"
-                              : "hover:bg-[#fafafa]",
+                              ? "bg-accent-tint hover:bg-accent-tint"
+                              : "hover:bg-surface-hover",
                           ].join(" ")}
                           style={{ height: 54 }}
                         >
@@ -280,8 +290,8 @@ export function AddContactsButton({
                             className={[
                               "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold uppercase",
                               isSelected
-                                ? "bg-[#dbeafe] text-[#1d4ed8]"
-                                : "bg-[#f0f0f0] text-[#71717a]",
+                                ? "bg-accent-border text-accent-hover"
+                                : "bg-surface-3 text-text-muted",
                             ].join(" ")}
                           >
                             {initials(person)}
@@ -291,12 +301,12 @@ export function AddContactsButton({
                           <div className="min-w-0 flex-1">
                             <p className={[
                               "truncate text-[13px] font-medium",
-                              isSelected ? "text-[#1d4ed8]" : "text-[#0f0f0f]",
+                              isSelected ? "text-accent-hover" : "text-text-primary",
                             ].join(" ")}>
                               {person.first_name} {person.last_name}
                             </p>
                             {person.email && (
-                              <p className="truncate text-[11px] text-[#a1a1aa]">
+                              <p className="truncate text-[11px] text-text-subtle">
                                 {person.email}
                               </p>
                             )}
@@ -307,12 +317,12 @@ export function AddContactsButton({
                             className={[
                               "flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-all",
                               isSelected
-                                ? "bg-[#2563eb]"
-                                : "border border-[#d4d4d8]",
+                                ? "bg-accent"
+                                : "border border-border-strong",
                             ].join(" ")}
                           >
                             {isSelected && (
-                              <Check size={11} strokeWidth={2.5} className="text-white" />
+                              <Check size={11} strokeWidth={2.5} className="text-accent-fg" />
                             )}
                           </div>
                         </button>
@@ -325,21 +335,21 @@ export function AddContactsButton({
             </div>{/* end middle grid row */}
 
             {/* ── Footer ── */}
-            <div className="border-t border-[#e7e7e7] px-6 py-4">
+            <div className="border-t border-border px-6 py-4">
               {error && (
-                <p className="mb-3 text-[12px] text-red-600">{error}</p>
+                <p role="alert" className="mb-3 text-[12px] text-danger">{error}</p>
               )}
               <div className="flex items-center justify-between gap-4">
                 {/* Left zone: availability */}
-                <p className="text-[12px] text-[#a1a1aa]">
+                <p className="text-[12px] text-text-subtle">
                   {nonMembers.length.toLocaleString()} available
                 </p>
 
                 {/* Center zone: selection count */}
-                <p className="text-[12px] font-medium text-[#0f0f0f]">
+                <p className="text-[12px] font-medium text-text-primary">
                   {selected.size > 0
                     ? `${selected.size} contact${selected.size !== 1 ? "s" : ""} selected`
-                    : <span className="text-[#a1a1aa]">None selected</span>}
+                    : <span className="text-text-subtle">None selected</span>}
                 </p>
 
                 {/* Right zone: actions */}
@@ -347,7 +357,7 @@ export function AddContactsButton({
                   <button
                     type="button"
                     onClick={() => setOpen(false)}
-                    className="rounded-md px-3 py-1.5 text-[12px] font-medium text-[#71717a] hover:text-[#0f0f0f] hover:bg-[#f5f5f5]"
+                    className="rounded-md px-3 py-1.5 text-[12px] font-medium text-text-muted hover:text-text-primary hover:bg-surface-2"
                   >
                     Cancel
                   </button>
@@ -355,7 +365,7 @@ export function AddContactsButton({
                     type="button"
                     onClick={handleAdd}
                     disabled={selected.size === 0 || isPending}
-                    className="inline-flex items-center gap-1.5 rounded-md bg-[#0f0f0f] px-4 py-1.5 text-[12px] font-medium text-white hover:bg-[#1a1a1a] disabled:cursor-not-allowed disabled:opacity-40"
+                    className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-1.5 text-[12px] font-medium text-primary-fg hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {isPending ? (
                       <>

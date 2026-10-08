@@ -37,7 +37,7 @@ const DEMO_MAILTO   = `mailto:${CONTACT_EMAIL}?subject=Demo%20Request%20%E2%80%9
 
 const CHANNELS = [
   { Icon: Smartphone,    label: "SMS",      color: "text-accent",      bg: "bg-accent-tint",  border: "border-accent-border" },
-  { Icon: Mail,          label: "Email",    color: "text-zinc-600",    bg: "bg-zinc-50",      border: "border-zinc-200"      },
+  { Icon: Mail,          label: "Email",    color: "text-text-secondary",    bg: "bg-background",      border: "border-border"      },
   { Icon: MessageSquare, label: "WhatsApp", color: "text-accent",      bg: "bg-accent-tint",  border: "border-accent-border" },
 ];
 
@@ -94,7 +94,7 @@ export default function LandingPage() {
   return (
     <div className="kesher-landing min-h-screen bg-background flex flex-col">
       <LandingHeader demoMailto={DEMO_MAILTO} />
-      <main className="flex-1">
+      <div className="flex-1">
         <HeroSection />
         <ProofStrip />
 
@@ -136,7 +136,7 @@ export default function LandingPage() {
         <ComplianceSection />
         <ForReviewersSection />
         <ContactSection />
-      </main>
+      </div>
       <LandingFooter contactEmail={CONTACT_EMAIL} demoMailto={DEMO_MAILTO} />
     </div>
   );

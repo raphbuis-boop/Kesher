@@ -58,9 +58,9 @@ function isSameDay(a: string, b: string) {
 }
 
 const CHANNEL_META: Record<string, { icon: React.FC<{ size?: number; strokeWidth?: number; className?: string }>; color: string; label: string }> = {
-  email: { icon: Mail, color: "text-zinc-500", label: "Email" },
-  sms: { icon: Smartphone, color: "text-blue-500", label: "SMS" },
-  whatsapp: { icon: MessageSquare, color: "text-emerald-500", label: "WhatsApp" },
+  email: { icon: Mail, color: "text-text-muted", label: "Email" },
+  sms: { icon: Smartphone, color: "text-info", label: "SMS" },
+  whatsapp: { icon: MessageSquare, color: "text-success", label: "WhatsApp" },
 };
 
 export default async function ActivityPage() {
@@ -109,13 +109,13 @@ export default async function ActivityPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#fafafa]">
+    <div className="min-h-screen bg-background">
       {/* Sticky header */}
-      <header className="sticky top-0 z-10 border-b border-[#e7e7e7] bg-white/95 backdrop-blur-sm px-6 py-3.5">
+      <header className="sticky top-0 z-10 border-b border-border bg-surface/95 backdrop-blur-sm px-6 py-3.5">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-[13px] font-semibold text-[#0f0f0f]">Activity</h1>
-            <p className="text-[11px] text-[#a1a1aa] mt-px">
+            <h1 className="text-[13px] font-semibold text-text-primary">Activity</h1>
+            <p className="text-[11px] text-text-subtle mt-px">
               {allEvents.length} event{allEvents.length !== 1 ? "s" : ""}
             </p>
           </div>
@@ -124,24 +124,24 @@ export default async function ActivityPage() {
 
       <div className="px-6 py-6">
         {allEvents.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#e7e7e7] py-24 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white border border-[#e7e7e7] mb-4">
-              <Mail size={18} className="text-[#d4d4d8]" strokeWidth={1.5} />
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-24 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface border border-border mb-4">
+              <Mail size={18} className="text-text-faint" strokeWidth={1.5} />
             </div>
-            <p className="text-[13px] font-semibold text-[#0f0f0f]">No activity yet</p>
-            <p className="text-[12px] text-[#a1a1aa] mt-1 max-w-xs">
+            <p className="text-[13px] font-semibold text-text-primary">No activity yet</p>
+            <p className="text-[12px] text-text-subtle mt-1 max-w-xs">
               Messages and imports will appear here as they happen.
             </p>
             <div className="mt-5 flex items-center gap-3">
               <Link
                 href="/messages/new"
-                className="inline-flex items-center gap-1.5 rounded-md bg-[#0f0f0f] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#27272a] transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-fg hover:bg-primary-hover transition-colors"
               >
                 <Plus size={11} strokeWidth={2.5} /> Send a message
               </Link>
               <Link
                 href="/imports"
-                className="text-[12px] font-medium text-[#a1a1aa] hover:text-[#71717a] transition-colors"
+                className="text-[12px] font-medium text-text-subtle hover:text-text-muted transition-colors"
               >
                 Import contacts
               </Link>
@@ -162,12 +162,12 @@ export default async function ActivityPage() {
               return groups.map((group) => (
                 <div key={group.label}>
                   <div className="mb-2 flex items-center gap-3">
-                    <span className="text-[11px] font-semibold text-[#a1a1aa] uppercase tracking-wider">
+                    <span className="text-[11px] font-semibold text-text-subtle uppercase tracking-wider">
                       {group.label}
                     </span>
-                    <div className="flex-1 h-px bg-[#f0f0f0]" />
+                    <div className="flex-1 h-px bg-surface-3" />
                   </div>
-                  <div className="rounded-xl border border-[#e7e7e7] bg-white overflow-hidden">
+                  <div className="rounded-xl border border-border bg-surface overflow-hidden">
                     {group.events.map((event, i) => {
                       const isLast = i === group.events.length - 1;
                       if (event.kind === "message") {
@@ -177,44 +177,44 @@ export default async function ActivityPage() {
                           <Link
                             key={event.id}
                             href={`/messages/${event.id}`}
-                            className={`flex items-start gap-3 px-4 py-3.5 hover:bg-[#fafafa] transition-colors duration-100 ${!isLast ? "border-b border-[#f5f5f5]" : ""}`}
+                            className={`flex items-start gap-3 px-4 py-3.5 hover:bg-surface-hover transition-colors duration-100 ${!isLast ? "border-b border-border-subtle" : ""}`}
                           >
-                            <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#fafafa] border border-[#f0f0f0]">
+                            <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-background border border-border-subtle">
                               <ChannelIcon size={12} className={meta.color} strokeWidth={1.75} />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-[13px] font-medium text-[#0f0f0f] truncate">
+                              <p className="text-[13px] font-medium text-text-primary truncate">
                                 {event.subject ?? event.body.slice(0, 60) + (event.body.length > 60 ? "…" : "")}
                               </p>
-                              <div className="mt-0.5 flex items-center gap-2 text-[11px] text-[#a1a1aa]">
+                              <div className="mt-0.5 flex items-center gap-2 text-[11px] text-text-subtle">
                                 <span>{meta.label}</span>
-                                <span className="text-[#d4d4d8]">·</span>
+                                <span className="text-text-subtle">·</span>
                                 <span>{event.audience_label}</span>
                                 {event.sent_count != null && (
                                   <>
-                                    <span className="text-[#d4d4d8]">·</span>
+                                    <span className="text-text-subtle">·</span>
                                     <span>{event.sent_count.toLocaleString()} delivered</span>
                                   </>
                                 )}
                                 {event.failed_count != null && event.failed_count > 0 && (
                                   <>
-                                    <span className="text-[#d4d4d8]">·</span>
-                                    <span className="text-red-400">{event.failed_count} failed</span>
+                                    <span className="text-text-subtle">·</span>
+                                    <span className="text-danger">{event.failed_count} failed</span>
                                   </>
                                 )}
                               </div>
                             </div>
                             <div className="shrink-0 flex items-center gap-2">
                               {event.status === "sent" ? (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
-                                  <span className="h-1 w-1 rounded-full bg-emerald-500" />Sent
+                                <span className="inline-flex items-center gap-1 rounded-full bg-success-tint px-1.5 py-0.5 text-[10px] font-medium text-success">
+                                  <span className="h-1 w-1 rounded-full bg-success-solid" />Sent
                                 </span>
                               ) : event.status === "failed" ? (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-600">
-                                  <span className="h-1 w-1 rounded-full bg-red-500" />Failed
+                                <span className="inline-flex items-center gap-1 rounded-full bg-danger-tint px-1.5 py-0.5 text-[10px] font-medium text-danger">
+                                  <span className="h-1 w-1 rounded-full bg-danger-solid" />Failed
                                 </span>
                               ) : null}
-                              <span className="text-[11px] tabular-nums text-[#a1a1aa]">
+                              <span className="text-[11px] tabular-nums text-text-subtle">
                                 {formatTime(event.created_at)}
                               </span>
                             </div>
@@ -224,26 +224,26 @@ export default async function ActivityPage() {
                         return (
                           <div
                             key={event.id}
-                            className={`flex items-start gap-3 px-4 py-3.5 hover:bg-[#fafafa] transition-colors duration-100 ${!isLast ? "border-b border-[#f5f5f5]" : ""}`}
+                            className={`flex items-start gap-3 px-4 py-3.5 hover:bg-surface-hover transition-colors duration-100 ${!isLast ? "border-b border-border-subtle" : ""}`}
                           >
-                            <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#fafafa] border border-[#f0f0f0]">
-                              <FileText size={12} className="text-[#a1a1aa]" strokeWidth={1.75} />
+                            <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-background border border-border-subtle">
+                              <FileText size={12} className="text-text-subtle" strokeWidth={1.75} />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-[13px] font-medium text-[#0f0f0f] truncate">{event.file_name}</p>
-                              <div className="mt-0.5 flex items-center gap-2 text-[11px] text-[#a1a1aa]">
+                              <p className="text-[13px] font-medium text-text-primary truncate">{event.file_name}</p>
+                              <div className="mt-0.5 flex items-center gap-2 text-[11px] text-text-subtle">
                                 <span>Import</span>
-                                <span className="text-[#d4d4d8]">·</span>
+                                <span className="text-text-subtle">·</span>
                                 <span>{event.imported_count.toLocaleString()} contacts added</span>
                                 {event.failed_count != null && event.failed_count > 0 && (
                                   <>
-                                    <span className="text-[#d4d4d8]">·</span>
-                                    <span className="text-amber-500">{event.failed_count} skipped</span>
+                                    <span className="text-text-subtle">·</span>
+                                    <span className="text-warning">{event.failed_count} skipped</span>
                                   </>
                                 )}
                               </div>
                             </div>
-                            <span className="shrink-0 text-[11px] tabular-nums text-[#a1a1aa]">
+                            <span className="shrink-0 text-[11px] tabular-nums text-text-subtle">
                               {formatTime(event.created_at)}
                             </span>
                           </div>
