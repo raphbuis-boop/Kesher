@@ -29,7 +29,7 @@
  *   register the callback URL.
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 // ─── GET — Meta's webhook verification challenge ──────────────────────────────
@@ -44,7 +44,11 @@ export async function GET(req: NextRequest) {
 
   if (mode === "subscribe" && token && expectedToken && token === expectedToken) {
     console.log("[meta-status] webhook verification succeeded");
-    return new NextResponse(challenge, { status: 200 });
+    // Meta expects the raw challenge string echoed back as plain text — not JSON.
+    return new NextResponse(challenge ?? "", {
+      status: 200,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
   }
 
   console.error(
@@ -93,7 +97,7 @@ function metaTimestampToIso(ts: string | undefined): string {
 
 function formatErrorDetail(err: MetaStatusError | undefined): string {
   if (!err) return "WhatsApp delivery failed";
-  const parts = [err.title ?? "Unknown error"];
+  const parts = [`Meta error ${err.code ?? "?"}: ${err.title ?? "Unknown error"}`];
   if (err.message) parts.push(err.message);
   if (err.error_data?.details) parts.push(`(${err.error_data.details})`);
   return parts.join(" — ");
@@ -112,16 +116,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
-  // Everything below can throw (bad env vars, unexpected Supabase client errors,
-  // etc.) — wrapped so a failure surfaces as a real 500 with a body, instead of an
-  // unhandled exception. Meta's webhook dashboard reports the HTTP outcome of each
-  // delivery attempt, so a clean 500 here is what lets it show a failed delivery
-  // instead of looking identical to "never called us at all."
+  // Ack Meta immediately — it retries (and can eventually disable the webhook) if
+  // it doesn't get a fast 200. DB updates run after the response is sent.
+  after(() => processPayload(payload));
+
+  return NextResponse.json({ ok: true });
+}
+
+async function processPayload(payload: MetaWebhookPayload) {
   try {
     // Basic shape check before touching the DB.
     if (payload.object !== "whatsapp_business_account" || !Array.isArray(payload.entry)) {
       console.warn(`[meta-status] unexpected payload shape — object=${payload.object}, skipping`);
-      return NextResponse.json({ ok: true });
+      return;
     }
 
     const supabase = createSupabaseAdminClient();
@@ -201,13 +208,8 @@ export async function POST(req: NextRequest) {
         }
       }
     }
-
-    // Always ack quickly — Meta retries (and can eventually disable the webhook) if
-    // it doesn't get a fast 200.
-    return NextResponse.json({ ok: true });
   } catch (err) {
     const detail = err instanceof Error ? err.message : "Unknown error";
-    console.error("[meta-status] POST handler exception:", detail);
-    return NextResponse.json({ error: detail }, { status: 500 });
+    console.error("[meta-status] processing exception:", detail);
   }
 }
