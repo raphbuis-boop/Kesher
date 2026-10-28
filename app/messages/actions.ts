@@ -184,6 +184,8 @@ export type SubmitOptions = {
   messageId?: string | null;
   /** Editing a repeating send */
   recurringId?: string | null;
+  /** This is a reminder for an earlier message */
+  resendOf?: string | null;
 };
 
 export type SubmitResult =
@@ -323,6 +325,7 @@ export async function submitMessage(raw: MessageInput, opts: SubmitOptions = { a
       rejected_at: null,
       rejection_reason: null,
     };
+    if (opts.resendOf) patch.resend_of = opts.resendOf;
     if (action === "draft") Object.assign(patch, { status: "draft", scheduled_for: null, requested_at: null, approved_by: null, approved_at: null });
     else if (action === "request_approval") Object.assign(patch, { status: "pending_approval", scheduled_for: scheduledFor?.toISOString() ?? null, requested_at: now, approved_by: null, approved_at: null });
     else if (action === "schedule") Object.assign(patch, { status: "scheduled", scheduled_for: scheduledFor!.toISOString(), requested_at: existing?.status === "pending_approval" ? undefined : null, approved_by: userId, approved_at: now });

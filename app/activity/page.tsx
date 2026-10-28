@@ -73,6 +73,7 @@ export default async function ActivityPage() {
       .from("messages")
       .select("id, subject, body, channel, audience_label, sent_count, failed_count, status, created_at")
       .eq("org_id", orgId)
+      .in("status", ["sending", "sent", "failed"])
       .order("created_at", { ascending: false })
       .limit(100),
     supabase

@@ -1,8 +1,9 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
+import { CONFIRMED_EXPLAINER, OPENED_EXPLAINER } from "@/lib/tracking";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { getOrgId } from "@/lib/org";
+import { getMembership, isAdminRole } from "@/lib/org";
 import { getBrandingSettings } from "@/lib/settings";
 import { isDemoWorkspaceLoaded } from "@/lib/demoWorkspace";
 import { getCategoryCounts } from "@/lib/categoryCounts";
@@ -39,6 +40,7 @@ type MessageRow = {
   status: string;
   sent_at: string | null;
   created_at: string;
+  confirm_button: string | null;
 };
 
 type ImportRow = {
@@ -50,8 +52,12 @@ type ImportRow = {
 
 type RecipRow = {
   message_id: string;
+  person_id: string;
+  channel: string | null;
   opened_at: string | null;
   delivered_at: string | null;
+  confirmed_at: string | null;
+  read_at: string | null;
 };
 
 type FeedItem =
@@ -129,7 +135,7 @@ function pctNum(num: number, den: number): number {
 
 export default async function OverviewPage() {
   const supabase = await createSupabaseServerClient();
-  const orgId = await getOrgId();
+  const { orgId, role } = await getMembership();
   const monthAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
   const weekAgo  = Date.now() - 7  * 24 * 60 * 60 * 1000;
 
@@ -140,14 +146,16 @@ export default async function OverviewPage() {
     categoryCounts,
     { data: rawMessages },
     { data: rawImports },
+    pendingApproval,
   ] = await Promise.all([
     getBrandingSettings(),
     isDemoWorkspaceLoaded(supabase, orgId),
     getCategoryCounts(supabase, orgId),
     supabase
       .from("messages")
-      .select("id, subject, body, channel, audience_label, recipient_count, sent_count, failed_count, status, sent_at, created_at")
+      .select("id, subject, body, channel, audience_label, recipient_count, sent_count, failed_count, status, sent_at, created_at, confirm_button:payload->>confirmButton")
       .eq("org_id", orgId)
+      .in("status", ["sending", "sent", "failed"])
       .order("created_at", { ascending: false })
       .limit(10),
     supabase
@@ -156,6 +164,9 @@ export default async function OverviewPage() {
       .eq("org_id", orgId)
       .order("created_at", { ascending: false })
       .limit(5),
+    isAdminRole(role)
+      ? supabase.from("messages").select("id", { count: "exact", head: true }).eq("org_id", orgId).eq("status", "pending_approval")
+      : Promise.resolve({ count: 0 }),
   ]);
 
   const msgList    = (rawMessages ?? []) as MessageRow[];
@@ -167,7 +178,7 @@ export default async function OverviewPage() {
   const { data: rawRecips } = messageIds.length > 0
     ? await supabase
         .from("message_recipients")
-        .select("message_id, opened_at, delivered_at")
+        .select("message_id, person_id, channel, opened_at, delivered_at, confirmed_at, read_at")
         .in("message_id", messageIds)
     : { data: [] };
   const recips = (rawRecips ?? []) as RecipRow[];
@@ -194,17 +205,30 @@ export default async function OverviewPage() {
   const sumSent     = recentMsgs.reduce((s, m) => s + (m.sent_count ?? 0), 0);
   const delivRate   = pctStr(sumSent, sumRecip);
 
-  // Open rate (email only, from webhook-confirmed recipient data)
+  // Opened (email rows only; opens can be automatic, so this is a rough signal) and the honest one:
+  // confirmed ("I've read this") or read on WhatsApp, out of people who could have shown either.
+  const recentIds = new Set(recentMsgs.map((m) => m.id));
+  const confirmLinkIds = new Set(recentMsgs.filter((m) => m.confirm_button === "true").map((m) => m.id));
   let eDel = 0, eOpen = 0;
+  const seenPossible = new Set<string>();
+  const seenDone = new Set<string>();
   for (const r of recips) {
+    if (!recentIds.has(r.message_id)) continue;
     const msg = msgList.find((m) => m.id === r.message_id);
-    if (msg?.channel === "email") {
+    const channel = r.channel ?? msg?.channel;
+    if (channel === "email") {
       if (r.delivered_at) eDel++;
       if (r.opened_at)    eOpen++;
+    }
+    if ((channel === "whatsapp" && r.delivered_at) || confirmLinkIds.has(r.message_id)) {
+      const key = `${r.message_id}:${r.person_id}`;
+      seenPossible.add(key);
+      if (r.confirmed_at || r.read_at) seenDone.add(key);
     }
   }
   const openRate = pctStr(eOpen, eDel);
   const hasOpenData = eDel > 0;
+  const seenRate = pctStr(seenDone.size, seenPossible.size);
 
   // ── Audience breakdown ───────────────────────────────────────────────────────
   const audiences = Object.entries(categoryCounts.byCategory)
@@ -265,11 +289,20 @@ export default async function OverviewPage() {
 
       <div className="px-6 py-6 space-y-6 max-w-7xl">
 
+        {(pendingApproval.count ?? 0) > 0 && (
+          <Link href="/messages?tab=approval" className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-900 hover:bg-amber-100">
+            <span>
+              <span className="font-semibold">{pendingApproval.count}</span> message{pendingApproval.count === 1 ? " is" : "s are"} waiting for your approval
+            </span>
+            <ArrowRight size={13} />
+          </Link>
+        )}
+
         {/* ── Load demo workspace (only ever shown when the workspace is empty) ── */}
         {contacts === 0 && !demoLoaded && <AdminOnly><DemoWorkspaceControl mode="load" /></AdminOnly>}
 
         {/* ── Section 1 — Hero KPIs ────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
 
           {/* Active Contacts */}
           <Link
@@ -317,11 +350,27 @@ export default async function OverviewPage() {
               hasOpenData ? "border-t-2 border-t-sky-500 border-line" : "border-line",
             ].join(" ")}
           >
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">Open Rate</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-3" title={OPENED_EXPLAINER}>Opened (may be automatic)</p>
             <p className="mt-2.5 text-[30px] font-semibold tracking-tight tabular-nums leading-none text-ink">
               {openRate ?? "—"}
             </p>
-            <p className="mt-2 text-[11px] text-ink-3">email, last 30d</p>
+            <p className="mt-2 text-[11px] text-ink-3" title={OPENED_EXPLAINER}>email, last 30d · unreliable</p>
+          </div>
+
+          {/* Confirmed or read — the signal that is certain */}
+          <div
+            className={[
+              "rounded-xl border bg-card px-4 py-4",
+              seenPossible.size > 0 ? "border-t-2 border-t-emerald-500 border-line" : "border-line",
+            ].join(" ")}
+          >
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-3" title={CONFIRMED_EXPLAINER}>Confirmed or read</p>
+            <p className="mt-2.5 text-[30px] font-semibold tracking-tight tabular-nums leading-none text-ink">
+              {seenRate ?? "—"}
+            </p>
+            <p className="mt-2 text-[11px] text-ink-3">
+              {seenPossible.size > 0 ? `${seenDone.size.toLocaleString()} of ${seenPossible.size.toLocaleString()} · last 30d` : "needs “I’ve read this” or WhatsApp"}
+            </p>
           </div>
         </div>
 

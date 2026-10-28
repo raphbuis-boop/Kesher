@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { isLikelyScannerClick, SCANNER_CLICK_MS } from "@/lib/tracking";
 
 // ─── Resend webhook event types ───────────────────────────────────────────────
 // Resend uses standardwebhooks for delivery. Signature headers:
@@ -118,6 +119,16 @@ export async function POST(req: NextRequest) {
   if (!column) {
     // email.sent, email.delivery_delayed, email.scheduled — no DB action needed
     return NextResponse.json({ ok: true });
+  }
+
+  // Mail security scanners click every link the moment a message lands. A click
+  // within seconds of delivery is a scanner, not a parent, so it isn't recorded.
+  if (type === "email.clicked") {
+    const { data: row } = await supabase.from("message_recipients").select("delivered_at, sent_at").eq("provider_id", emailId).maybeSingle();
+    if (row && isLikelyScannerClick(created_at, row.delivered_at as string | null, row.sent_at as string | null)) {
+      console.log(`[resend-webhook] ignoring click within ${SCANNER_CLICK_MS}ms of delivery (link scanner) — email_id=${emailId}`);
+      return NextResponse.json({ ok: true });
+    }
   }
 
   const update: Record<string, string | null> = {

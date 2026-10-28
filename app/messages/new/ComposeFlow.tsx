@@ -437,6 +437,7 @@ export function ComposeFlow({
   customTokens = [],
   canEmergency = false,
   schoolTimezone,
+  confirmLinksReady = true,
   schedulerHealthy = true,
   isAdmin = true,
   requireApproval = false,
@@ -453,6 +454,8 @@ export function ComposeFlow({
   customTokens?: { token: string; label: string }[];
   canEmergency?: boolean;
   schoolTimezone: string;
+  /** False when the site URL or signing key is missing, so "I've read this" links can't be made */
+  confirmLinksReady?: boolean;
   /** False when the background job that sends scheduled messages hasn't run recently */
   schedulerHealthy?: boolean;
   isAdmin?: boolean;
@@ -777,7 +780,7 @@ export function ComposeFlow({
               {showMore && (
                 <div className="mt-2 space-y-2.5 rounded-lg border border-line bg-canvas p-3">
                   <Toggle checked={familyPrefix} onChange={setFamilyPrefix} hint="e.g. “For Moshe (3rd) and Rivka (6th):” — helpful when a family has several children.">Start each message with the child&apos;s name</Toggle>
-                  <Toggle checked={confirmButton} onChange={setConfirmButton} hint="Parents tap a link (no login) to tell you they've read it. Confirmed is the most reliable read signal.">Add an &ldquo;I&apos;ve read this&rdquo; button</Toggle>
+                  <Toggle checked={confirmButton && confirmLinksReady} onChange={setConfirmButton} disabled={!confirmLinksReady} hint={confirmLinksReady ? "Parents tap a link (no login) to tell you they've read it. Confirmed is the most reliable read signal." : "Needs NEXT_PUBLIC_SITE_URL and a signing key to be set on the server."}>Add an &ldquo;I&apos;ve read this&rdquo; button</Toggle>
                   <Toggle checked={studentsDirect} onChange={setStudentsDirect} hint="Otherwise students are reached through their parents.">Also message students directly (if they have a phone or email on file)</Toggle>
                   {canEmergency && (
                     <Toggle checked={isEmergency} onChange={setIsEmergency} hint="Reaches parents who chose “emergency messages only”. Doesn't override anyone who unsubscribed or replied STOP.">Emergency message</Toggle>

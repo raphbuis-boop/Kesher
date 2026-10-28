@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { getOrgId } from "@/lib/org";
+import { getMembership, isAdminRole } from "@/lib/org";
 import { CampaignClient } from "./CampaignClient";
 
 export type CampaignMessage = {
@@ -18,11 +18,25 @@ export type CampaignMessage = {
   status: string;
   sent_at: string | null;
   created_at: string;
+  resend_of: string | null;
+  /** "true" when the message carried an "I've read this" link */
+  confirm_button: string | null;
+};
+
+/** Context shown above the numbers: what this message is a reminder for, and reminders already sent for it */
+export type CampaignLinks = {
+  reminderFor: { id: string; title: string } | null;
+  reminders: number;
+  /** Unsent-roster problems (people with no usable contact) are listed on the delivery problems page */
+  isAdmin: boolean;
 };
 
 export type CampaignRecipient = {
   id: string;
   person_id: string;
+  channel: string | null;
+  confirmed_at: string | null;
+  fallback_of: string | null;
   contact_value: string;
   name: string;
   status: string;
@@ -51,6 +65,7 @@ export type ChartBucket = {
   opened: number;   // email
   read: number;     // whatsapp
   replied: number;  // sms + whatsapp
+  confirmed: number; // "I've read this"
 };
 
 function buildChartBuckets(
@@ -65,6 +80,7 @@ function buildChartBuckets(
   const open    = new Array(BUCKETS).fill(0);
   const read    = new Array(BUCKETS).fill(0);
   const replied = new Array(BUCKETS).fill(0);
+  const confirmed = new Array(BUCKETS).fill(0);
 
   const bucket = (ts: string) =>
     Math.min(
@@ -75,17 +91,19 @@ function buildChartBuckets(
   for (const r of recipients) {
     if (r.delivered_at) del[bucket(r.delivered_at)]++;
     if (r.opened_at)    open[bucket(r.opened_at)]++;
+    if (r.confirmed_at) confirmed[bucket(r.confirmed_at)]++;
     if (r.read_at)      read[bucket(r.read_at)]++;
     if (r.replied_at)   replied[bucket(r.replied_at)]++;
   }
 
-  let cd = 0, co = 0, cr = 0, cp = 0;
+  let cd = 0, co = 0, cr = 0, cp = 0, cc = 0;
   return Array.from({ length: BUCKETS }, (_, i) => {
     cd += del[i];
     co += open[i];
     cr += read[i];
     cp += replied[i];
-    return { hour: i, delivered: cd, opened: co, read: cr, replied: cp };
+    cc += confirmed[i];
+    return { hour: i, delivered: cd, opened: co, read: cr, replied: cp, confirmed: cc };
   });
 }
 
@@ -98,10 +116,10 @@ export default async function CampaignPage({
 }) {
   const { id } = await params;
   const supabase = await createSupabaseServerClient();
-  const orgId = await getOrgId();
+  const { orgId, role } = await getMembership();
 
   const recipientColumns =
-    "id, person_id, contact_value, name, status, provider_id, sent_at, delivered_at, opened_at, clicked_at, read_at, replied_at, bounced_at, complained_at, bounce_type, error_detail, people(id, first_name, last_name, categories)";
+    "id, person_id, channel, confirmed_at, fallback_of, contact_value, name, status, provider_id, sent_at, delivered_at, opened_at, clicked_at, read_at, replied_at, bounced_at, complained_at, bounce_type, error_detail, people(id, first_name, last_name, categories)";
   const recipientPage = (from: number) =>
     supabase
       .from("message_recipients")
@@ -115,7 +133,7 @@ export default async function CampaignPage({
     supabase
       .from("messages")
       .select(
-        "id, subject, body, channel, audience_label, audience_slug, recipient_count, sent_count, failed_count, status, sent_at, created_at"
+        "id, subject, body, channel, audience_label, audience_slug, recipient_count, sent_count, failed_count, status, sent_at, created_at, resend_of, confirm_button:payload->>confirmButton"
       )
       .eq("org_id", orgId)
       .eq("id", id)
@@ -143,11 +161,25 @@ export default async function CampaignPage({
     message.sent_at ?? message.created_at
   );
 
+  const [reminderRes, remindersRes] = await Promise.all([
+    message.resend_of
+      ? supabase.from("messages").select("id, subject, body").eq("org_id", orgId).eq("id", message.resend_of).maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase.from("messages").select("id", { count: "exact", head: true }).eq("org_id", orgId).eq("resend_of", id),
+  ]);
+  const original = reminderRes.data as { id: string; subject: string | null; body: string } | null;
+  const links: CampaignLinks = {
+    reminderFor: original ? { id: original.id, title: original.subject?.trim() || original.body.slice(0, 50) } : null,
+    reminders: remindersRes.count ?? 0,
+    isAdmin: isAdminRole(role),
+  };
+
   return (
     <CampaignClient
       message={message}
       recipients={recipients}
       chartData={chartData}
+      links={links}
     />
   );
 }

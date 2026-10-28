@@ -12,6 +12,7 @@ import { redirect } from "next/navigation";
 import { ComposeFlow, type AudienceOption, type ComposeInitial } from "./ComposeFlow";
 import { getRequireApproval, getSchoolTimezone, localDateString, localTimeString, validClockRule } from "@/lib/schoolTime";
 import { getDispatcherHealth } from "@/lib/send/health";
+import { linksConfigured } from "@/lib/links";
 import type { MessageInput } from "@/lib/send/types";
 
 const SYSTEM_AUDIENCES: { slug: string; label: string; category: string }[] = [
@@ -116,6 +117,7 @@ export default async function NewMessagePage({ searchParams }: { searchParams: P
           customTokens={fieldDefs.map((d) => ({ token: `{{${d.key}}}`, label: d.label }))}
           canEmergency={admin}
           schoolTimezone={timezone}
+          confirmLinksReady={linksConfigured()}
           schedulerHealthy={health.healthy}
           isAdmin={admin}
           requireApproval={requireApproval}

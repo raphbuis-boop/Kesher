@@ -10,7 +10,6 @@ import {
   MessageSquare,
   Download,
   Copy,
-  RotateCcw,
   Search,
   X,
   CheckCircle2,
@@ -23,23 +22,35 @@ import {
   Reply,
   BookOpen,
   Activity,
+  Info,
+  MousePointerClick,
+  CheckCheck,
+  AlertTriangle,
 } from "lucide-react";
-import type { CampaignMessage, CampaignRecipient, ChartBucket } from "./page";
+import type { CampaignLinks, CampaignMessage, CampaignRecipient, ChartBucket } from "./page";
+import { CONFIRMED_EXPLAINER, OPENED_EXPLAINER, OPENED_LABEL, READ_EXPLAINER } from "@/lib/tracking";
+import { ResendUnread } from "./ResendUnread";
 
 // ─── types ──────────────────────────────────────────────────────────────────
 
 type RecipientStatus =
+  | "confirmed"
   | "replied"
   | "read"
+  | "clicked"
   | "opened"
   | "delivered"
   | "bounced"
   | "complained"
   | "failed"
+  | "retried"
   | "opted_out"
+  | "queued"
   | "sent";
 
-type FilterKey = "all" | "delivered" | "opened" | "not_opened" | "read" | "replied" | "failed";
+type FilterKey = "all" | "delivered" | "confirmed" | "unseen" | "opened" | "read" | "replied" | "failed";
+
+type Chan = "email" | "sms" | "whatsapp";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -61,27 +72,41 @@ const CATEGORY_LABELS: Record<string, string> = {
   board: "Board", donor: "Donor", prospect: "Prospect",
 };
 
-function recipientStatus(r: CampaignRecipient): RecipientStatus {
+/** The channel a row was sent on (older single-channel messages have it on the message). */
+function rowChannel(r: CampaignRecipient, message: CampaignMessage): Chan {
+  const c = r.channel ?? message.channel;
+  return c === "sms" || c === "whatsapp" ? c : "email";
+}
+
+/** Highest-confidence thing we know about this row. "Retried" = failed, but the message went out on another channel. */
+function recipientStatus(r: CampaignRecipient, retried: Set<string>): RecipientStatus {
   if (r.status === "opted_out") return "opted_out";
-  if (r.replied_at)          return "replied";
   if (r.complained_at)       return "complained";
-  if (r.bounced_at)          return "bounced";
-  if (r.status === "failed") return "failed";
+  if (r.bounced_at && !retried.has(r.id)) return "bounced";
+  if (r.status === "failed") return retried.has(r.id) ? "retried" : "failed";
+  if (r.confirmed_at)        return "confirmed";
+  if (r.replied_at)          return "replied";
   if (r.read_at)             return "read";
+  if (r.clicked_at)          return "clicked";
   if (r.opened_at)           return "opened";
   if (r.delivered_at)        return "delivered";
+  if (r.status === "queued" || r.status === "sending") return "queued";
   return "sent";
 }
 
 const STATUS_META: Record<RecipientStatus, { label: string; textColor: string; bg: string; dot: string }> = {
+  confirmed: { label: "Confirmed", textColor: "text-emerald-800", bg: "bg-emerald-100", dot: "bg-emerald-600" },
   replied:   { label: "Replied",   textColor: "text-violet-700",  bg: "bg-violet-50",  dot: "bg-violet-500"  },
   read:      { label: "Read",      textColor: "text-blue-700",    bg: "bg-blue-50",    dot: "bg-blue-500"    },
-  opened:    { label: "Opened",    textColor: "text-sky-700",     bg: "bg-sky-50",     dot: "bg-sky-500"     },
+  clicked:   { label: "Clicked",   textColor: "text-sky-700",     bg: "bg-sky-50",     dot: "bg-sky-500"     },
+  opened:    { label: OPENED_LABEL, textColor: "text-sky-700",    bg: "bg-sky-50",     dot: "bg-sky-400"     },
   delivered: { label: "Delivered", textColor: "text-emerald-700", bg: "bg-emerald-50", dot: "bg-emerald-500" },
   bounced:   { label: "Bounced",   textColor: "text-amber-700",   bg: "bg-amber-50",   dot: "bg-amber-500"   },
   complained:{ label: "Spam",      textColor: "text-orange-700",  bg: "bg-orange-50",  dot: "bg-orange-500"  },
   failed:    { label: "Failed",    textColor: "text-red-600",     bg: "bg-red-50",     dot: "bg-red-500"     },
+  retried:   { label: "Sent another way", textColor: "text-ink-2", bg: "bg-muted",     dot: "bg-ink-3"       },
   opted_out: { label: "Opted out", textColor: "text-rose-700",    bg: "bg-rose-50",    dot: "bg-rose-500"    },
+  queued:    { label: "Waiting to send", textColor: "text-ink-2", bg: "bg-muted",      dot: "bg-ink-3"       },
   sent:      { label: "Sent",      textColor: "text-ink-2",   bg: "bg-muted", dot: "bg-ink-3"  },
 };
 
@@ -117,7 +142,7 @@ function fmtRelative(ts: string): string {
 
 function lastActivity(r: CampaignRecipient): string | null {
   return (
-    [r.replied_at, r.complained_at, r.opened_at, r.read_at, r.bounced_at, r.delivered_at, r.sent_at]
+    [r.confirmed_at, r.replied_at, r.complained_at, r.clicked_at, r.opened_at, r.read_at, r.bounced_at, r.delivered_at, r.sent_at]
       .filter(Boolean)
       .sort((a, b) => new Date(b!).getTime() - new Date(a!).getTime())[0] ?? null
   );
@@ -128,49 +153,38 @@ function pct(num: number, den: number): string {
   return `${((num / den) * 100).toFixed(1)}%`;
 }
 
-function exportCSV(recipients: CampaignRecipient[], subject: string | null, channel: string) {
-  const isEmail    = channel === "email";
-  const isWhatsApp = channel === "whatsapp";
+function csvCell(v: string | null | undefined): string {
+  const t = v ?? "";
+  return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
+}
 
-  const header = isEmail
-    ? "Name,Email,Status,Delivered At,Opened At,Replied At,Bounced At,Bounce Type"
-    : isWhatsApp
-    ? "Name,Phone,Status,Delivered At,Read At,Replied At"
-    : "Name,Phone,Status,Delivered At,Replied At";
-
+function exportCSV(recipients: CampaignRecipient[], message: CampaignMessage, retried: Set<string>) {
+  const iso = (ts: string | null) => (ts ? new Date(ts).toISOString() : "");
+  const header = ["Name", "Channel", "Contact", "Status", "Delivered", `${OPENED_LABEL}`, "Clicked", "Read (WhatsApp)", "Confirmed", "Replied", "Bounced", "Error"].join(",");
   const rows = recipients
-    .map((r) => {
-      const base = [
-        `"${r.name.replace(/"/g, '""')}"`,
-        `"${r.contact_value}"`,
-        recipientStatus(r),
-        r.delivered_at ? new Date(r.delivered_at).toISOString() : "",
-      ];
-      if (isEmail) {
-        return [...base,
-          r.opened_at   ? new Date(r.opened_at).toISOString()   : "",
-          r.replied_at  ? new Date(r.replied_at).toISOString()  : "",
-          r.bounced_at  ? new Date(r.bounced_at).toISOString()  : "",
-          r.bounce_type ?? "",
-        ].join(",");
-      }
-      if (isWhatsApp) {
-        return [...base,
-          r.read_at    ? new Date(r.read_at).toISOString()    : "",
-          r.replied_at ? new Date(r.replied_at).toISOString() : "",
-        ].join(",");
-      }
-      return [...base,
-        r.replied_at ? new Date(r.replied_at).toISOString() : "",
-      ].join(",");
-    })
+    .map((r) =>
+      [
+        csvCell(r.name),
+        rowChannel(r, message),
+        csvCell(r.contact_value),
+        STATUS_META[recipientStatus(r, retried)].label,
+        iso(r.delivered_at),
+        iso(r.opened_at),
+        iso(r.clicked_at),
+        iso(r.read_at),
+        iso(r.confirmed_at),
+        iso(r.replied_at),
+        iso(r.bounced_at),
+        csvCell(r.error_detail),
+      ].join(",")
+    )
     .join("\n");
 
   const blob = new Blob([`${header}\n${rows}`], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `campaign-${(subject ?? "export").replace(/\s+/g, "-").toLowerCase()}.csv`;
+  a.download = `message-${(message.subject ?? "export").replace(/\s+/g, "-").toLowerCase()}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -183,11 +197,10 @@ function useCountUp(target: number, duration = 700) {
 
   useEffect(() => {
     cancelAnimationFrame(rafRef.current);
-    if (target === 0) { setVal(0); return; }
     let startTime: number | null = null;
     function step(ts: number) {
       if (startTime === null) startTime = ts;
-      const t = Math.min((ts - startTime) / duration, 1);
+      const t = target === 0 ? 1 : Math.min((ts - startTime) / duration, 1);
       const eased = 1 - Math.pow(1 - t, 3);
       setVal(Math.round(target * eased));
       if (t < 1) rafRef.current = requestAnimationFrame(step);
@@ -225,9 +238,9 @@ function useReveal(duration = 1200) {
 // ─── KPI Card ────────────────────────────────────────────────────────────────
 
 function KPICard({
-  label, value, sub, accent, index = 0,
+  label, value, sub, accent, index = 0, info,
 }: {
-  label: string; value: number; sub?: string; accent?: string; index?: number;
+  label: string; value: number; sub?: string; accent?: string; index?: number; info?: string;
 }) {
   const count = useCountUp(value, 650);
 
@@ -239,7 +252,14 @@ function KPICard({
       ].filter(Boolean).join(" ")}
       style={{ animationDelay: `${index * 50}ms` }}
     >
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">{label}</p>
+      <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-ink-3">
+        {label}
+        {info && (
+          <span title={info} className="cursor-help text-ink-3 normal-case" aria-label={info}>
+            <Info size={11} strokeWidth={2} />
+          </span>
+        )}
+      </p>
       <p className="mt-2.5 text-[30px] font-semibold tracking-tight tabular-nums leading-none text-ink">
         {count.toLocaleString()}
       </p>
@@ -251,57 +271,43 @@ function KPICard({
 // ─── KPI grid ────────────────────────────────────────────────────────────────
 
 type KPIStats = {
-  total: number; delivered: number; opened: number;
-  read: number; replied: number; failed: number;
+  /** Distinct people */
+  people: number;
+  /** Messages (a person on two channels has two) */
+  rows: number;
+  delivered: number;
+  emailRows: number; emailDelivered: number; opened: number; clicked: number;
+  waRows: number; waDelivered: number; read: number;
+  replied: number;
+  /** People who tapped "I've read this" */
+  confirmed: number;
+  /** People who confirmed or read on WhatsApp */
+  seen: number;
+  failed: number;
+  usesConfirm: boolean;
 };
 
-function KPIGrid({ stats, channel }: { stats: KPIStats; channel: string }) {
-  if (channel === "email") {
-    return (
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <KPICard label="Recipients" value={stats.total} index={0} />
-        <KPICard label="Delivered" value={stats.delivered}
-          sub={pct(stats.delivered, stats.total) + " delivery rate"} accent={ACCENT.emerald} index={1} />
-        <KPICard label="Opened" value={stats.opened}
-          sub={pct(stats.opened, stats.delivered) + " open rate"}
-          accent={stats.opened > 0 ? ACCENT.sky : undefined} index={2} />
-        <KPICard label="Failed" value={stats.failed}
-          sub={pct(stats.failed, stats.total) + " failure rate"}
-          accent={stats.failed > 0 ? ACCENT.red : undefined} index={3} />
-      </div>
-    );
+function KPIGrid({ stats }: { stats: KPIStats }) {
+  const cards: { label: string; value: number; sub?: string; accent?: string; info?: string }[] = [
+    { label: "People", value: stats.people, sub: stats.rows !== stats.people ? `${stats.rows.toLocaleString()} messages across channels` : undefined },
+    { label: "Delivered", value: stats.delivered, sub: pct(stats.delivered, stats.rows) + " of messages", accent: ACCENT.emerald },
+  ];
+  if (stats.usesConfirm || stats.confirmed > 0) {
+    cards.push({ label: "Confirmed", value: stats.confirmed, sub: `${pct(stats.confirmed, stats.people)} of people tapped "I've read this"`, accent: ACCENT.emerald, info: CONFIRMED_EXPLAINER });
   }
-
-  if (channel === "whatsapp") {
-    return (
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <KPICard label="Recipients" value={stats.total} index={0} />
-        <KPICard label="Delivered" value={stats.delivered}
-          sub={pct(stats.delivered, stats.total) + " delivery rate"} accent={ACCENT.emerald} index={1} />
-        <KPICard label="Read" value={stats.read}
-          sub={pct(stats.read, stats.delivered) + " read rate"}
-          accent={stats.read > 0 ? ACCENT.blue : undefined} index={2} />
-        <KPICard label="Replied" value={stats.replied}
-          sub={pct(stats.replied, stats.delivered) + " reply rate"}
-          accent={stats.replied > 0 ? ACCENT.violet : undefined} index={3} />
-        <KPICard label="Failed" value={stats.failed}
-          sub={pct(stats.failed, stats.total) + " failure rate"}
-          accent={stats.failed > 0 ? ACCENT.red : undefined} index={4} />
-      </div>
-    );
+  if (stats.waRows > 0) {
+    cards.push({ label: "Read (WhatsApp)", value: stats.read, sub: `${pct(stats.read, stats.waDelivered)} of ${stats.waDelivered.toLocaleString()} delivered`, accent: stats.read > 0 ? ACCENT.blue : undefined, info: READ_EXPLAINER });
   }
+  if (stats.emailRows > 0) {
+    cards.push({ label: OPENED_LABEL, value: stats.opened, sub: `${pct(stats.opened, stats.emailDelivered)} of ${stats.emailDelivered.toLocaleString()} emails`, accent: stats.opened > 0 ? ACCENT.sky : undefined, info: OPENED_EXPLAINER });
+    if (stats.clicked > 0) cards.push({ label: "Clicked", value: stats.clicked, sub: "Link scanners are ignored", accent: ACCENT.sky });
+  }
+  if (stats.replied > 0) cards.push({ label: "Replied", value: stats.replied, accent: ACCENT.violet });
+  cards.push({ label: "Failed", value: stats.failed, sub: stats.failed > 0 ? "No working channel reached them" : "Everyone was reached", accent: stats.failed > 0 ? ACCENT.red : undefined });
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <KPICard label="Recipients" value={stats.total} index={0} />
-      <KPICard label="Delivered" value={stats.delivered}
-        sub={pct(stats.delivered, stats.total) + " delivery rate"} accent={ACCENT.emerald} index={1} />
-      <KPICard label="Replied" value={stats.replied}
-        sub={pct(stats.replied, stats.delivered) + " reply rate"}
-        accent={stats.replied > 0 ? ACCENT.violet : undefined} index={2} />
-      <KPICard label="Failed" value={stats.failed}
-        sub={pct(stats.failed, stats.total) + " failure rate"}
-        accent={stats.failed > 0 ? ACCENT.red : undefined} index={3} />
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+      {cards.map((c, i) => <KPICard key={c.label} {...c} index={i} />)}
     </div>
   );
 }
@@ -313,12 +319,13 @@ function LiveProgressBanner({ message, stats }: { message: CampaignMessage; stat
   const [dismissed, setDismissed] = useState(false);
 
   const sentAt    = message.sent_at ?? message.created_at;
-  const ageMs     = Date.now() - new Date(sentAt).getTime();
+  const [now] = useState(() => Date.now());
+  const ageMs     = now - new Date(sentAt).getTime();
   const isFresh   = ageMs < 2 * 60 * 60 * 1000;
-  const delivPct  = stats.total > 0 ? stats.delivered / stats.total : 0;
+  const delivPct  = stats.rows > 0 ? stats.delivered / stats.rows : 0;
   const isComplete = delivPct >= 0.95 || !isFresh;
 
-  const shouldShow = !dismissed && stats.total > 0 && (message.status === "sending" || isFresh);
+  const shouldShow = !dismissed && stats.rows > 0 && (message.status === "sending" || isFresh);
 
   useEffect(() => {
     if (!shouldShow || isComplete) return;
@@ -328,11 +335,9 @@ function LiveProgressBanner({ message, stats }: { message: CampaignMessage; stat
 
   if (!shouldShow) return null;
 
-  const barPct  = stats.total > 0 ? Math.round((stats.delivered / stats.total) * 100) : 0;
-  const isEmail = message.channel === "email";
-  const isWA    = message.channel === "whatsapp";
-  const engCount = isEmail ? stats.opened : isWA ? stats.read : stats.replied;
-  const engLabel = isEmail ? "opened" : isWA ? "read" : "replied";
+  const barPct  = stats.rows > 0 ? Math.round((stats.delivered / stats.rows) * 100) : 0;
+  const engCount = stats.seen;
+  const engLabel = "confirmed or read";
 
   return (
     <div className="rounded-xl border border-line bg-card shadow-card px-5 py-4 animate-fade-up" style={{ animationDelay: "0ms" }}>
@@ -347,7 +352,7 @@ function LiveProgressBanner({ message, stats }: { message: CampaignMessage; stat
             </span>
           )}
           <span className="text-[13px] font-semibold text-ink">
-            {isComplete ? "Campaign delivered" : "Sending in progress"}
+            {isComplete ? "Delivered" : "Sending in progress"}
           </span>
           {!isComplete && (
             <span className="text-[11px] text-ink-3">· updates every 10s</span>
@@ -379,7 +384,7 @@ function LiveProgressBanner({ message, stats }: { message: CampaignMessage; stat
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
           <span className="text-[11px] text-ink-2">
             <span className="tabular-nums font-semibold text-ink">{stats.delivered.toLocaleString()}</span>
-            {" / "}{stats.total.toLocaleString()} delivered
+            {" / "}{stats.rows.toLocaleString()} delivered
           </span>
         </div>
         {engCount > 0 && (
@@ -409,13 +414,11 @@ function LiveProgressBanner({ message, stats }: { message: CampaignMessage; stat
 
 function ActivityFeed({
   recipients,
-  channel,
+  message,
 }: {
   recipients: CampaignRecipient[];
-  channel: string;
+  message: CampaignMessage;
 }) {
-  const isEmail    = channel === "email";
-  const isWhatsApp = channel === "whatsapp";
 
   const events = useMemo(() => {
     const evs: Array<{
@@ -433,11 +436,17 @@ function ActivityFeed({
       } else if (r.replied_at) {
         evs.push({ label: `${name} replied`, time: r.replied_at, color: "text-violet-600", bg: "bg-violet-50", icon: Reply });
       }
-      if (isEmail && r.opened_at) {
-        evs.push({ label: `${name} opened the email`, time: r.opened_at, color: "text-sky-600", bg: "bg-sky-50", icon: Eye });
+      if (r.confirmed_at) {
+        evs.push({ label: `${name} confirmed they read it`, time: r.confirmed_at, color: "text-emerald-700", bg: "bg-emerald-50", icon: CheckCheck });
       }
-      if (isWhatsApp && r.read_at) {
-        evs.push({ label: `${name} read the message`, time: r.read_at, color: "text-blue-600", bg: "bg-blue-50", icon: BookOpen });
+      if (r.clicked_at) {
+        evs.push({ label: `${name} clicked a link`, time: r.clicked_at, color: "text-sky-600", bg: "bg-sky-50", icon: MousePointerClick });
+      }
+      if (r.opened_at) {
+        evs.push({ label: `${name}'s email was opened (may be automatic)`, time: r.opened_at, color: "text-sky-600", bg: "bg-sky-50", icon: Eye });
+      }
+      if (r.read_at) {
+        evs.push({ label: `${name} read the WhatsApp message`, time: r.read_at, color: "text-blue-600", bg: "bg-blue-50", icon: BookOpen });
       }
       if (r.bounced_at) {
         evs.push({ label: `${name}'s message bounced`, time: r.bounced_at, color: "text-amber-600", bg: "bg-amber-50", icon: AlertCircle });
@@ -450,7 +459,8 @@ function ActivityFeed({
     return evs
       .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
       .slice(0, 20);
-  }, [recipients, isEmail, isWhatsApp]);
+  }, [recipients]);
+  void message;
 
   return (
     <div className="rounded-xl border border-line bg-card shadow-card px-5 py-5 flex flex-col animate-fade-up" style={{ animationDelay: "280ms" }}>
@@ -466,11 +476,7 @@ function ActivityFeed({
           </div>
           <p className="text-[12px] font-medium text-ink-2">Waiting for activity</p>
           <p className="mt-0.5 text-[11px] text-ink-3">
-            {isEmail
-              ? "Opens and bounces will appear here."
-              : isWhatsApp
-              ? "Read receipts and replies will appear here."
-              : "Replies will appear here."}
+            Confirmations, read receipts, replies and bounces will appear here.
           </p>
         </div>
       ) : (
@@ -497,19 +503,16 @@ function ActivityFeed({
 
 // ─── Timeline chart ───────────────────────────────────────────────────────────
 
-function TimelineChart({ data, channel }: { data: ChartBucket[]; channel: string }) {
+function TimelineChart({ data }: { data: ChartBucket[] }) {
   // Hook must be called before any early return
   const revealPct = useReveal(1100);
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  const isEmail    = channel === "email";
-  const isWhatsApp = channel === "whatsapp";
-
   const hasDelivered = data.some((b) => b.delivered > 0);
-  const hasOpened    = isEmail    && data.some((b) => b.opened  > 0);
-  const hasRead      = isWhatsApp && data.some((b) => b.read    > 0);
-  const hasReplied   = !isEmail   && data.some((b) => b.replied > 0);
+  const hasOpened    = data.some((b) => b.opened  > 0);
+  const hasRead      = data.some((b) => b.read    > 0);
+  const hasReplied   = data.some((b) => b.replied > 0);
 
   if (!hasDelivered) {
     return (
@@ -650,7 +653,7 @@ function TimelineChart({ data, channel }: { data: ChartBucket[]; channel: string
               </text>
               {hasOpened && (() => { ttLine += 14; return (
                 <text key="o" x={ttX + 10} y={ttY + ttLine} fontSize="9.5" fill="#0ea5e9" fontWeight="500">
-                  {hBucket.opened.toLocaleString()} opened
+                  {hBucket.opened.toLocaleString()} opened (may be automatic)
                 </text>
               ); })()}
               {hasRead && (() => { ttLine += 14; return (
@@ -676,7 +679,7 @@ function TimelineChart({ data, channel }: { data: ChartBucket[]; channel: string
         {hasOpened && (
           <div className="flex items-center gap-1.5">
             <span className="h-[2px] w-5 rounded-full bg-sky-500" />
-            <span className="text-[11px] text-ink-2">Opened</span>
+            <span className="text-[11px] text-ink-2">{OPENED_LABEL}</span>
           </div>
         )}
         {hasRead && (
@@ -727,14 +730,14 @@ function StatusBadge({ status, tooltip }: { status: RecipientStatus; tooltip?: s
 // ─── Recipient Drawer ─────────────────────────────────────────────────────────
 
 function RecipientDrawer({
-  recipient, message, onClose,
+  recipient, message, retried, onClose,
 }: {
-  recipient: CampaignRecipient; message: CampaignMessage; onClose: () => void;
+  recipient: CampaignRecipient; message: CampaignMessage; retried: Set<string>; onClose: () => void;
 }) {
-  const status     = recipientStatus(recipient);
+  const status     = recipientStatus(recipient, retried);
   const person     = recipient.people;
-  const isEmail    = message.channel === "email";
-  const isWhatsApp = message.channel === "whatsapp";
+  const chan       = rowChannel(recipient, message);
+  const isEmail    = chan === "email";
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -753,16 +756,22 @@ function RecipientDrawer({
     recipient.delivered_at
       ? { label: "Delivered", time: recipient.delivered_at, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50" }
       : null,
-    isEmail && recipient.opened_at
-      ? { label: "Opened", time: recipient.opened_at, icon: Eye, color: "text-sky-600", bg: "bg-sky-50" }
+    recipient.opened_at
+      ? { label: OPENED_LABEL, time: recipient.opened_at, icon: Eye, color: "text-sky-600", bg: "bg-sky-50" }
       : null,
-    isWhatsApp && recipient.read_at
-      ? { label: "Read", time: recipient.read_at, icon: BookOpen, color: "text-blue-600", bg: "bg-blue-50" }
+    recipient.clicked_at
+      ? { label: "Clicked a link", time: recipient.clicked_at, icon: MousePointerClick, color: "text-sky-600", bg: "bg-sky-50" }
       : null,
-    !isEmail && recipient.replied_at && recipient.status !== "opted_out"
+    recipient.read_at
+      ? { label: "Read on WhatsApp", time: recipient.read_at, icon: BookOpen, color: "text-blue-600", bg: "bg-blue-50" }
+      : null,
+    recipient.confirmed_at
+      ? { label: "Confirmed they read it", time: recipient.confirmed_at, icon: CheckCheck, color: "text-emerald-700", bg: "bg-emerald-50" }
+      : null,
+    recipient.replied_at && recipient.status !== "opted_out"
       ? { label: "Replied", time: recipient.replied_at, icon: Reply, color: "text-violet-600", bg: "bg-violet-50" }
       : null,
-    !isEmail && recipient.replied_at && recipient.status === "opted_out"
+    recipient.replied_at && recipient.status === "opted_out"
       ? { label: "Opted out (replied STOP)", time: recipient.replied_at, icon: XCircle, color: "text-rose-600", bg: "bg-rose-50" }
       : null,
     recipient.bounced_at
@@ -800,6 +809,8 @@ function RecipientDrawer({
           <div>
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-ink-3">Delivery Status</p>
             <StatusBadge status={status} />
+            {status === "opened" && <p className="mt-2 text-[11px] leading-relaxed text-ink-3">{OPENED_EXPLAINER}</p>}
+            {status === "retried" && <p className="mt-2 text-[11px] leading-relaxed text-ink-3">{recipient.error_detail ?? "This channel failed, so Kesher tried the next one."}</p>}
           </div>
 
           <div>
@@ -810,7 +821,7 @@ function RecipientDrawer({
                 <p className="mt-0.5 text-[13px] text-ink">{recipient.name}</p>
               </div>
               <div className="px-4 py-3">
-                <p className="text-[10px] text-ink-3">{isEmail ? "Email" : "Phone"}</p>
+                <p className="text-[10px] text-ink-3">{isEmail ? "Email" : chan === "whatsapp" ? "WhatsApp number" : "Phone"}</p>
                 <p className="mt-0.5 font-mono text-[12px] text-ink">{recipient.contact_value}</p>
               </div>
               {person?.categories && person.categories.length > 0 && (
@@ -909,14 +920,15 @@ function RecipientDrawer({
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
-function EmptyState({ filter, search, channel, onClear }: {
-  filter: FilterKey; search: string; channel: string; onClear: () => void;
+function EmptyState({ filter, search, onClear }: {
+  filter: FilterKey; search: string; onClear: () => void;
 }) {
   const CONFIGS: Record<FilterKey, { title: string; body: string }> = {
     all:        { title: "No recipients yet",     body: "Recipients will appear here once the campaign is sent." },
     delivered:  { title: "No deliveries yet",     body: "Delivery confirmations will appear as messages reach recipients." },
-    opened:     { title: "No opens yet",          body: channel === "email" ? "Opens will appear once recipients view the email." : "Opens are not tracked for this channel." },
-    not_opened: { title: "Everyone has opened",   body: "All delivered recipients have opened the message." },
+    confirmed:  { title: "Nobody has confirmed yet", body: "People appear here when they tap \"I've read this\" in their message." },
+    unseen:     { title: "Everyone has confirmed or read it", body: "Nobody is left who hasn't confirmed or read on WhatsApp." },
+    opened:     { title: "No opens recorded",     body: "Email opens are unreliable and may be automatic, so don't treat a missing open as unread." },
     read:       { title: "No read receipts yet",  body: "WhatsApp read receipts appear when recipients open the message." },
     replied:    { title: "No replies yet",        body: "Replies will appear here as recipients respond." },
     failed:     { title: "No failures",           body: "All messages were accepted for delivery." },
@@ -948,9 +960,9 @@ function EmptyState({ filter, search, channel, onClear }: {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function CampaignClient({
-  message, recipients, chartData,
+  message, recipients, chartData, links,
 }: {
-  message: CampaignMessage; recipients: CampaignRecipient[]; chartData: ChartBucket[];
+  message: CampaignMessage; recipients: CampaignRecipient[]; chartData: ChartBucket[]; links: CampaignLinks;
 }) {
   const [filter, setFilter]   = useState<FilterKey>("all");
   const [search, setSearch]   = useState("");
@@ -964,64 +976,78 @@ export function CampaignClient({
   const channelMeta = CHANNEL_META[message.channel] ?? CHANNEL_META.email;
   const ChannelIcon = channelMeta.icon;
   const sentAt   = message.sent_at ?? message.created_at;
-  const isEmail    = message.channel === "email";
-  const isWhatsApp = message.channel === "whatsapp";
+  const usesConfirm = message.confirm_button === "true";
 
-  const stats = useMemo<KPIStats>(() => ({
-    total:     recipients.length,
-    delivered: recipients.filter((r) => r.delivered_at).length,
-    opened:    recipients.filter((r) => r.opened_at).length,
-    read:      recipients.filter((r) => r.read_at).length,
-    replied:   recipients.filter((r) => r.replied_at).length,
-    failed:    recipients.filter((r) => r.status === "failed").length,
-  }), [recipients]);
+  // A failed row whose message then went out on another channel is "sent another way", not a failure
+  const retried = useMemo(() => new Set(recipients.map((r) => r.fallback_of).filter((x): x is string => !!x)), [recipients]);
+  const chanOf = useMemo(() => new Map(recipients.map((r) => [r.id, rowChannel(r, message)])), [recipients, message]);
 
-  const FILTERS: { key: FilterKey; label: string }[] = useMemo(() => {
-    if (isEmail) return [
-      { key: "all", label: "All" }, { key: "delivered", label: "Delivered" },
-      { key: "opened", label: "Opened" }, { key: "not_opened", label: "Not Opened" }, { key: "failed", label: "Failed" },
-    ];
-    if (isWhatsApp) return [
-      { key: "all", label: "All" }, { key: "delivered", label: "Delivered" },
-      { key: "read", label: "Read" }, { key: "replied", label: "Replied" }, { key: "failed", label: "Failed" },
-    ];
-    return [
-      { key: "all", label: "All" }, { key: "delivered", label: "Delivered" },
-      { key: "replied", label: "Replied" }, { key: "failed", label: "Failed" },
-    ];
-  }, [isEmail, isWhatsApp]);
+  // Seen = confirmed, or read on WhatsApp. Email opens never count (they may be automatic).
+  const seenPeople = useMemo(() => new Set(recipients.filter((r) => r.confirmed_at || r.read_at).map((r) => r.person_id)), [recipients]);
 
-  const filterCounts = useMemo(() => ({
-    all:        recipients.length,
-    delivered:  recipients.filter((r) => r.delivered_at).length,
-    opened:     recipients.filter((r) => r.opened_at).length,
-    not_opened: recipients.filter((r) => r.delivered_at && !r.opened_at).length,
-    read:       recipients.filter((r) => r.read_at).length,
-    replied:    recipients.filter((r) => r.replied_at).length,
-    failed:     recipients.filter((r) => r.status === "failed").length,
-  }), [recipients]);
+  const stats = useMemo<KPIStats>(() => {
+    const email = recipients.filter((r) => chanOf.get(r.id) === "email");
+    const wa = recipients.filter((r) => chanOf.get(r.id) === "whatsapp");
+    const people = new Set(recipients.map((r) => r.person_id));
+    return {
+      people:         people.size,
+      rows:           recipients.length,
+      delivered:      recipients.filter((r) => r.delivered_at).length,
+      emailRows:      email.length,
+      emailDelivered: email.filter((r) => r.delivered_at).length,
+      opened:         email.filter((r) => r.opened_at).length,
+      clicked:        email.filter((r) => r.clicked_at).length,
+      waRows:         wa.length,
+      waDelivered:    wa.filter((r) => r.delivered_at).length,
+      read:           wa.filter((r) => r.read_at).length,
+      replied:        new Set(recipients.filter((r) => r.replied_at).map((r) => r.person_id)).size,
+      confirmed:      new Set(recipients.filter((r) => r.confirmed_at).map((r) => r.person_id)).size,
+      seen:           seenPeople.size,
+      failed:         recipients.filter((r) => r.status === "failed" && !retried.has(r.id)).length,
+      usesConfirm,
+    };
+  }, [recipients, chanOf, seenPeople, retried, usesConfirm]);
+
+  const FILTERS: { key: FilterKey; label: string; hint?: string }[] = useMemo(() => {
+    const list: { key: FilterKey; label: string; hint?: string }[] = [
+      { key: "all", label: "All" },
+      { key: "delivered", label: "Delivered" },
+    ];
+    if (usesConfirm || stats.confirmed > 0) list.push({ key: "confirmed", label: "Confirmed" });
+    if (usesConfirm || stats.waRows > 0) list.push({ key: "unseen", label: "Not confirmed or read", hint: "Haven't confirmed, and haven't read it on WhatsApp. Email opens aren't used." });
+    if (stats.waRows > 0) list.push({ key: "read", label: "Read (WhatsApp)" });
+    if (stats.emailRows > 0) list.push({ key: "opened", label: OPENED_LABEL, hint: OPENED_EXPLAINER });
+    if (stats.replied > 0) list.push({ key: "replied", label: "Replied" });
+    list.push({ key: "failed", label: "Failed" });
+    return list;
+  }, [usesConfirm, stats.confirmed, stats.waRows, stats.emailRows, stats.replied]);
+
+  const activeFilter: FilterKey = FILTERS.some((f) => f.key === filter) ? filter : "all";
+
+  const matches = useMemo(() => ({
+    all:       () => true,
+    delivered: (r: CampaignRecipient) => !!r.delivered_at,
+    confirmed: (r: CampaignRecipient) => !!r.confirmed_at,
+    unseen:    (r: CampaignRecipient) => !seenPeople.has(r.person_id) && r.status !== "opted_out",
+    opened:    (r: CampaignRecipient) => !!r.opened_at,
+    read:      (r: CampaignRecipient) => !!r.read_at,
+    replied:   (r: CampaignRecipient) => !!r.replied_at,
+    failed:    (r: CampaignRecipient) => r.status === "failed" && !retried.has(r.id),
+  } satisfies Record<FilterKey, (r: CampaignRecipient) => boolean>), [seenPeople, retried]);
+
+  const filterCounts = useMemo(
+    () => Object.fromEntries((Object.keys(matches) as FilterKey[]).map((k) => [k, recipients.filter(matches[k]).length])) as Record<FilterKey, number>,
+    [recipients, matches]
+  );
 
   const filtered = useMemo(() => {
-    let list = recipients;
-    switch (filter) {
-      case "delivered":  list = list.filter((r) => r.delivered_at); break;
-      case "opened":     list = list.filter((r) => r.opened_at); break;
-      case "not_opened": list = list.filter((r) => r.delivered_at && !r.opened_at); break;
-      case "read":       list = list.filter((r) => r.read_at); break;
-      case "replied":    list = list.filter((r) => r.replied_at); break;
-      case "failed":     list = list.filter((r) => r.status === "failed"); break;
-    }
+    let list = recipients.filter(matches[activeFilter]);
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter((r) => r.name.toLowerCase().includes(q) || r.contact_value.toLowerCase().includes(q));
     }
     return list;
-  }, [recipients, filter, search]);
-
-  useEffect(() => {
-    const validKeys = FILTERS.map((f) => f.key);
-    if (!validKeys.includes(filter)) setFilter("all");
-  }, [FILTERS, filter]);
+  }, [recipients, activeFilter, search, matches]);
 
   return (
     <div className="min-h-screen bg-canvas">
@@ -1045,25 +1071,26 @@ export function CampaignClient({
 
           <div className="flex items-center gap-2 shrink-0">
             <button
-              onClick={() => exportCSV(recipients, message.subject, message.channel)}
+              onClick={() => exportCSV(recipients, message, retried)}
               className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-card px-3 py-1.5 text-[12px] font-medium text-ink-2 hover:bg-canvas hover:text-ink hover:border-line-strong"
             >
               <Download size={11} strokeWidth={2} />
               Export
             </button>
             <Link
-              href={`/messages/new?audiences=${message.audience_slug}`}
+              href={`/messages/problems?message=${message.id}`}
               className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-card px-3 py-1.5 text-[12px] font-medium text-ink-2 hover:bg-canvas hover:text-ink hover:border-line-strong"
             >
-              <RotateCcw size={11} strokeWidth={2} />
-              Resend
+              <AlertTriangle size={11} strokeWidth={2} />
+              Delivery problems
             </Link>
+            {message.status !== "sending" && stats.people > 0 && <ResendUnread messageId={message.id} unseenCount={Math.max(0, stats.people - stats.seen)} originalChannels={[...new Set(chanOf.values())]} />}
             <Link
-              href="/messages/new"
+              href={`/messages/new?audiences=${message.audience_slug}`}
               className="inline-flex items-center gap-1.5 rounded-lg bg-ink px-3 py-1.5 text-[12px] font-medium text-on-ink hover:bg-ink-hover"
             >
               <Copy size={11} strokeWidth={2} />
-              Duplicate
+              New message to this audience
             </Link>
           </div>
         </div>
@@ -1072,6 +1099,18 @@ export function CampaignClient({
           <span>{message.audience_label}</span>
           <span className="text-line">·</span>
           <span>{fmtDate(sentAt)}</span>
+          {links.reminderFor && (
+            <>
+              <span className="text-line">·</span>
+              <span>Reminder for <Link href={`/messages/${links.reminderFor.id}`} className="underline decoration-dotted underline-offset-2 hover:text-ink-2">{links.reminderFor.title}</Link></span>
+            </>
+          )}
+          {links.reminders > 0 && (
+            <>
+              <span className="text-line">·</span>
+              <span>{links.reminders} reminder{links.reminders === 1 ? "" : "s"} sent</span>
+            </>
+          )}
           {message.status === "sent" && (
             <>
               <span className="text-line">·</span>
@@ -1089,7 +1128,7 @@ export function CampaignClient({
         <LiveProgressBanner message={message} stats={stats} />
 
         {/* ── KPI grid ─────────────────────────────────────────────────────── */}
-        <KPIGrid stats={stats} channel={message.channel} />
+        <KPIGrid stats={stats} />
 
         {/* ── Timeline + Activity Feed ──────────────────────────────────────── */}
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-5">
@@ -1102,13 +1141,13 @@ export function CampaignClient({
                   Cumulative events over the first 24 hours · hover for details
                 </p>
               </div>
-              <TimelineChart data={chartData} channel={message.channel} />
+              <TimelineChart data={chartData} />
             </div>
           </div>
 
           {/* Activity Feed — 2/5 width */}
           <div className="lg:col-span-2">
-            <ActivityFeed recipients={recipients} channel={message.channel} />
+            <ActivityFeed recipients={recipients} message={message} />
           </div>
         </div>
 
@@ -1150,11 +1189,12 @@ export function CampaignClient({
             <div className="flex items-center gap-0 border-b border-muted-2 -mx-5 px-5">
               {FILTERS.map((f) => {
                 const count = filterCounts[f.key];
-                const isActive = filter === f.key;
+                const isActive = activeFilter === f.key;
                 return (
                   <button
                     key={f.key}
                     onClick={() => setFilter(f.key)}
+                    title={f.hint}
                     className={[
                       "inline-flex items-center gap-1.5 border-b-[1.5px] pb-3 pt-0.5 mr-5 text-[12px] font-medium transition-all duration-100",
                       isActive
@@ -1175,27 +1215,16 @@ export function CampaignClient({
           </div>
 
           {filtered.length === 0 ? (
-            <EmptyState filter={filter} search={search} channel={message.channel} onClear={() => setSearch("")} />
+            <EmptyState filter={activeFilter} search={search} onClear={() => setSearch("")} />
           ) : (
             <table className="w-full">
               <thead>
                 <tr className="border-b border-muted-2 bg-canvas">
                   <th className="py-2.5 pl-5 pr-3 text-left text-[10px] font-semibold uppercase tracking-wide text-ink-3">Name</th>
-                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-ink-3">
-                    {isEmail ? "Email" : "Phone"}
-                  </th>
-                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-ink-3">Audience</th>
+                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-ink-3">Via</th>
+                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-ink-3">Contact</th>
                   <th className="px-3 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-ink-3">Status</th>
-                  <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wide text-ink-3">Delivered</th>
-                  {isEmail && (
-                    <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wide text-ink-3">Opened</th>
-                  )}
-                  {isWhatsApp && (
-                    <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wide text-ink-3">Read</th>
-                  )}
-                  {!isEmail && (
-                    <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wide text-ink-3">Replied</th>
-                  )}
+                  <th className="px-3 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wide text-ink-3">Signals</th>
                   <th className="pl-3 pr-5 py-2.5 text-right text-[10px] font-semibold uppercase tracking-wide text-ink-3">
                     Last Activity
                   </th>
@@ -1203,10 +1232,11 @@ export function CampaignClient({
               </thead>
               <tbody>
                 {filtered.slice(0, visibleCount).map((r, i, shown) => {
-                  const status = recipientStatus(r);
+                  const status = recipientStatus(r, retried);
                   const isLast = i === shown.length - 1;
                   const la = lastActivity(r);
-                  const person = r.people;
+                  const chan = chanOf.get(r.id) ?? "email";
+                  const ChanIcon = CHANNEL_META[chan].icon;
                   const tooltipTs = la ? fmt(la) ?? undefined : undefined;
 
                   return (
@@ -1223,71 +1253,42 @@ export function CampaignClient({
                           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted-2 text-[10px] font-semibold text-ink-2">
                             {r.name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase()}
                           </div>
-                          <span className="text-[13px] font-medium text-ink">{r.name}</span>
+                          <span dir="auto" className="text-[13px] font-medium text-ink">{r.name}</span>
                         </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${CHANNEL_META[chan].bg} ${CHANNEL_META[chan].color}`}>
+                          <ChanIcon size={10} strokeWidth={2} />
+                          {CHANNEL_META[chan].label}
+                        </span>
                       </td>
                       <td className="px-3 py-3">
                         <span className="font-mono text-[11px] text-ink-2">{r.contact_value}</span>
                       </td>
                       <td className="px-3 py-3">
-                        {person?.categories && person.categories.length > 0 ? (
-                          <span className="text-[12px] text-ink-2">
-                            {CATEGORY_LABELS[person.categories[0]] ?? person.categories[0]}
-                          </span>
-                        ) : (
-                          <span className="text-line-strong">—</span>
-                        )}
-                      </td>
-                      <td className="px-3 py-3">
                         <StatusBadge status={status} tooltip={tooltipTs} />
                         {r.error_detail && (
-                          <p className="mt-1 max-w-[260px] text-[11px] leading-snug text-red-500 break-words">
+                          <p className={`mt-1 max-w-[260px] break-words text-[11px] leading-snug ${status === "retried" ? "text-ink-3" : "text-red-500"}`}>
                             {r.error_detail}
                           </p>
                         )}
                       </td>
-                      <td className="px-3 py-3 text-center">
-                        {r.delivered_at ? (
-                          <span title={fmt(r.delivered_at) ?? ""} className="inline-flex justify-center cursor-default">
-                            <CheckCircle2 size={14} className="text-emerald-500" strokeWidth={1.75} />
+                      <td className="px-3 py-3">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <span title={r.delivered_at ? `Delivered ${fmt(r.delivered_at)}` : "Not delivered yet"} className={r.delivered_at ? "text-emerald-500" : "text-line-strong"}>
+                            <CheckCircle2 size={13} strokeWidth={1.75} />
                           </span>
-                        ) : (
-                          <span className="text-line-strong">—</span>
-                        )}
+                          <span title={r.opened_at ? `${OPENED_LABEL} ${fmt(r.opened_at)}` : "No open recorded (not proof it wasn't read)"} className={r.opened_at ? "text-sky-500" : "text-line-strong"}>
+                            <Eye size={13} strokeWidth={1.75} />
+                          </span>
+                          <span title={r.read_at ? `Read on WhatsApp ${fmt(r.read_at)}` : "No WhatsApp read receipt"} className={r.read_at ? "text-blue-500" : "text-line-strong"}>
+                            <BookOpen size={13} strokeWidth={1.75} />
+                          </span>
+                          <span title={r.confirmed_at ? `Confirmed ${fmt(r.confirmed_at)}` : "Not confirmed"} className={r.confirmed_at ? "text-emerald-700" : "text-line-strong"}>
+                            <CheckCheck size={14} strokeWidth={2} />
+                          </span>
+                        </div>
                       </td>
-                      {isEmail && (
-                        <td className="px-3 py-3 text-center">
-                          {r.opened_at ? (
-                            <span title={fmt(r.opened_at) ?? ""} className="inline-flex justify-center cursor-default">
-                              <CheckCircle2 size={14} className="text-sky-500" strokeWidth={1.75} />
-                            </span>
-                          ) : (
-                            <span className="text-line-strong">—</span>
-                          )}
-                        </td>
-                      )}
-                      {isWhatsApp && (
-                        <td className="px-3 py-3 text-center">
-                          {r.read_at ? (
-                            <span title={fmt(r.read_at) ?? ""} className="inline-flex justify-center cursor-default">
-                              <CheckCircle2 size={14} className="text-blue-500" strokeWidth={1.75} />
-                            </span>
-                          ) : (
-                            <span className="text-line-strong">—</span>
-                          )}
-                        </td>
-                      )}
-                      {!isEmail && (
-                        <td className="px-3 py-3 text-center">
-                          {r.replied_at ? (
-                            <span title={fmt(r.replied_at) ?? ""} className="inline-flex justify-center cursor-default">
-                              <CheckCircle2 size={14} className="text-violet-500" strokeWidth={1.75} />
-                            </span>
-                          ) : (
-                            <span className="text-line-strong">—</span>
-                          )}
-                        </td>
-                      )}
                       <td className="pl-3 pr-5 py-3 text-right">
                         <span className="text-[11px] tabular-nums text-ink-3">
                           {la ? fmt(la, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "—"}
@@ -1326,6 +1327,7 @@ export function CampaignClient({
         <RecipientDrawer
           recipient={selected}
           message={message}
+          retried={retried}
           onClose={() => setSelected(null)}
         />
       )}

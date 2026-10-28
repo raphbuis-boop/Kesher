@@ -33,6 +33,8 @@ export async function proxy(request: NextRequest) {
     pathname === "/unsubscribe" ||
     pathname === "/api/unsubscribe" ||
     pathname.startsWith("/invite/") ||
+    // "I've read this" links in messages (signed per recipient)
+    pathname.startsWith("/r/") ||
     pathname.startsWith("/api/webhooks/") ||
     // Vercel Cron has no session; these routes check CRON_SECRET themselves
     pathname.startsWith("/api/cron/")
