@@ -36,6 +36,7 @@ export type CampaignRecipient = {
   bounced_at: string | null;
   complained_at: string | null;
   bounce_type: string | null;
+  error_detail: string | null;
   people: {
     id: string;
     first_name: string;
@@ -100,7 +101,7 @@ export default async function CampaignPage({
   const orgId = await getOrgId();
 
   const recipientColumns =
-    "id, person_id, contact_value, name, status, provider_id, sent_at, delivered_at, opened_at, clicked_at, read_at, replied_at, bounced_at, complained_at, bounce_type, people(id, first_name, last_name, categories)";
+    "id, person_id, contact_value, name, status, provider_id, sent_at, delivered_at, opened_at, clicked_at, read_at, replied_at, bounced_at, complained_at, bounce_type, error_detail, people(id, first_name, last_name, categories)";
   const recipientPage = (from: number) =>
     supabase
       .from("message_recipients")

@@ -875,7 +875,8 @@ function RecipientDrawer({
             <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3.5">
               <p className="text-[11px] font-semibold text-red-600">Delivery Failed</p>
               <p className="mt-0.5 text-[12px] text-red-500">
-                {recipient.bounce_type ? `Error code: ${recipient.bounce_type}` : "The message could not be delivered."}
+                {recipient.error_detail
+                  ?? (recipient.bounce_type ? `Error code: ${recipient.bounce_type}` : "The message could not be delivered.")}
               </p>
             </div>
           )}
@@ -1238,6 +1239,11 @@ export function CampaignClient({
                       </td>
                       <td className="px-3 py-3">
                         <StatusBadge status={status} tooltip={tooltipTs} />
+                        {r.error_detail && (
+                          <p className="mt-1 max-w-[260px] text-[11px] leading-snug text-red-500 break-words">
+                            {r.error_detail}
+                          </p>
+                        )}
                       </td>
                       <td className="px-3 py-3 text-center">
                         {r.delivered_at ? (
