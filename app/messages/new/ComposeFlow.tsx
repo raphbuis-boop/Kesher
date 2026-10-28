@@ -548,7 +548,7 @@ export function ComposeFlow({
         attachments.map((a) => a.url),
         channel === "email" && greetingEnabled ? greetingTemplate : null,
         removedPersonIds.size > 0 ? Array.from(removedPersonIds) : undefined,
-        { templateId: channel === "email" ? templateId : null, isFundraising }
+        { templateId: channel === "sms" ? null : templateId, isFundraising }
       );
       if (result.success) {
         toast.success("Message sent");
@@ -693,9 +693,9 @@ export function ComposeFlow({
         <div className="flex items-start gap-4">
           <span className="mt-1 w-16 flex-shrink-0 text-xs font-semibold uppercase tracking-wider text-ink-3">Message</span>
           <div className="flex-1 space-y-3">
-            {channel === "email" && templates.length > 0 && (
+            {channel !== "sms" && templates.length > 0 && (
               <div className="flex items-center gap-2 border-b border-muted pb-3">
-                <label htmlFor="compose-template" className="text-xs font-semibold uppercase tracking-wider text-ink-3">Template</label>
+                <label htmlFor="compose-template" className="text-xs font-semibold uppercase tracking-wider text-ink-3">{channel === "email" ? "Template" : "Sender label"}</label>
                 <select
                   id="compose-template"
                   value={templateId ?? ""}

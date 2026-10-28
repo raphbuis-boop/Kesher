@@ -23,7 +23,6 @@ import {
   UserPlus,
 } from "lucide-react";
 import type { BrandingSettings } from "@/lib/settings";
-import type { ChannelStatus } from "./channels";
 import type { ImportRow } from "./page";
 import {
   changeEmail,
@@ -605,42 +604,6 @@ function TeamSection({
 
 // ─── Channels ─────────────────────────────────────────────────────────────────
 
-function ChannelsSection({ channels, simulated }: { channels: ChannelStatus[]; simulated: boolean }) {
-  return (
-    <div className="space-y-5">
-      {simulated && (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-[12px] text-amber-800 [[data-theme=dark]_&]:text-amber-300">
-          Sends are simulated for this workspace (demo mode) — no real messages go out.
-        </div>
-      )}
-      <Card title="Channels" description="Read-only. Channels are configured by Kesher on the server.">
-        <ul className="divide-y divide-line">
-          {channels.map((c) => (
-            <li key={c.key} className="flex flex-col gap-2 py-3.5 first:pt-0 last:pb-0 sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0">
-                <p className="text-[13px] font-medium text-ink">{c.label}</p>
-                {c.detail.length > 0 ? (
-                  <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-[12px]">
-                    {c.detail.map((d) => (
-                      <div key={d.label} className="contents">
-                        <dt className="text-ink-3">{d.label}</dt>
-                        <dd className="truncate font-mono text-[11.5px] text-ink-soft">{d.value || "—"}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                ) : (
-                  c.problem && <p className="mt-1 text-[12px] text-ink-3">{c.problem}</p>
-                )}
-              </div>
-              <StatusPill ok={c.connected} />
-            </li>
-          ))}
-        </ul>
-      </Card>
-    </div>
-  );
-}
-
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 function DataSection({ imports, logoUrl }: { imports: ImportRow[]; logoUrl: string }) {
@@ -873,8 +836,6 @@ export function SettingsShell({
   profile,
   branding,
   role,
-  channels,
-  simulated,
   imports,
   members,
   invites,
@@ -885,8 +846,6 @@ export function SettingsShell({
   profile: { name: string; email: string };
   branding: BrandingSettings;
   role: "owner" | "admin" | "member";
-  channels: ChannelStatus[];
-  simulated: boolean;
   imports: ImportRow[];
   members: TeamMember[];
   invites: TeamInvite[];
@@ -960,8 +919,7 @@ export function SettingsShell({
           {active === "profile" && <ProfileSection profile={profile} />}
           {active === "school" && <SchoolSection branding={branding} uploadsEnabled={logoUploadsEnabled} />}
           {active === "team" && <TeamSection currentUserId={currentUserId} role={role} members={members} invites={invites} />}
-          {active === "channels" && <ChannelsSection channels={channels} simulated={simulated} />}
-          {active === "data" && <DataSection imports={imports} logoUrl={branding.logoUrl} />}
+                    {active === "data" && <DataSection imports={imports} logoUrl={branding.logoUrl} />}
           {active === "appearance" && <AppearanceSection />}
           {active === "danger" && <DangerSection schoolName={branding.schoolName} role={role} />}
           {panels[active] && <div className={active === "data" || active === "channels" ? "mt-5" : ""}>{panels[active]}</div>}

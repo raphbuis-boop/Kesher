@@ -16,22 +16,26 @@
  *   SINCH_APP_ID           — Conversation App ID
  *   SINCH_ACCESS_KEY       — Access Key ID
  *   SINCH_ACCESS_SECRET    — Access Secret
- *   SINCH_SMS_SENDER       — E.164 sender number, e.g. "+12125551234"
+ *   SINCH_SMS_SENDER       — default sender (schools set their own in Settings → Channels)
  *   SINCH_WEBHOOK_SECRET   — Shared secret for webhook verification
  *   SINCH_REGION           — "us" (default) or "eu"
  *
  * ─── Meta WhatsApp Cloud API (WhatsApp) ────────────────────────────────────────
- * Required env vars:
- *   META_WHATSAPP_PHONE_NUMBER_ID   — WhatsApp Business phone number ID
- *   META_WHATSAPP_ACCESS_TOKEN      — System user access token
- *   META_WHATSAPP_TEMPLATE_NAME     — Approved message template name
+ * Per-school settings (lib/channels.ts): phone number ID, WABA ID, display
+ * name, template name / language / variable count, and the school's own
+ * encrypted access token. Schools that existed before per-school config fall
+ * back to these env vars:
+ *   META_WHATSAPP_PHONE_NUMBER_ID, META_WHATSAPP_ACCESS_TOKEN,
+ *   META_WHATSAPP_TEMPLATE_NAME, META_WHATSAPP_TEMPLATE_LANG, META_WHATSAPP_WABA_ID
+ * Platform-wide:
  *   WHATSAPP_WEBHOOK_VERIFY_TOKEN   — Arbitrary string you choose; entered in Meta
  *     App Dashboard → WhatsApp → Configuration → Webhooks when registering the
  *     callback URL. Verified by app/api/webhooks/meta-whatsapp/route.ts (GET).
- *
- * Optional env vars:
- *   META_WHATSAPP_TEMPLATE_LANG     — Template language code (default "en_US")
  */
+
+import { SinchProvider } from "./sinch-provider";
+import { MetaWhatsAppProvider } from "./meta-whatsapp-provider";
+import type { WhatsAppConfig } from "./channels";
 
 export type SmsChannel = "sms" | "whatsapp";
 
@@ -40,6 +44,8 @@ export type OutboundSms = {
   from: string;      // E.164 sender number
   body: string;      // message text
   mediaUrl?: string; // optional image URL (MMS / WhatsApp)
+  /** School or group name — the {{1}} variable of a two-variable WhatsApp template. */
+  label?: string;
 };
 
 export type SmsResult = {
@@ -71,67 +77,12 @@ export function getSmsProvider(): SmsProvider | null {
     return null;
   }
 
-  const { SinchProvider } = require("./sinch-provider") as typeof import("./sinch-provider");
-  return new SinchProvider(
-    projectId,
-    appId,
-    accessKey,
-    accessSecret,
-    process.env.SINCH_REGION ?? "us"
-  );
+  return new SinchProvider(projectId, appId, accessKey, accessSecret, process.env.SINCH_REGION ?? "us");
 }
 
 // ─── WhatsApp factory (Meta Cloud API) ─────────────────────────────────────────
 
-export function getWhatsAppProvider(): SmsProvider | null {
-  const phoneNumberId = process.env.META_WHATSAPP_PHONE_NUMBER_ID;
-  const accessToken   = process.env.META_WHATSAPP_ACCESS_TOKEN;
-  const templateName  = process.env.META_WHATSAPP_TEMPLATE_NAME;
-
-  if (!phoneNumberId || !accessToken || !templateName) {
-    const missing = [
-      !phoneNumberId && "META_WHATSAPP_PHONE_NUMBER_ID",
-      !accessToken   && "META_WHATSAPP_ACCESS_TOKEN",
-      !templateName  && "META_WHATSAPP_TEMPLATE_NAME",
-    ].filter(Boolean).join(", ");
-    console.warn(`[meta-whatsapp] getWhatsAppProvider: missing env vars: ${missing}`);
-    return null;
-  }
-
-  const templateLang = process.env.META_WHATSAPP_TEMPLATE_LANG || "en_US";
-
-  const { MetaWhatsAppProvider } = require("./meta-whatsapp-provider") as typeof import("./meta-whatsapp-provider");
-  return new MetaWhatsAppProvider(phoneNumberId, accessToken, templateName, templateLang);
-}
-
-// ─── Validation ───────────────────────────────────────────────────────────────
-
-export function validateSmsEnv(channel: "sms"): string | null {
-  const hasCredentials =
-    process.env.SINCH_PROJECT_ID &&
-    process.env.SINCH_APP_ID &&
-    process.env.SINCH_ACCESS_KEY &&
-    process.env.SINCH_ACCESS_SECRET;
-
-  if (!hasCredentials)
-    return "SMS delivery is not configured for this account. Contact your administrator.";
-
-  if (!process.env.SINCH_SMS_SENDER)
-    return "SMS sender number is not configured. Contact your administrator.";
-
-  return null;
-}
-
-export function validateMetaWhatsAppEnv(): string | null {
-  const hasCredentials =
-    process.env.META_WHATSAPP_PHONE_NUMBER_ID &&
-    process.env.META_WHATSAPP_ACCESS_TOKEN;
-
-  if (!hasCredentials)
-    return "WhatsApp delivery is not configured for this account. Contact your administrator.";
-
-  if (!process.env.META_WHATSAPP_TEMPLATE_NAME)
-    return "WhatsApp template is not configured. Set META_WHATSAPP_TEMPLATE_NAME.";
-
-  return null;
+/** A provider bound to one school's WhatsApp number, token and template. */
+export function getWhatsAppProvider(cfg: WhatsAppConfig): SmsProvider {
+  return new MetaWhatsAppProvider(cfg.phoneNumberId, cfg.accessToken, cfg.templateName, cfg.templateLang, cfg.templateVars);
 }

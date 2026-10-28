@@ -10,7 +10,8 @@ import { getBrandingSettings } from "@/lib/settings";
 import { buildEmailHtml, buildEmailText, formatFrom, resolveGreeting, type EmailBranding } from "@/lib/email/render";
 import { applyTemplate, getTemplate } from "@/lib/templates";
 import { FUNDRAISING_WHATSAPP_NOTE, looksLikeFundraising } from "@/lib/fundraising";
-import { getSmsProvider, getWhatsAppProvider, validateSmsEnv, validateMetaWhatsAppEnv } from "@/lib/sms-provider";
+import { getSmsProvider, getWhatsAppProvider } from "@/lib/sms-provider";
+import { getChannelConfig, type ChannelConfig } from "@/lib/channels";
 import { buildUnsubscribeUrls, validateUnsubscribeEnv } from "@/lib/unsubscribe";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -290,10 +291,12 @@ async function sendViaSmsProvider(
   bodyTemplate: string,
   messageId: string,
   now: string,
+  cfg: ChannelConfig,
+  senderLabel: string,
   attachmentUrls?: string[]
 ): Promise<{ inserts: RecipientInsert[]; sentCount: number; failedCount: number; batchError: string | null }> {
-  // Route by channel: SMS → Sinch, WhatsApp → Meta Cloud API
-  const provider = channel === "whatsapp" ? getWhatsAppProvider() : getSmsProvider();
+  // Route by channel: SMS → Sinch, WhatsApp → Meta Cloud API (this school's number)
+  const provider = channel === "whatsapp" ? (cfg.whatsapp ? getWhatsAppProvider(cfg.whatsapp) : null) : cfg.sms ? getSmsProvider() : null;
   const providerName = channel === "whatsapp" ? "WhatsApp (Meta Cloud API)" : "SMS (Sinch)";
 
   if (!provider) {
@@ -316,7 +319,7 @@ async function sendViaSmsProvider(
   // fromNumber is used by Sinch for SMS_SENDER channel property. Meta Cloud API
   // identifies the sender by META_WHATSAPP_PHONE_NUMBER_ID baked into the request
   // URL — the OutboundSms.from field is ignored by MetaWhatsAppProvider.
-  const fromNumber = channel === "sms" ? (process.env.SINCH_SMS_SENDER ?? "") : "";
+  const fromNumber = channel === "sms" ? (cfg.sms?.sender ?? "") : "";
 
   const MEDIA_RE = /\.(jpg|jpeg|png|gif|webp|pdf)$/i;
   const firstMediaUrl = attachmentUrls?.find((u) => MEDIA_RE.test(u));
@@ -361,6 +364,7 @@ async function sendViaSmsProvider(
       from: fromNumber,
       body,
       mediaUrl: firstMediaUrl,
+      label: senderLabel,
     });
 
     inserts.push({
@@ -425,14 +429,14 @@ function simulateSend(
 
 // ─── Validation ───────────────────────────────────────────────────────────────
 
-function validateEnv(channel: Channel): string | null {
+function validateEnv(channel: Channel, cfg: ChannelConfig | null): string | null {
   if (channel === "email") {
     if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL)
       return "Email delivery is not configured for this account. Contact your administrator.";
     return validateUnsubscribeEnv();
   }
-  if (channel === "sms") return validateSmsEnv("sms");
-  if (channel === "whatsapp") return validateMetaWhatsAppEnv();
+  if (channel === "sms") return cfg?.smsProblem ? `${cfg.smsProblem} Set it up in Settings → Channels.` : null;
+  if (channel === "whatsapp") return cfg?.whatsappProblem ? `${cfg.whatsappProblem} Set it up in Settings → Channels.` : null;
   return null;
 }
 
@@ -455,12 +459,14 @@ export async function sendMessage(
   const simulated = await sendsAreSimulated(orgId);
 
   // Simulated-send tenants never touch a real provider — env credentials aren't required.
-  const envError = simulated ? null : validateEnv(channel);
+  const channelCfg = channel === "email" ? null : await getChannelConfig(orgId);
+  const envError = simulated ? null : validateEnv(channel, channelCfg);
   if (envError) return { success: false, error: envError };
 
   // Email look: school branding with the chosen template laid over it
-  const template = channel === "email" ? await getTemplate(supabase, orgId, options?.templateId) : null;
-  const branding: EmailBranding = applyTemplate(channel === "email" ? await getBrandingSettings() : ({} as Awaited<ReturnType<typeof getBrandingSettings>>), template);
+  // (WhatsApp uses the template's sender name as the {{1}} school/group label)
+  const template = await getTemplate(supabase, orgId, options?.templateId);
+  const branding: EmailBranding = applyTemplate(channel === "email" ? await getBrandingSettings() : ({} as Awaited<ReturnType<typeof getBrandingSettings>>), channel === "email" ? template : null);
   const isFundraising = !!options?.isFundraising;
 
   const trimmedSubject = subject.trim();
@@ -611,7 +617,8 @@ export async function sendMessage(
     batchError = result.batchError;
   } else {
     // SMS or WhatsApp via provider abstraction (currently Sinch)
-    const result = await sendViaSmsProvider(channel as "sms" | "whatsapp", eligible, trimmedBody, messageId, now, attachmentUrls);
+    const senderLabel = template?.sender_name?.trim() || (await getBrandingSettings()).schoolName || "Your school";
+    const result = await sendViaSmsProvider(channel as "sms" | "whatsapp", eligible, trimmedBody, messageId, now, channelCfg!, senderLabel, attachmentUrls);
     sentCount = result.sentCount;
     failedCount = result.failedCount;
     inserts = result.inserts;

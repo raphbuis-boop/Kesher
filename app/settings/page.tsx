@@ -6,7 +6,9 @@ import { getMembership, isAdminRole, sendsAreSimulated } from "@/lib/org";
 import { isDemoWorkspaceLoaded } from "@/lib/demoWorkspace";
 import { DemoWorkspaceControl } from "@/app/components/DemoWorkspaceControl";
 import { AdminOnly } from "@/app/components/AdminOnly";
-import { getChannelStatuses } from "./channels";
+import { getChannelsOverview } from "./channels";
+import { ChannelsSettings } from "./panels/ChannelsSettings";
+import { WhatsAppTemplatePanel } from "./panels/WhatsAppTemplatePanel";
 import { SettingsShell, type SectionId, type TeamInvite, type TeamMember } from "./SettingsShell";
 import { getCustomFieldDefs } from "@/lib/customFields";
 import { CustomFieldsSettings } from "./panels/CustomFieldsSettings";
@@ -43,7 +45,7 @@ export default async function SettingsPage() {
           .eq("org_id", orgId)
           .order("created_at", { ascending: false })
           .limit(10),
-        getChannelStatuses(branding.senderEmail),
+        getChannelsOverview(orgId, { schoolName: branding.schoolName, senderName: branding.senderName, senderEmail: branding.senderEmail }),
         supabase.rpc("org_members", { p_org: orgId }),
         supabase
           .from("org_invites")
@@ -69,7 +71,7 @@ export default async function SettingsPage() {
       ])
     : null;
 
-  const [demoLoaded, simulated, importsRes, channels, membersRes, invitesRes, fieldDefs, newContactsMode, pendingRes, googleConnection, sheetsRes, requestsRes, templates, templateAssignments, groupsRes] = admin ?? [];
+  const [demoLoaded, simulated, importsRes, channelsOverview, membersRes, invitesRes, fieldDefs, newContactsMode, pendingRes, googleConnection, sheetsRes, requestsRes, templates, templateAssignments, groupsRes] = admin ?? [];
 
   const audienceChoices: AudienceChoice[] = [
     ...[["parents", "Parents"], ["students", "Students"], ["grandparents", "Grandparents"], ["alumni", "Alumni"], ["faculty", "Faculty"], ["staff", "Staff"], ["board", "Board"], ["donors", "Donors"], ["prospects", "Prospects"]].map(
@@ -103,9 +105,11 @@ export default async function SettingsPage() {
   });
 
   // Server-loaded panels shown inside the matching Settings section (admins only)
-  const panels: Partial<Record<SectionId, React.ReactNode>> = admin
+  const panels: Partial<Record<SectionId, React.ReactNode>> = admin && channelsOverview
     ? {
+        channels: <ChannelsSettings overview={channelsOverview} simulated={simulated ?? false} />,
         templates: (
+          <div className="space-y-5">
           <TemplatesSettings
             templates={templates ?? []}
             assignments={templateAssignments ?? {}}
@@ -113,6 +117,14 @@ export default async function SettingsPage() {
             brand={{ schoolName: branding.schoolName, primaryColor: branding.primaryColor, logoUrl: branding.logoUrl, footerText: branding.footerText, senderName: branding.senderName }}
             uploadsEnabled={!!process.env.BLOB_READ_WRITE_TOKEN}
           />
+          <WhatsAppTemplatePanel
+            configured={channelsOverview.statuses.find((c) => c.key === "whatsapp")?.state !== "not_connected"}
+            templateName={channelsOverview.form.whatsapp.templateName}
+            templateVars={channelsOverview.form.whatsapp.templateVars}
+            live={channelsOverview.live}
+            hasWaba={!!channelsOverview.form.whatsapp.wabaId}
+          />
+          </div>
         ),
         data: (
           <div className="space-y-5">
@@ -156,8 +168,6 @@ export default async function SettingsPage() {
         profile={{ name: meta.full_name ?? meta.name ?? "", email: (claims?.email as string | undefined) ?? "" }}
         branding={branding}
         role={role}
-        channels={channels ?? []}
-        simulated={simulated ?? false}
         imports={(importsRes?.data ?? []) as ImportRow[]}
         members={(membersRes?.data ?? []) as TeamMember[]}
         invites={withExpiry((invitesRes?.data ?? []) as Omit<TeamInvite, "expired">[])}
