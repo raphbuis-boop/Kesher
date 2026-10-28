@@ -1,5 +1,6 @@
 "use client";
 
+import { useActionToast } from "@/app/components/ui/toast";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Pencil, X, Loader2 } from "lucide-react";
@@ -43,20 +44,20 @@ const initialState: UpdatePersonState = { success: false, error: null };
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
 const inputCls =
-  "w-full rounded-lg border border-[#e7e7e7] bg-[#fafafa] px-3 py-2 text-[13px] text-[#0f0f0f] placeholder-[#a1a1aa] outline-none transition-colors focus:border-[#a1a1aa] focus:bg-white disabled:opacity-50";
+  "w-full rounded-lg border border-line bg-canvas px-3 py-2 text-[13px] text-ink placeholder-ink-3 outline-none transition-colors focus:border-ink-3 focus:bg-card disabled:opacity-50";
 
-const labelCls = "block text-[11px] font-medium text-[#71717a] mb-1.5";
+const labelCls = "block text-[11px] font-medium text-ink-2 mb-1.5";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">
+    <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-ink-3">
       {children}
     </p>
   );
 }
 
 function Divider() {
-  return <div className="border-t border-[#f5f5f5] my-5" />;
+  return <div className="border-t border-muted my-5" />;
 }
 
 // ─── Form ────────────────────────────────────────────────────────────────────
@@ -73,6 +74,7 @@ function EditPersonForm({
   onCancel: () => void;
 }) {
   const [state, formAction, isPending] = useActionState(updatePerson, initialState);
+  useActionToast(state, (s) => ({ success: s.success ? "Changes saved" : null }));
   const [selectedCategories, setSelectedCategories] = useState<string[]>(person.currentCategories);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>(person.currentTagIds);
 
@@ -102,7 +104,7 @@ function EditPersonForm({
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div>
           <label htmlFor="ep_first_name" className={labelCls}>
-            First Name <span className="text-[#d4d4d8]">*</span>
+            First Name <span className="text-line-strong">*</span>
           </label>
           <input
             id="ep_first_name"
@@ -116,7 +118,7 @@ function EditPersonForm({
         </div>
         <div>
           <label htmlFor="ep_last_name" className={labelCls}>
-            Last Name <span className="text-[#d4d4d8]">*</span>
+            Last Name <span className="text-line-strong">*</span>
           </label>
           <input
             id="ep_last_name"
@@ -203,8 +205,8 @@ function EditPersonForm({
                 className={[
                   "rounded-full px-3 py-1.5 text-[11px] font-medium transition-colors disabled:opacity-50",
                   selected
-                    ? "bg-[#0f0f0f] text-white"
-                    : "bg-[#f5f5f5] text-[#71717a] hover:bg-[#e7e7e7] hover:text-[#0f0f0f]",
+                    ? "bg-ink text-on-ink"
+                    : "bg-muted text-ink-2 hover:bg-line hover:text-ink",
                 ].join(" ")}
               >
                 {label}
@@ -276,8 +278,8 @@ function EditPersonForm({
                   className={[
                     "rounded-full px-3 py-1.5 text-[11px] font-medium transition-colors disabled:opacity-50",
                     selected
-                      ? "bg-[#0f0f0f] text-white"
-                      : "bg-[#f5f5f5] text-[#71717a] hover:bg-[#e7e7e7]",
+                      ? "bg-ink text-on-ink"
+                      : "bg-muted text-ink-2 hover:bg-line",
                   ].join(" ")}
                 >
                   {tag.name}
@@ -293,7 +295,7 @@ function EditPersonForm({
 
       {/* ── Notes ─────────────────────────────────────────────────────── */}
       <Divider />
-      <label htmlFor="ep_notes" className="mb-3 block text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">Notes</label>
+      <label htmlFor="ep_notes" className="mb-3 block text-[10px] font-semibold uppercase tracking-wider text-ink-3">Notes</label>
       <textarea
         id="ep_notes"
         name="notes"
@@ -315,19 +317,19 @@ function EditPersonForm({
       )}
 
       {/* ── Footer buttons ────────────────────────────────────────────── */}
-      <div className="mt-6 flex items-center justify-end gap-2 border-t border-[#f5f5f5] pt-5">
+      <div className="mt-6 flex items-center justify-end gap-2 border-t border-muted pt-5">
         <button
           type="button"
           onClick={onCancel}
           disabled={isPending}
-          className="rounded-md px-3 py-1.5 text-[12px] font-medium text-[#71717a] hover:bg-[#f5f5f5] hover:text-[#0f0f0f] disabled:opacity-50"
+          className="rounded-md px-3 py-1.5 text-[12px] font-medium text-ink-2 hover:bg-muted hover:text-ink disabled:opacity-50"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isPending}
-          className="inline-flex items-center gap-1.5 rounded-md bg-[#0f0f0f] px-4 py-1.5 text-[12px] font-medium text-white hover:bg-[#1a1a1a] disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex items-center gap-1.5 rounded-md bg-ink px-4 py-1.5 text-[12px] font-medium text-on-ink hover:bg-ink-hover disabled:cursor-not-allowed disabled:opacity-40"
         >
           {isPending ? (
             <>
@@ -387,7 +389,7 @@ export function EditPersonButton({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-md border border-[#e7e7e7] bg-white px-3 py-1.5 text-[12px] font-medium text-[#0f0f0f] hover:bg-[#fafafa] hover:border-[#d4d4d8]"
+        className="inline-flex items-center gap-1.5 rounded-md border border-line bg-card px-3 py-1.5 text-[12px] font-medium text-ink hover:bg-canvas hover:border-line-strong"
       >
         <Pencil size={12} strokeWidth={2} />
         Edit
@@ -400,7 +402,7 @@ export function EditPersonButton({
           className="animate-backdrop fixed inset-0 z-[9999] flex items-center justify-center bg-black/25 p-4"
         >
           <div
-            className="animate-fade-up w-full max-w-[520px] rounded-xl border border-[#e7e7e7] bg-white shadow-2xl shadow-black/10"
+            className="animate-pop-in w-full max-w-[520px] rounded-xl border border-line bg-card shadow-pop"
             style={{
               display: "grid",
               gridTemplateRows: "auto minmax(0,1fr)",
@@ -408,16 +410,16 @@ export function EditPersonButton({
             }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-[#f0f0f0] px-6 py-4">
+            <div className="flex items-center justify-between border-b border-muted-2 px-6 py-4">
               <div>
-                <h2 className="text-[13px] font-semibold text-[#0f0f0f]">Edit Contact</h2>
-                <p className="mt-px text-[11px] text-[#a1a1aa]">
+                <h2 className="text-[13px] font-semibold text-ink">Edit Contact</h2>
+                <p className="mt-px text-[11px] text-ink-3">
                   {person.first_name} {person.last_name}
                 </p>
               </div>
               <button
                 onClick={() => setOpen(false)}
-                className="rounded-md p-1.5 text-[#a1a1aa] hover:bg-[#f5f5f5] hover:text-[#71717a]"
+                className="rounded-md p-1.5 text-ink-3 hover:bg-muted hover:text-ink-2"
                 aria-label="Close"
               >
                 <X size={15} strokeWidth={1.75} />

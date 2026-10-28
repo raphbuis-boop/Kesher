@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles, Trash2, Loader2, CheckCircle2, X } from "lucide-react";
 import { loadDemoDataAction, removeDemoDataAction } from "@/app/dashboard/demoActions";
+import { toast } from "@/app/components/ui/toast";
 
 type Phase = "idle" | "confirming" | "done";
 
@@ -20,10 +21,12 @@ export function DemoWorkspaceControl({ mode }: { mode: "load" | "remove" }) {
       const res = mode === "load" ? await loadDemoDataAction() : await removeDemoDataAction();
       if (!res.success) {
         setError(res.error);
+        toast.error(res.error ?? "Something went wrong.");
         setPhase("idle");
         return;
       }
       setMessage(res.message);
+      toast.success(res.message ?? (mode === "load" ? "Demo data loaded" : "Demo data removed"));
       setPhase("done");
       router.refresh();
     });
@@ -40,22 +43,22 @@ export function DemoWorkspaceControl({ mode }: { mode: "load" | "remove" }) {
     }
 
     return (
-      <div className="rounded-xl border border-[#e7e7e7] bg-white p-5">
+      <div className="rounded-xl border border-line bg-card shadow-card p-5">
         {phase === "idle" ? (
           <div className="flex items-start gap-3.5">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 border border-emerald-100">
               <Sparkles size={16} className="text-emerald-600" strokeWidth={1.75} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-semibold text-[#0f0f0f]">Your workspace is empty</p>
-              <p className="mt-1 text-[12px] text-[#71717a] leading-relaxed">
+              <p className="text-[13px] font-semibold text-ink">Your workspace is empty</p>
+              <p className="mt-1 text-[12px] text-ink-2 leading-relaxed">
                 Load a fictional demo school — sample contacts, audiences, and message history — to explore
                 Kesher or prepare a product demo. Fully reversible.
               </p>
               <button
                 type="button"
                 onClick={() => setPhase("confirming")}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-[#0f0f0f] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#27272a] transition-colors"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-ink px-3 py-1.5 text-[12px] font-medium text-on-ink hover:bg-ink-hover transition-colors"
               >
                 <Sparkles size={12} strokeWidth={2} />
                 Load demo workspace
@@ -64,8 +67,8 @@ export function DemoWorkspaceControl({ mode }: { mode: "load" | "remove" }) {
           </div>
         ) : (
           <div>
-            <p className="text-[13px] font-semibold text-[#0f0f0f]">Load demo workspace?</p>
-            <p className="mt-1 text-[12px] text-[#71717a] leading-relaxed">
+            <p className="text-[13px] font-semibold text-ink">Load demo workspace?</p>
+            <p className="mt-1 text-[12px] text-ink-2 leading-relaxed">
               This adds a fictional school (&quot;Riverside Academy&quot;) with sample staff, families, audiences, and
               message history to this workspace only. No real emails, texts, or WhatsApp messages are sent —
               every contact uses fictional, non-deliverable details. You can remove it at any time.
@@ -76,7 +79,7 @@ export function DemoWorkspaceControl({ mode }: { mode: "load" | "remove" }) {
                 type="button"
                 onClick={handleConfirm}
                 disabled={isPending}
-                className="inline-flex items-center gap-1.5 rounded-md bg-[#0f0f0f] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#27272a] disabled:opacity-60 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-md bg-ink px-3 py-1.5 text-[12px] font-medium text-on-ink hover:bg-ink-hover disabled:opacity-60 transition-colors"
               >
                 {isPending ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} strokeWidth={2} />}
                 {isPending ? "Loading…" : "Yes, load demo data"}
@@ -85,7 +88,7 @@ export function DemoWorkspaceControl({ mode }: { mode: "load" | "remove" }) {
                 type="button"
                 onClick={() => setPhase("idle")}
                 disabled={isPending}
-                className="inline-flex items-center gap-1 rounded-md border border-[#e7e7e7] px-3 py-1.5 text-[12px] font-medium text-[#71717a] hover:text-[#0f0f0f] disabled:opacity-60 transition-colors"
+                className="inline-flex items-center gap-1 rounded-md border border-line px-3 py-1.5 text-[12px] font-medium text-ink-2 hover:text-ink disabled:opacity-60 transition-colors"
               >
                 <X size={12} strokeWidth={2} />
                 Cancel
@@ -100,7 +103,7 @@ export function DemoWorkspaceControl({ mode }: { mode: "load" | "remove" }) {
   // mode === "remove"
   if (phase === "done") {
     return (
-      <div className="flex items-center gap-2 rounded-lg border border-[#e7e7e7] bg-[#fafafa] px-3 py-2 text-[11px] text-[#71717a]">
+      <div className="flex items-center gap-2 rounded-lg border border-line bg-canvas px-3 py-2 text-[11px] text-ink-2">
         <CheckCircle2 size={13} strokeWidth={2} className="shrink-0 text-emerald-600" />
         {message}
       </div>
@@ -114,7 +117,7 @@ export function DemoWorkspaceControl({ mode }: { mode: "load" | "remove" }) {
         <button
           type="button"
           onClick={() => setPhase("confirming")}
-          className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[10px] font-medium text-amber-800 border border-amber-200 hover:bg-amber-100 transition-colors"
+          className="inline-flex items-center gap-1 rounded-full bg-card px-2 py-0.5 text-[10px] font-medium text-amber-800 border border-amber-200 hover:bg-amber-100 transition-colors"
         >
           <Trash2 size={10} strokeWidth={2} />
           Remove

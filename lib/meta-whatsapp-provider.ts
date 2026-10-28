@@ -27,11 +27,14 @@
  *   header component; out of scope for now.
  *
  * Webhooks:
- *   Not implemented. Meta requires a webhook for delivery status / inbound replies,
- *   but that is out of scope for this change (see lib/sms-provider.ts doc comment).
+ *   Delivery status callbacks land in app/api/webhooks/meta-whatsapp/route.ts.
+ *   Diagnostics (number status, WABA subscription, template): /api/admin/whatsapp-diagnostics.
  */
 
 import type { SmsProvider, SmsChannel, OutboundSms, SmsResult } from "./sms-provider";
+
+// Graph API base used for every Meta call (sends + /api/admin/whatsapp-diagnostics).
+export const META_GRAPH_BASE = "https://graph.facebook.com/v21.0";
 
 export class MetaWhatsAppProvider implements SmsProvider {
   private phoneNumberId: string;
@@ -52,7 +55,7 @@ export class MetaWhatsAppProvider implements SmsProvider {
   }
 
   async send(_channel: SmsChannel, msg: OutboundSms): Promise<SmsResult> {
-    const url = `https://graph.facebook.com/v21.0/${this.phoneNumberId}/messages`;
+    const url = `${META_GRAPH_BASE}/${this.phoneNumberId}/messages`;
 
     // WhatsApp numbers on the Graph API are digits only — no "+", spaces, dashes,
     // or parentheses. people.whatsapp is hand-entered (e.g. "(845) 580-4298"), so
@@ -95,11 +98,19 @@ export class MetaWhatsAppProvider implements SmsProvider {
         json = JSON.parse(rawBody);
       } catch {
         // Non-JSON response (e.g. 502 HTML from a proxy/gateway)
-        console.error(`[meta-whatsapp] non-JSON response HTTP ${res.status}: ${rawBody.slice(0, 200)}`);
+        console.error(`[meta-send] to=${to} http=${res.status} non-JSON body=${rawBody.slice(0, 500)}`);
         return { providerId: null, success: false, error: `HTTP ${res.status} — non-JSON response` };
       }
 
       const providerId = json.messages?.[0]?.id ?? null;
+
+      // Full Meta response for every send — the body never contains the access
+      // token (it only travels in our request's Authorization header).
+      console.log(
+        `[meta-send] to=${to} http=${res.status} wamid=${providerId ?? "none"} ` +
+        `phone_number_id=${this.phoneNumberId} template=${this.templateName}/${this.templateLang} ` +
+        `error=${json.error ? JSON.stringify(json.error) : "none"} response=${rawBody}`
+      );
 
       if (!res.ok || !providerId) {
         const detail = json.error?.message ?? `HTTP ${res.status}`;

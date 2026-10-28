@@ -135,7 +135,7 @@ export function AIAssist({
         <div className="fixed inset-0 z-50 flex items-end justify-end sm:items-start sm:pt-24 sm:pr-6">
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-black/20"
+            className="animate-backdrop absolute inset-0 bg-black/20"
             onClick={handleClose}
             aria-hidden="true"
           />
@@ -145,21 +145,21 @@ export function AIAssist({
             role="dialog"
             aria-modal="true"
             aria-label="AI Assist"
-            className="relative z-10 flex w-full flex-col rounded-t-xl border border-zinc-200 bg-white shadow-xl sm:w-96 sm:rounded-xl"
+            className="animate-pop-in relative z-10 flex w-full flex-col rounded-t-xl border border-line bg-card shadow-pop sm:w-96 sm:rounded-xl"
             style={{ maxHeight: "80vh" }}
           >
             {/* Header */}
-            <div className="flex flex-shrink-0 items-center justify-between border-b border-zinc-100 px-4 py-3">
+            <div className="flex flex-shrink-0 items-center justify-between border-b border-muted px-4 py-3">
               <div className="flex items-center gap-2">
                 <div className="flex h-6 w-6 items-center justify-center rounded-md bg-violet-100 text-violet-600">
                   <SparkleIcon />
                 </div>
-                <span className="text-sm font-semibold text-zinc-900">AI Assist</span>
+                <span className="text-sm font-semibold text-ink">AI Assist</span>
               </div>
               <button
                 onClick={handleClose}
                 aria-label="Close"
-                className="rounded-md p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
+                className="rounded-md p-1 text-ink-3 transition-colors hover:bg-muted hover:text-ink-soft"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -170,17 +170,17 @@ export function AIAssist({
             <div className="flex-1 overflow-y-auto px-4 py-4">
               {/* Draft from prompt */}
               <div className="mb-4">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-3">
                   Draft Message
                 </p>
-                <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+                <div className="rounded-lg border border-line bg-canvas p-3">
                   <textarea
                     ref={promptRef}
                     value={draftPrompt}
                     onChange={(e) => setDraftPrompt(e.target.value)}
                     placeholder={`e.g. "Remind parents about the Shabbaton this Friday"`}
                     rows={3}
-                    className="w-full resize-none bg-transparent text-sm text-zinc-800 placeholder-zinc-400 outline-none"
+                    className="w-full resize-none bg-transparent text-sm text-ink-hover placeholder-ink-3 outline-none"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && draftPrompt.trim()) {
                         runAction("draft", draftPrompt.trim());
@@ -215,7 +215,7 @@ export function AIAssist({
 
               {/* Actions on existing content */}
               <div className="mb-4">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-3">
                   Edit Current Message
                 </p>
                 <div className="space-y-1">
@@ -231,8 +231,8 @@ export function AIAssist({
                         className={
                           "flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40 " +
                           (!hasContent
-                            ? "text-zinc-300"
-                            : "text-zinc-700 hover:bg-zinc-50")
+                            ? "text-line-strong"
+                            : "text-ink-soft hover:bg-canvas")
                         }
                       >
                         {isLoading ? (
@@ -249,7 +249,7 @@ export function AIAssist({
                   })}
                 </div>
                 {!hasContent && (
-                  <p className="mt-2 text-xs text-zinc-400">
+                  <p className="mt-2 text-xs text-ink-3">
                     Write a subject or message first to use these options.
                   </p>
                 )}
@@ -274,12 +274,12 @@ export function AIAssist({
                   {result.type === "draft" && (
                     <div className="px-3 py-3">
                       <div className="mb-2">
-                        <p className="mb-0.5 text-xs font-medium text-zinc-500">Subject</p>
-                        <p className="text-sm text-zinc-900">{result.subject}</p>
+                        <p className="mb-0.5 text-xs font-medium text-ink-2">Subject</p>
+                        <p className="text-sm text-ink">{result.subject}</p>
                       </div>
                       <div className="mb-3">
-                        <p className="mb-0.5 text-xs font-medium text-zinc-500">Body</p>
-                        <p className="whitespace-pre-wrap text-sm leading-relaxed text-zinc-700">
+                        <p className="mb-0.5 text-xs font-medium text-ink-2">Body</p>
+                        <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink-soft">
                           {result.body}
                         </p>
                       </div>
@@ -298,7 +298,7 @@ export function AIAssist({
 
                   {result.type === "body" && (
                     <div className="px-3 py-3">
-                      <p className="mb-3 whitespace-pre-wrap text-sm leading-relaxed text-zinc-700">
+                      <p className="mb-3 whitespace-pre-wrap text-sm leading-relaxed text-ink-soft">
                         {result.body}
                       </p>
                       <button
@@ -325,7 +325,7 @@ export function AIAssist({
                               onApplySubject(line);
                               setOpen(false);
                             }}
-                            className="flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left text-sm text-zinc-800 transition-colors hover:bg-violet-100"
+                            className="flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left text-sm text-ink-hover transition-colors hover:bg-violet-100"
                           >
                             <span className="mt-0.5 flex-shrink-0 text-violet-400">
                               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

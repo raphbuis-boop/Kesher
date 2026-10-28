@@ -5,7 +5,9 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getOrgId } from "@/lib/org";
 import { getBrandingSettings } from "@/lib/settings";
 import { isDemoWorkspaceLoaded } from "@/lib/demoWorkspace";
+import { getCategoryCounts } from "@/lib/categoryCounts";
 import { DemoWorkspaceControl } from "@/app/components/DemoWorkspaceControl";
+import { AdminOnly } from "@/app/components/AdminOnly";
 import {
   Users,
   Send,
@@ -52,8 +54,6 @@ type RecipRow = {
   delivered_at: string | null;
 };
 
-type PersonRow = { categories: string[] | null };
-
 type FeedItem =
   | {
       kind: "campaign";
@@ -81,7 +81,7 @@ const CHANNEL_META: Record<
     bg: string;
   }
 > = {
-  email:    { label: "Email",    Icon: Mail,          color: "text-zinc-500",    bg: "bg-[#f5f5f5]"  },
+  email:    { label: "Email",    Icon: Mail,          color: "text-ink-2",    bg: "bg-muted"  },
   sms:      { label: "SMS",      Icon: Smartphone,    color: "text-blue-500",    bg: "bg-blue-50"     },
   whatsapp: { label: "WhatsApp", Icon: MessageSquare, color: "text-emerald-500", bg: "bg-emerald-50"  },
 };
@@ -136,15 +136,13 @@ export default async function OverviewPage() {
   const [
     branding,
     demoLoaded,
-    { count: rawContactCount },
-    { data: rawPeople },
+    categoryCounts,
     { data: rawMessages },
     { data: rawImports },
   ] = await Promise.all([
     getBrandingSettings(),
     isDemoWorkspaceLoaded(supabase, orgId),
-    supabase.from("people").select("*", { count: "exact", head: true }).eq("org_id", orgId),
-    supabase.from("people").select("categories").eq("org_id", orgId),
+    getCategoryCounts(supabase, orgId),
     supabase
       .from("messages")
       .select("id, subject, body, channel, audience_label, recipient_count, sent_count, failed_count, status, sent_at, created_at")
@@ -161,8 +159,7 @@ export default async function OverviewPage() {
 
   const msgList    = (rawMessages ?? []) as MessageRow[];
   const importList = (rawImports  ?? []) as ImportRow[];
-  const peopleList = (rawPeople   ?? []) as PersonRow[];
-  const contacts   = rawContactCount ?? 0;
+  const contacts   = categoryCounts.total;
 
   // ── Phase 2 — recipient stats for known message IDs ──────────────────────────
   const messageIds = msgList.map((m) => m.id);
@@ -209,17 +206,11 @@ export default async function OverviewPage() {
   const hasOpenData = eDel > 0;
 
   // ── Audience breakdown ───────────────────────────────────────────────────────
-  const catCounts: Record<string, number> = {};
-  for (const p of peopleList) {
-    for (const c of p.categories ?? []) {
-      catCounts[c] = (catCounts[c] ?? 0) + 1;
-    }
-  }
-  const audiences = Object.entries(catCounts)
+  const audiences = Object.entries(categoryCounts.byCategory)
+    .filter(([, n]) => n > 0)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 7);
-  const uncategorized =
-    contacts - peopleList.filter((p) => p.categories && p.categories.length > 0).length;
+  const uncategorized = categoryCounts.uncategorized;
 
   // ── Activity feed ─────────────────────────────────────────────────────────────
   const feed: FeedItem[] = [
@@ -249,20 +240,20 @@ export default async function OverviewPage() {
 
   // ── Render ────────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#fafafa]">
+    <div className="min-h-screen bg-canvas">
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-10 border-b border-[#e7e7e7] bg-white/95 backdrop-blur-sm px-6 py-3.5">
+      <header className="sticky top-0 z-10 border-b border-line bg-card/95 backdrop-blur-sm px-6 py-3.5">
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-[13px] font-semibold text-[#0f0f0f]">Overview</h1>
-            <p className="text-[11px] text-[#a1a1aa] mt-px">{branding.schoolName || "Your Organization"}</p>
+            <h1 className="text-[13px] font-semibold text-ink">Overview</h1>
+            <p className="text-[11px] text-ink-3 mt-px">{branding.schoolName || "Your Organization"}</p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
-            {demoLoaded && <DemoWorkspaceControl mode="remove" />}
+            {demoLoaded && <AdminOnly><DemoWorkspaceControl mode="remove" /></AdminOnly>}
             <Link
               href="/messages/new"
-              className="inline-flex items-center gap-1.5 rounded-md bg-[#0f0f0f] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-[#27272a]"
+              className="inline-flex items-center gap-1.5 rounded-md bg-ink px-3 py-1.5 text-[12px] font-medium text-on-ink hover:bg-ink-hover"
             >
               <PenLine size={12} strokeWidth={2} />
               Compose
@@ -274,7 +265,7 @@ export default async function OverviewPage() {
       <div className="px-6 py-6 space-y-6 max-w-7xl">
 
         {/* ── Load demo workspace (only ever shown when the workspace is empty) ── */}
-        {contacts === 0 && !demoLoaded && <DemoWorkspaceControl mode="load" />}
+        {contacts === 0 && !demoLoaded && <AdminOnly><DemoWorkspaceControl mode="load" /></AdminOnly>}
 
         {/* ── Section 1 — Hero KPIs ────────────────────────────────────────── */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -282,54 +273,54 @@ export default async function OverviewPage() {
           {/* Active Contacts */}
           <Link
             href="/people"
-            className="group rounded-xl border border-[#e7e7e7] bg-white px-4 py-4 transition-all duration-150 hover:border-[#d4d4d8] hover:shadow-sm"
+            className="group rounded-xl border border-line bg-card px-4 py-4 transition-all duration-150 hover:border-line-strong hover:shadow-sm"
           >
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">Active Contacts</p>
-            <p className="mt-2.5 text-[30px] font-semibold tracking-tight tabular-nums leading-none text-[#0f0f0f]">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">Active Contacts</p>
+            <p className="mt-2.5 text-[30px] font-semibold tracking-tight tabular-nums leading-none text-ink">
               {contacts.toLocaleString()}
             </p>
-            <p className="mt-2 flex items-center justify-between text-[11px] text-[#a1a1aa]">
+            <p className="mt-2 flex items-center justify-between text-[11px] text-ink-3">
               <span>in directory</span>
-              <ArrowRight size={10} className="text-[#d4d4d8] group-hover:text-[#a1a1aa] transition-colors" />
+              <ArrowRight size={10} className="text-line-strong group-hover:text-ink-3 transition-colors" />
             </p>
           </Link>
 
           {/* Campaigns This Week */}
           <Link
             href="/messages"
-            className="group rounded-xl border border-[#e7e7e7] bg-white px-4 py-4 transition-all duration-150 hover:border-[#d4d4d8] hover:shadow-sm"
+            className="group rounded-xl border border-line bg-card px-4 py-4 transition-all duration-150 hover:border-line-strong hover:shadow-sm"
           >
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">This Week</p>
-            <p className="mt-2.5 text-[30px] font-semibold tracking-tight tabular-nums leading-none text-[#0f0f0f]">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">This Week</p>
+            <p className="mt-2.5 text-[30px] font-semibold tracking-tight tabular-nums leading-none text-ink">
               {weekCount}
             </p>
-            <p className="mt-2 flex items-center justify-between text-[11px] text-[#a1a1aa]">
+            <p className="mt-2 flex items-center justify-between text-[11px] text-ink-3">
               <span>campaigns sent</span>
-              <ArrowRight size={10} className="text-[#d4d4d8] group-hover:text-[#a1a1aa] transition-colors" />
+              <ArrowRight size={10} className="text-line-strong group-hover:text-ink-3 transition-colors" />
             </p>
           </Link>
 
           {/* Delivery Rate */}
-          <div className="rounded-xl border border-t-2 border-t-emerald-500 border-[#e7e7e7] bg-white px-4 py-4">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">Delivery Rate</p>
-            <p className="mt-2.5 text-[30px] font-semibold tracking-tight tabular-nums leading-none text-[#0f0f0f]">
+          <div className="rounded-xl border border-t-2 border-t-emerald-500 border-line bg-card px-4 py-4">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">Delivery Rate</p>
+            <p className="mt-2.5 text-[30px] font-semibold tracking-tight tabular-nums leading-none text-ink">
               {delivRate ?? "—"}
             </p>
-            <p className="mt-2 text-[11px] text-[#a1a1aa]">last 30 days</p>
+            <p className="mt-2 text-[11px] text-ink-3">last 30 days</p>
           </div>
 
           {/* Open Rate */}
           <div
             className={[
-              "rounded-xl border bg-white px-4 py-4",
-              hasOpenData ? "border-t-2 border-t-sky-500 border-[#e7e7e7]" : "border-[#e7e7e7]",
+              "rounded-xl border bg-card px-4 py-4",
+              hasOpenData ? "border-t-2 border-t-sky-500 border-line" : "border-line",
             ].join(" ")}
           >
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">Open Rate</p>
-            <p className="mt-2.5 text-[30px] font-semibold tracking-tight tabular-nums leading-none text-[#0f0f0f]">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">Open Rate</p>
+            <p className="mt-2.5 text-[30px] font-semibold tracking-tight tabular-nums leading-none text-ink">
               {openRate ?? "—"}
             </p>
-            <p className="mt-2 text-[11px] text-[#a1a1aa]">email, last 30d</p>
+            <p className="mt-2 text-[11px] text-ink-3">email, last 30d</p>
           </div>
         </div>
 
@@ -337,15 +328,15 @@ export default async function OverviewPage() {
         <div className="grid gap-5 lg:grid-cols-5">
 
           {/* ── Section 2 — Activity Feed (3/5) ──────────────────────────── */}
-          <div className="lg:col-span-3 rounded-xl border border-[#e7e7e7] bg-white overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#f0f0f0]">
+          <div className="lg:col-span-3 rounded-xl border border-line bg-card shadow-card overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-muted-2">
               <div>
-                <h2 className="text-[13px] font-semibold text-[#0f0f0f]">Activity</h2>
-                <p className="mt-0.5 text-[11px] text-[#a1a1aa]">Campaigns, imports, and contact changes</p>
+                <h2 className="text-[13px] font-semibold text-ink">Activity</h2>
+                <p className="mt-0.5 text-[11px] text-ink-3">Campaigns, imports, and contact changes</p>
               </div>
               <Link
                 href="/activity"
-                className="inline-flex items-center gap-1 text-[11px] font-medium text-[#a1a1aa] hover:text-[#71717a] transition-colors"
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-ink-3 hover:text-ink-2 transition-colors"
               >
                 View all <ArrowRight size={10} />
               </Link>
@@ -353,16 +344,16 @@ export default async function OverviewPage() {
 
             {feed.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center px-6">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#e7e7e7] bg-[#fafafa] mb-4">
-                  <Send size={17} className="text-[#d4d4d8]" strokeWidth={1.5} />
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-line bg-canvas mb-4">
+                  <Send size={17} className="text-line-strong" strokeWidth={1.5} />
                 </div>
-                <p className="text-[13px] font-semibold text-[#0f0f0f]">No activity yet</p>
-                <p className="mt-1 text-[12px] text-[#a1a1aa]">
+                <p className="text-[13px] font-semibold text-ink">No activity yet</p>
+                <p className="mt-1 text-[12px] text-ink-3">
                   Send your first message to get started.
                 </p>
                 <Link
                   href="/messages/new"
-                  className="mt-4 inline-flex items-center gap-1.5 rounded-md border border-[#e7e7e7] bg-white px-3 py-1.5 text-[12px] font-medium text-[#0f0f0f] hover:bg-[#fafafa] transition-colors"
+                  className="mt-4 inline-flex items-center gap-1.5 rounded-md border border-line bg-card px-3 py-1.5 text-[12px] font-medium text-ink hover:bg-canvas transition-colors"
                 >
                   <Plus size={11} strokeWidth={2.5} /> Compose
                 </Link>
@@ -371,21 +362,21 @@ export default async function OverviewPage() {
               <div>
                 {feed.map((item, i) => {
                   const isLast = i === feed.length - 1;
-                  const rowCls = `flex items-start gap-3 px-5 py-4 transition-colors hover:bg-[#fafafa] ${!isLast ? "border-b border-[#f5f5f5]" : ""}`;
+                  const rowCls = `flex items-start gap-3 px-5 py-4 transition-colors hover:bg-canvas ${!isLast ? "border-b border-muted" : ""}`;
 
                   if (item.kind === "import") {
                     return (
                       <div key={item.id} className={rowCls}>
-                        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#f5f5f5]">
-                          <Upload size={12} className="text-[#a1a1aa]" strokeWidth={2} />
+                        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted">
+                          <Upload size={12} className="text-ink-3" strokeWidth={2} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[13px] text-[#0f0f0f] leading-snug">
+                          <p className="text-[13px] text-ink leading-snug">
                             <span className="font-medium">Imported {item.count.toLocaleString()} contacts</span>
-                            <span className="text-[#71717a]"> · {item.fileName}</span>
+                            <span className="text-ink-2"> · {item.fileName}</span>
                           </p>
                         </div>
-                        <span className="mt-0.5 shrink-0 text-[11px] tabular-nums text-[#a1a1aa]">
+                        <span className="mt-0.5 shrink-0 text-[11px] tabular-nums text-ink-3">
                           {timeAgo(item.time)}
                         </span>
                       </div>
@@ -421,7 +412,7 @@ export default async function OverviewPage() {
                       {iconEl}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 min-w-0">
-                          <p className="text-[13px] font-medium text-[#0f0f0f] truncate leading-snug">
+                          <p className="text-[13px] font-medium text-ink truncate leading-snug">
                             {item.subject}
                           </p>
                           <span
@@ -431,7 +422,7 @@ export default async function OverviewPage() {
                             {meta.label}
                           </span>
                         </div>
-                        <p className="mt-0.5 text-[11px] text-[#a1a1aa] leading-snug">
+                        <p className="mt-0.5 text-[11px] text-ink-3 leading-snug">
                           {item.audience}
                           {item.recipients > 0 && (
                             <> · <span className="tabular-nums">{item.recipients.toLocaleString()}</span> recipients</>
@@ -447,7 +438,7 @@ export default async function OverviewPage() {
                           )}
                         </p>
                       </div>
-                      <span className="mt-0.5 shrink-0 text-[11px] tabular-nums text-[#a1a1aa]">
+                      <span className="mt-0.5 shrink-0 text-[11px] tabular-nums text-ink-3">
                         {timeAgo(item.time)}
                       </span>
                     </Link>
@@ -461,27 +452,27 @@ export default async function OverviewPage() {
           <div className="lg:col-span-2 flex flex-col gap-5">
 
             {/* Section 5 — Quick Actions */}
-            <div className="rounded-xl border border-[#e7e7e7] bg-white overflow-hidden">
-              <div className="px-5 py-3.5 border-b border-[#f0f0f0]">
-                <h2 className="text-[13px] font-semibold text-[#0f0f0f]">Quick Actions</h2>
+            <div className="rounded-xl border border-line bg-card shadow-card overflow-hidden">
+              <div className="px-5 py-3.5 border-b border-muted-2">
+                <h2 className="text-[13px] font-semibold text-ink">Quick Actions</h2>
               </div>
-              <div className="divide-y divide-[#f5f5f5]">
+              <div className="divide-y divide-muted">
                 {QUICK_ACTIONS.map(({ href, Icon, label, sub }) => (
                   <Link
                     key={href}
                     href={href}
-                    className="group flex items-center gap-3.5 px-5 py-3 transition-colors hover:bg-[#fafafa]"
+                    className="group flex items-center gap-3.5 px-5 py-3 transition-colors hover:bg-canvas"
                   >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#e7e7e7] bg-white group-hover:border-[#d4d4d8] transition-colors">
-                      <Icon size={13} className="text-[#71717a]" strokeWidth={1.75} />
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line bg-card group-hover:border-line-strong transition-colors">
+                      <Icon size={13} className="text-ink-2" strokeWidth={1.75} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-medium text-[#0f0f0f]">{label}</p>
-                      <p className="text-[11px] text-[#a1a1aa]">{sub}</p>
+                      <p className="text-[13px] font-medium text-ink">{label}</p>
+                      <p className="text-[11px] text-ink-3">{sub}</p>
                     </div>
                     <ChevronRight
                       size={13}
-                      className="text-[#d4d4d8] group-hover:text-[#a1a1aa] shrink-0 transition-colors"
+                      className="text-line-strong group-hover:text-ink-3 shrink-0 transition-colors"
                     />
                   </Link>
                 ))}
@@ -489,12 +480,12 @@ export default async function OverviewPage() {
             </div>
 
             {/* Section 4 — Audience Breakdown / Directory */}
-            <div className="rounded-xl border border-[#e7e7e7] bg-white overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#f0f0f0]">
-                <h2 className="text-[13px] font-semibold text-[#0f0f0f]">Directory</h2>
+            <div className="rounded-xl border border-line bg-card shadow-card overflow-hidden">
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-muted-2">
+                <h2 className="text-[13px] font-semibold text-ink">Directory</h2>
                 <Link
                   href="/people"
-                  className="inline-flex items-center gap-1 text-[11px] font-medium text-[#a1a1aa] hover:text-[#71717a] transition-colors"
+                  className="inline-flex items-center gap-1 text-[11px] font-medium text-ink-3 hover:text-ink-2 transition-colors"
                 >
                   View all <ArrowRight size={10} />
                 </Link>
@@ -502,13 +493,13 @@ export default async function OverviewPage() {
 
               {audiences.length === 0 ? (
                 <div className="px-5 py-10 text-center">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e7e7e7] bg-[#fafafa] mx-auto mb-3">
-                    <Users size={14} className="text-[#d4d4d8]" strokeWidth={1.5} />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-canvas mx-auto mb-3">
+                    <Users size={14} className="text-line-strong" strokeWidth={1.5} />
                   </div>
-                  <p className="text-[12px] text-[#71717a] font-medium">No contacts yet</p>
+                  <p className="text-[12px] text-ink-2 font-medium">No contacts yet</p>
                   <Link
                     href="/imports"
-                    className="mt-1.5 inline-block text-[11px] text-[#a1a1aa] hover:text-[#71717a] transition-colors"
+                    className="mt-1.5 inline-block text-[11px] text-ink-3 hover:text-ink-2 transition-colors"
                   >
                     Import contacts →
                   </Link>
@@ -518,17 +509,17 @@ export default async function OverviewPage() {
                   {audiences.map(([cat, count]) => {
                     const share = contacts > 0 ? count / contacts : 0;
                     return (
-                      <div key={cat} className="flex items-center gap-3 py-2.5 border-b border-[#f5f5f5] last:border-0">
-                        <span className="flex-1 text-[12px] text-[#71717a]">
+                      <div key={cat} className="flex items-center gap-3 py-2.5 border-b border-muted last:border-0">
+                        <span className="flex-1 text-[12px] text-ink-2">
                           {AUDIENCE_LABELS[cat] ?? cat}
                         </span>
-                        <div className="w-16 h-1 rounded-full bg-[#f0f0f0] overflow-hidden">
+                        <div className="w-16 h-1 rounded-full bg-muted-2 overflow-hidden">
                           <div
-                            className="h-full rounded-full bg-[#d4d4d8]"
+                            className="h-full rounded-full bg-line-strong"
                             style={{ width: `${Math.round(share * 100)}%` }}
                           />
                         </div>
-                        <span className="w-8 text-right text-[13px] font-medium tabular-nums text-[#0f0f0f]">
+                        <span className="w-8 text-right text-[13px] font-medium tabular-nums text-ink">
                           {count.toLocaleString()}
                         </span>
                       </div>
@@ -536,14 +527,14 @@ export default async function OverviewPage() {
                   })}
                   {uncategorized > 0 && (
                     <div className="flex items-center gap-3 py-2.5">
-                      <span className="flex-1 text-[12px] text-[#a1a1aa]">Uncategorized</span>
-                      <div className="w-16 h-1 rounded-full bg-[#f0f0f0] overflow-hidden">
+                      <span className="flex-1 text-[12px] text-ink-3">Uncategorized</span>
+                      <div className="w-16 h-1 rounded-full bg-muted-2 overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-[#e7e7e7]"
+                          className="h-full rounded-full bg-line"
                           style={{ width: `${Math.round((uncategorized / contacts) * 100)}%` }}
                         />
                       </div>
-                      <span className="w-8 text-right text-[13px] font-medium tabular-nums text-[#a1a1aa]">
+                      <span className="w-8 text-right text-[13px] font-medium tabular-nums text-ink-3">
                         {uncategorized.toLocaleString()}
                       </span>
                     </div>
