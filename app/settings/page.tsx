@@ -28,6 +28,9 @@ import { getRequireApproval, getSchoolTimezone } from "@/lib/schoolTime";
 import { getDispatcherHealth } from "@/lib/send/health";
 import { getAbsoluteBaseUrl } from "@/lib/site-url";
 import { getHebrewDateStyle } from "@/lib/hebrewDate";
+import QRCode from "qrcode";
+import { ParentSignupSettings } from "./panels/ParentSignupSettings";
+import { buildSignupUrl, canVerifyPhones, getSignupSettings } from "@/lib/signup";
 import { ShabbosSettings, type ShabbosView } from "./panels/ShabbosSettings";
 import { getShabbosSettings, getUpcomingWindows, SHABBOS_DEFAULTS } from "@/lib/shabbos";
 import { formatInZone } from "@/lib/schoolTime";
@@ -83,10 +86,13 @@ export default async function SettingsPage() {
         getShabbosSettings(supabase, orgId),
         getUpcomingWindows(supabase, orgId, new Date(), 6),
         supabase.from("window_overrides").select("reason, created_at").eq("org_id", orgId).order("created_at", { ascending: false }).limit(5),
+        getSignupSettings(supabase, orgId),
+        canVerifyPhones(orgId),
+        supabase.from("people").select("id", { count: "exact", head: true }).eq("org_id", orgId).eq("status", "pending").eq("source_system", "signup").contains("categories", ["parent"]),
       ])
     : null;
 
-  const [demoLoaded, simulated, importsRes, channelsOverview, membersRes, invitesRes, fieldDefs, newContactsMode, pendingRes, googleConnection, sheetsRes, requestsRes, templates, templateAssignments, groupsRes, schoolTimezone, requireApproval, dispatcherHealth, hebrewStyle, shabbosSettings, shabbosWindows, overridesRes] = admin ?? [];
+  const [demoLoaded, simulated, importsRes, channelsOverview, membersRes, invitesRes, fieldDefs, newContactsMode, pendingRes, googleConnection, sheetsRes, requestsRes, templates, templateAssignments, groupsRes, schoolTimezone, requireApproval, dispatcherHealth, hebrewStyle, shabbosSettings, shabbosWindows, overridesRes, signupSettings, signupVerifies, signupPending] = admin ?? [];
 
   const audienceChoices: AudienceChoice[] = [
     ...[["parents", "Parents"], ["students", "Students"], ["grandparents", "Grandparents"], ["alumni", "Alumni"], ["faculty", "Faculty"], ["staff", "Staff"], ["board", "Board"], ["donors", "Donors"], ["prospects", "Prospects"]].map(
@@ -141,11 +147,27 @@ export default async function SettingsPage() {
     isOwner: role === "owner",
   };
 
+  const signupUrl = signupSettings?.enabled ? buildSignupUrl(orgId, signupSettings.epoch) : null;
+  const [signupQrSvg, signupQrPng] = signupUrl
+    ? await Promise.all([QRCode.toString(signupUrl, { type: "svg", margin: 1, errorCorrectionLevel: "M" }), QRCode.toDataURL(signupUrl, { margin: 2, width: 768, errorCorrectionLevel: "M" })])
+    : [null, null];
+
   // Server-loaded panels shown inside the matching Settings section (admins only)
   const panels: Partial<Record<SectionId, React.ReactNode>> = admin && channelsOverview
     ? {
         channels: <ChannelsSettings overview={channelsOverview} simulated={simulated ?? false} />,
         shabbos: <ShabbosSettings view={shabbosView} />,
+        parents: (
+          <ParentSignupSettings
+            enabled={signupSettings?.enabled ?? false}
+            intro={signupSettings?.intro ?? ""}
+            url={signupUrl}
+            qrSvg={signupQrSvg}
+            qrPng={signupQrPng}
+            pending={signupPending?.count ?? 0}
+            verifiesPhones={signupVerifies ?? false}
+          />
+        ),
         messaging: (
           <MessagingSettings
             timezone={schoolTimezone ?? "America/New_York"}

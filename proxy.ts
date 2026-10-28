@@ -35,6 +35,8 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/invite/") ||
     // "I've read this" links in messages (signed per recipient)
     pathname.startsWith("/r/") ||
+    // Parent signup link / QR code
+    pathname.startsWith("/join/") ||
     pathname.startsWith("/api/webhooks/") ||
     // Vercel Cron has no session; these routes check CRON_SECRET themselves
     pathname.startsWith("/api/cron/")

@@ -19,6 +19,7 @@ type Row = {
   created_at: string;
   households: { name: string } | null;
   sync_sources: { name: string } | null;
+  contact_preferences: { phone_verified_at: string | null; sms_consent_at: string | null; email_enabled: boolean; sms_enabled: boolean; whatsapp_enabled: boolean } | null;
 };
 
 export default async function ReviewPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
@@ -30,7 +31,7 @@ export default async function ReviewPage({ searchParams }: { searchParams: Promi
   const [{ data }, { count: pendingCount }, { count: rejectedCount }] = await Promise.all([
     supabase
       .from("people")
-      .select("id, first_name, last_name, email, phone, categories, grade, source_system, created_at, households ( name ), sync_sources ( name )")
+      .select("id, first_name, last_name, email, phone, categories, grade, source_system, created_at, households ( name ), sync_sources ( name ), contact_preferences ( phone_verified_at, sms_consent_at, email_enabled, sms_enabled, whatsapp_enabled )")
       .eq("org_id", orgId)
       .eq("status", showRejected ? "rejected" : "pending")
       .order("household_id", { nullsFirst: false })
@@ -43,22 +44,27 @@ export default async function ReviewPage({ searchParams }: { searchParams: Promi
 
   // Possible matches with people already in the directory (same email, or same name)
   const emails = [...new Set(rows.map((r) => r.email?.toLowerCase()).filter((e): e is string => !!e))];
+  const phones = [...new Set(rows.map((r) => r.phone).filter((p): p is string => !!p))];
   const lastNames = [...new Set(rows.map((r) => r.last_name).filter(Boolean))];
-  const [byEmail, byName] = await Promise.all([
+  const [byEmail, byName, byPhone] = await Promise.all([
     emails.length
       ? supabase.from("people").select("id, first_name, last_name, email").eq("org_id", orgId).eq("status", "active").in("email", emails.slice(0, 300))
       : Promise.resolve({ data: [] }),
     lastNames.length
       ? supabase.from("people").select("id, first_name, last_name, email").eq("org_id", orgId).eq("status", "active").in("last_name", lastNames.slice(0, 300))
       : Promise.resolve({ data: [] }),
+    phones.length
+      ? supabase.from("people").select("id, first_name, last_name, email, phone").eq("org_id", orgId).eq("status", "active").in("phone", phones.slice(0, 300))
+      : Promise.resolve({ data: [] }),
   ]);
-  type Match = { id: string; first_name: string; last_name: string; email: string | null };
-  const active = [...((byEmail.data ?? []) as Match[]), ...((byName.data ?? []) as Match[])];
+  type Match = { id: string; first_name: string; last_name: string; email: string | null; phone?: string | null };
+  const active = [...((byEmail.data ?? []) as Match[]), ...((byPhone.data ?? []) as Match[]), ...((byName.data ?? []) as Match[])];
 
   const people: ReviewPerson[] = rows.map((r) => {
     const match = active.find(
       (a) =>
         (r.email && a.email?.toLowerCase() === r.email.toLowerCase()) ||
+        (r.phone && a.phone && a.phone === r.phone) ||
         (`${a.first_name} ${a.last_name}`.toLowerCase() === `${r.first_name} ${r.last_name}`.toLowerCase())
     );
     return {
@@ -70,6 +76,14 @@ export default async function ReviewPage({ searchParams }: { searchParams: Promi
       family: r.households?.name ?? "No family",
       source: r.sync_sources?.name ?? SOURCE_LABELS[r.source_system] ?? r.source_system,
       match: match ? { id: match.id, name: `${match.first_name} ${match.last_name}` } : null,
+      signup:
+        r.source_system === "signup" && r.categories?.includes("parent")
+          ? {
+              phoneVerified: !!r.contact_preferences?.phone_verified_at,
+              consentAt: r.contact_preferences?.sms_consent_at ?? null,
+              channels: [r.contact_preferences?.email_enabled && "email", r.contact_preferences?.sms_enabled && "text", r.contact_preferences?.whatsapp_enabled && "WhatsApp"].filter((x): x is string => !!x),
+            }
+          : null,
     };
   });
 

@@ -14,6 +14,8 @@ export type ReviewPerson = {
   family: string;
   source: string;
   match: { id: string; name: string } | null;
+  /** Parent signups: what the parent proved and agreed to */
+  signup: { phoneVerified: boolean; consentAt: string | null; channels: string[] } | null;
 };
 
 export function ReviewQueue({ people, canReview, rejected }: { people: ReviewPerson[]; canReview: boolean; rejected: boolean }) {
@@ -113,6 +115,13 @@ export function ReviewQueue({ people, canReview, rejected }: { people: ReviewPer
                   <div className="min-w-0 flex-1">
                     <Link href={`/people/${p.id}`} className="text-[13px] font-medium text-ink hover:text-ink-2">{p.name}</Link>
                     <p className="truncate text-[11px] text-ink-3">{p.detail || "No contact info"} · from {p.source}</p>
+                    {p.signup && (
+                      <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px]">
+                        <span className={p.signup.phoneVerified ? "text-emerald-700" : "text-amber-700"}>{p.signup.phoneVerified ? "Phone verified" : "Phone not verified"}</span>
+                        {p.signup.channels.length > 0 && <span className="text-ink-3">wants {p.signup.channels.join(", ")}</span>}
+                        {p.signup.consentAt && <span className="text-ink-3">agreed to messages {new Date(p.signup.consentAt).toLocaleDateString()}</span>}
+                      </p>
+                    )}
                     {p.match && (
                       <p className="mt-0.5 text-[11px] text-amber-700">
                         Looks like <Link href={`/people/${p.match.id}`} className="underline underline-offset-2">{p.match.name}</Link>, who&apos;s already in your directory
