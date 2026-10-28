@@ -145,6 +145,9 @@ function SignOutButton() {
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
+// Links families open from a message: no staff sidebar
+const FAMILY_PREFIXES = ["/r/", "/join/", "/p/", "/archive/"];
+
 const PUBLIC_PATHS = ["/", "/login", "/privacy", "/sms-terms", "/terms", "/contact", "/cta", "/opt-in", "/sample-form", "/unsubscribe"];
 
 export function Nav() {
@@ -168,7 +171,7 @@ export function Nav() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  if (PUBLIC_PATHS.includes(pathname) || pathname.startsWith("/invite/") || pathname === "/no-workspace") return null;
+  if (PUBLIC_PATHS.includes(pathname) || pathname.startsWith("/invite/") || pathname === "/no-workspace" || FAMILY_PREFIXES.some((p) => pathname.startsWith(p))) return null;
 
   const closeMobile = () => setMobileOpen(false);
 
