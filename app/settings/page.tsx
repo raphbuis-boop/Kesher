@@ -16,6 +16,8 @@ import Link from "next/link";
 import { GoogleSheetsSettings, type SheetSourceView } from "./panels/GoogleSheetsSettings";
 import { getGoogleConnection, googleConfigError } from "@/lib/google";
 import { IntegrationsSettings } from "./panels/IntegrationsSettings";
+import { TemplatesSettings, type AudienceChoice } from "./panels/TemplatesSettings";
+import { getAudienceTemplateMap, listTemplates } from "@/lib/templates";
 import { PROVIDERS } from "@/lib/sync/connectors";
 import type { SyncStats } from "@/lib/sync/engine";
 import { getNewContactsMode } from "@/lib/sync/engine";
@@ -61,10 +63,20 @@ export default async function SettingsPage() {
           .eq("kind", "google_sheets")
           .order("created_at"),
         supabase.from("integration_requests").select("provider").eq("org_id", orgId),
+        listTemplates(supabase, orgId),
+        getAudienceTemplateMap(supabase, orgId),
+        supabase.from("groups").select("id, name").eq("org_id", orgId).order("name"),
       ])
     : null;
 
-  const [demoLoaded, simulated, importsRes, channels, membersRes, invitesRes, fieldDefs, newContactsMode, pendingRes, googleConnection, sheetsRes, requestsRes] = admin ?? [];
+  const [demoLoaded, simulated, importsRes, channels, membersRes, invitesRes, fieldDefs, newContactsMode, pendingRes, googleConnection, sheetsRes, requestsRes, templates, templateAssignments, groupsRes] = admin ?? [];
+
+  const audienceChoices: AudienceChoice[] = [
+    ...[["parents", "Parents"], ["students", "Students"], ["grandparents", "Grandparents"], ["alumni", "Alumni"], ["faculty", "Faculty"], ["staff", "Staff"], ["board", "Board"], ["donors", "Donors"], ["prospects", "Prospects"]].map(
+      ([slug, label]) => ({ slug, label, custom: false })
+    ),
+    ...((groupsRes?.data ?? []) as { id: string; name: string }[]).map((g) => ({ slug: g.id, label: g.name, custom: true })),
+  ];
 
   // Last run result for each connected sheet
   type SheetRow = { id: string; name: string; config: Record<string, string>; auto_sync: boolean; last_run_at: string | null; last_run_id: string | null; last_error: string | null };
@@ -93,6 +105,15 @@ export default async function SettingsPage() {
   // Server-loaded panels shown inside the matching Settings section (admins only)
   const panels: Partial<Record<SectionId, React.ReactNode>> = admin
     ? {
+        templates: (
+          <TemplatesSettings
+            templates={templates ?? []}
+            assignments={templateAssignments ?? {}}
+            audiences={audienceChoices}
+            brand={{ schoolName: branding.schoolName, primaryColor: branding.primaryColor, logoUrl: branding.logoUrl, footerText: branding.footerText, senderName: branding.senderName }}
+            uploadsEnabled={!!process.env.BLOB_READ_WRITE_TOKEN}
+          />
+        ),
         data: (
           <div className="space-y-5">
             <NewContactsSetting mode={newContactsMode ?? "review"} pending={pendingRes?.count ?? 0} />

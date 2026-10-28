@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getOrgId } from "@/lib/org";
 import { getGroupMembers, type GroupRow } from "@/lib/audienceMembers";
 import { ComposeFlow, type AudienceOption } from "./ComposeFlow";
+import { getAudienceTemplateMap, listTemplates } from "@/lib/templates";
 
 const SYSTEM_AUDIENCES: { slug: string; label: string; category: string }[] = [
   { slug: "parents", label: "Parents", category: "parent" },
@@ -99,6 +100,7 @@ export default async function NewMessagePage({
     })
   );
 
+  const [templates, audienceTemplates] = await Promise.all([listTemplates(supabase, orgId), getAudienceTemplateMap(supabase, orgId)]);
   const audiences = [...systemAudiences, ...customAudiences];
   const attachmentsEnabled = !!process.env.BLOB_READ_WRITE_TOKEN;
 
@@ -116,6 +118,8 @@ export default async function NewMessagePage({
           fromEmail={fromEmail}
           initialAudienceSlugs={initialAudienceSlugs}
           attachmentsEnabled={attachmentsEnabled}
+          templates={templates.map((t) => ({ id: t.id, name: t.name, defaultSubject: t.default_subject }))}
+          audienceTemplates={audienceTemplates}
         />
       </div>
     </div>

@@ -6,6 +6,9 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { sendMessage, previewRecipients, resolveAllRecipients, type Channel, type RecipientPreview, type ResolvedRecipient } from "../actions";
 import { TEMPLATE_TOKENS, renderTemplate } from "@/lib/template";
+import { FUNDRAISING_WHATSAPP_NOTE, looksLikeFundraising } from "@/lib/fundraising";
+
+export type TemplateOption = { id: string; name: string; defaultSubject: string | null };
 
 export type AudienceOption = {
   slug: string;
@@ -384,11 +387,16 @@ export function ComposeFlow({
   fromEmail,
   initialAudienceSlugs,
   attachmentsEnabled = false,
+  templates = [],
+  audienceTemplates = {},
 }: {
   audiences: AudienceOption[];
   fromEmail: string;
   initialAudienceSlugs?: string[];
   attachmentsEnabled?: boolean;
+  templates?: TemplateOption[];
+  /** audience slug → default template id */
+  audienceTemplates?: Record<string, string>;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -399,6 +407,11 @@ export function ComposeFlow({
     : [];
 
   const [selectedAudiences, setSelectedAudiences] = useState<AudienceOption[]>(initialSelected);
+  // Template: picked from the audience's default until the sender chooses one themselves
+  const defaultTemplateFor = (list: AudienceOption[]) => list.map((a) => audienceTemplates[a.slug]).find(Boolean) ?? null;
+  const [templateId, setTemplateId] = useState<string | null>(defaultTemplateFor(initialSelected));
+  const [templateTouched, setTemplateTouched] = useState(false);
+  const [isFundraising, setIsFundraising] = useState(false);
   const [channel, setChannel] = useState<Channel>("email");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -419,11 +432,21 @@ export function ComposeFlow({
 
   function toggleAudience(a: AudienceOption) {
     setRecipientPreviews(null);
-    setSelectedAudiences((prev) =>
-      prev.some((x) => x.slug === a.slug)
-        ? prev.filter((x) => x.slug !== a.slug)
-        : [...prev, a]
-    );
+    const next = selectedAudiences.some((x) => x.slug === a.slug) ? selectedAudiences.filter((x) => x.slug !== a.slug) : [...selectedAudiences, a];
+    setSelectedAudiences(next);
+    if (!templateTouched) {
+      const tid = defaultTemplateFor(next);
+      setTemplateId(tid);
+      const tpl = templates.find((t) => t.id === tid);
+      if (tpl?.defaultSubject && !subject.trim()) setSubject(tpl.defaultSubject);
+    }
+  }
+
+  function chooseTemplate(id: string) {
+    setTemplateTouched(true);
+    setTemplateId(id || null);
+    const tpl = templates.find((t) => t.id === id);
+    if (tpl?.defaultSubject && !subject.trim()) setSubject(tpl.defaultSubject);
   }
 
   function handleChannelChange(c: Channel) {
@@ -487,7 +510,9 @@ export function ComposeFlow({
   const eligible = recipientCount(selectedAudiences, channel);
   const missing = totalCount - eligible;
 
+  const whatsappBlocked = isFundraising || looksLikeFundraising(body, subject);
   const canSend =
+    !(channel === "whatsapp" && whatsappBlocked) &&
     selectedAudiences.length > 0 &&
     body.trim().length > 0 &&
     (channel !== "email" || subject.trim().length > 0) &&
@@ -522,7 +547,8 @@ export function ComposeFlow({
         body,
         attachments.map((a) => a.url),
         channel === "email" && greetingEnabled ? greetingTemplate : null,
-        removedPersonIds.size > 0 ? Array.from(removedPersonIds) : undefined
+        removedPersonIds.size > 0 ? Array.from(removedPersonIds) : undefined,
+        { templateId: channel === "email" ? templateId : null, isFundraising }
       );
       if (result.success) {
         toast.success("Message sent");
@@ -594,13 +620,16 @@ export function ComposeFlow({
               {(["email", "sms", "whatsapp"] as Channel[]).map((c) => {
                 const count = c === "email" ? emailCount : c === "whatsapp" ? whatsappCount : phoneCount;
                 const isSelected = channel === c;
+                const disabledByFundraising = c === "whatsapp" && isFundraising;
                 return (
                   <button
                     key={c}
                     type="button"
+                    disabled={disabledByFundraising}
+                    title={disabledByFundraising ? FUNDRAISING_WHATSAPP_NOTE : undefined}
                     onClick={() => handleChannelChange(c)}
                     className={
-                      "flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors " +
+                      "flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 " +
                       (isSelected
                         ? "border-ink bg-ink text-on-ink"
                         : "border-line bg-card text-ink-soft hover:border-line-strong hover:text-ink")
@@ -620,6 +649,27 @@ export function ComposeFlow({
                 );
               })}
             </div>
+
+            <label className="mt-3 flex cursor-pointer items-start gap-2 text-xs text-ink-2">
+              <input
+                type="checkbox"
+                checked={isFundraising}
+                onChange={(e) => {
+                  setIsFundraising(e.target.checked);
+                  if (e.target.checked && channel === "whatsapp") handleChannelChange("email");
+                }}
+                className="mt-0.5 h-3.5 w-3.5 accent-[var(--app-ink)]"
+              />
+              <span>
+                This is a fundraising message
+                {isFundraising && <span className="mt-0.5 block text-ink-3">{FUNDRAISING_WHATSAPP_NOTE}</span>}
+              </span>
+            </label>
+            {channel === "whatsapp" && !isFundraising && whatsappBlocked && (
+              <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                This reads like a fundraising message. WhatsApp doesn&apos;t allow those — send it by email or text instead, or remove the donation wording.
+              </p>
+            )}
 
             {/* Human-language channel notes */}
             {channel === "sms" && (
@@ -643,6 +693,20 @@ export function ComposeFlow({
         <div className="flex items-start gap-4">
           <span className="mt-1 w-16 flex-shrink-0 text-xs font-semibold uppercase tracking-wider text-ink-3">Message</span>
           <div className="flex-1 space-y-3">
+            {channel === "email" && templates.length > 0 && (
+              <div className="flex items-center gap-2 border-b border-muted pb-3">
+                <label htmlFor="compose-template" className="text-xs font-semibold uppercase tracking-wider text-ink-3">Template</label>
+                <select
+                  id="compose-template"
+                  value={templateId ?? ""}
+                  onChange={(e) => chooseTemplate(e.target.value)}
+                  className="rounded-md border border-line bg-card py-1.5 pl-2.5 pr-7 text-xs font-medium text-ink-soft outline-none hover:border-line-strong focus:border-line-strong"
+                >
+                  <option value="">School default</option>
+                  {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+              </div>
+            )}
             {channel === "email" && (
               <input
                 type="text"
