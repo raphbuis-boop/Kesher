@@ -13,6 +13,8 @@ import { CustomFieldsSettings } from "./panels/CustomFieldsSettings";
 import { NewContactsSetting } from "./panels/NewContactsSetting";
 import { GoogleSheetsSettings, type SheetSourceView } from "./panels/GoogleSheetsSettings";
 import { getGoogleConnection, googleConfigError } from "@/lib/google";
+import { IntegrationsSettings } from "./panels/IntegrationsSettings";
+import { PROVIDERS } from "@/lib/sync/connectors";
 import type { SyncStats } from "@/lib/sync/engine";
 import { getNewContactsMode } from "@/lib/sync/engine";
 
@@ -56,10 +58,11 @@ export default async function SettingsPage() {
           .eq("org_id", orgId)
           .eq("kind", "google_sheets")
           .order("created_at"),
+        supabase.from("integration_requests").select("provider").eq("org_id", orgId),
       ])
     : null;
 
-  const [demoLoaded, simulated, importsRes, channels, membersRes, invitesRes, fieldDefs, newContactsMode, pendingRes, googleConnection, sheetsRes] = admin ?? [];
+  const [demoLoaded, simulated, importsRes, channels, membersRes, invitesRes, fieldDefs, newContactsMode, pendingRes, googleConnection, sheetsRes, requestsRes] = admin ?? [];
 
   // Last run result for each connected sheet
   type SheetRow = { id: string; name: string; config: Record<string, string>; auto_sync: boolean; last_run_at: string | null; last_run_id: string | null; last_error: string | null };
@@ -97,6 +100,7 @@ export default async function SettingsPage() {
               sources={sheetViews}
               customFields={(fieldDefs ?? []).map((d) => ({ key: d.key, label: d.label }))}
             />
+            <IntegrationsSettings providers={PROVIDERS} requested={((requestsRes?.data ?? []) as { provider: string }[]).map((r) => r.provider)} />
             <CustomFieldsSettings defs={fieldDefs ?? []} />
           </div>
         ),
