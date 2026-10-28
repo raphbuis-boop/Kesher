@@ -3,7 +3,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getOrgId } from "@/lib/org";
 import { revalidatePath } from "next/cache";
-import type { FilterNode } from "@/lib/resolveAudience";
+import type { FilterNode } from "@/lib/audienceRules";
 
 export type AddGroupState = {
   success: boolean;
@@ -33,6 +33,7 @@ export async function addGroup(
     } catch {
       return { success: false, error: "Invalid filter configuration." };
     }
+    if (!isValidRule(filterConfig)) return { success: false, error: "That rule isn't valid. Check each condition has a value." };
   }
 
   const { data: newGroup, error } = await supabase
@@ -64,6 +65,61 @@ export async function addGroup(
   revalidatePath("/audiences");
   revalidatePath("/groups");
   revalidatePath("/");
+  return { success: true, error: null };
+}
+
+const FIELD_OPS = ["eq", "neq", "gte", "lte", "contains", "empty", "not_empty"];
+
+/** Structural check on a rule coming from the browser (depth/size capped, known node types only). */
+function isValidRule(node: unknown, depth = 0): node is FilterNode {
+  if (!node || typeof node !== "object" || depth > 4) return false;
+  const n = node as Record<string, unknown>;
+  switch (n.type) {
+    case "and":
+    case "or":
+      return Array.isArray(n.filters) && n.filters.length > 0 && n.filters.length <= 20 && n.filters.every((f) => isValidRule(f, depth + 1));
+    case "field":
+      return (
+        typeof n.field === "string" && n.field.length <= 60 &&
+        FIELD_OPS.includes(n.op as string) &&
+        (n.op === "empty" || n.op === "not_empty" || typeof n.value === "string" || typeof n.value === "number")
+      );
+    case "category":
+      return typeof n.value === "string";
+    case "grad_year_eq":
+      return typeof n.value === "number";
+    case "grad_year_range":
+      return typeof n.min === "number" && typeof n.max === "number";
+    default:
+      return false;
+  }
+}
+
+/** Edit a smart audience's name, description and rule. */
+export async function updateSmartAudience(
+  groupId: string,
+  input: { name: string; description: string; rule: FilterNode }
+): Promise<{ success: boolean; error: string | null }> {
+  const supabase = await createSupabaseServerClient();
+  const orgId = await getOrgId();
+  const name = input.name.trim();
+  if (!name) return { success: false, error: "Audience name is required." };
+  if (!isValidRule(input.rule)) return { success: false, error: "That rule isn't valid. Check each condition has a value." };
+
+  const { data, error } = await supabase
+    .from("groups")
+    .update({ name, description: input.description.trim() || null, filter_config: input.rule })
+    .eq("org_id", orgId)
+    .eq("id", groupId)
+    .eq("is_dynamic", true)
+    .select("id")
+    .maybeSingle();
+  if (error) return { success: false, error: error.message };
+  if (!data) return { success: false, error: "Smart audience not found." };
+
+  revalidatePath(`/audiences/${groupId}`);
+  revalidatePath("/audiences");
+  revalidatePath("/messages/new");
   return { success: true, error: null };
 }
 

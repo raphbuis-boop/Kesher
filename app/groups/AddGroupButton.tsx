@@ -2,8 +2,10 @@
 
 import { useActionToast } from "@/app/components/ui/toast";
 import { useActionState, useEffect, useRef, useState } from "react";
+import { Plus, X, Sparkles, Hand } from "lucide-react";
+import { RuleBuilder } from "@/app/audiences/RuleBuilder";
 import { addGroup, type AddGroupState } from "./actions";
-import type { FilterNode } from "@/lib/resolveAudience";
+import type { FilterNode, RuleCatalog } from "@/lib/audienceRules";
 
 export type Tag = {
   id: string;
@@ -12,270 +14,14 @@ export type Tag = {
 
 const initialState: AddGroupState = { success: false, error: null };
 
-const CATEGORY_OPTIONS = [
-  { value: "parent", label: "Parents" },
-  { value: "student", label: "Students" },
-  { value: "faculty", label: "Faculty" },
-  { value: "alumni", label: "Alumni" },
-  { value: "donor", label: "Donors" },
-  { value: "staff", label: "Staff" },
-  { value: "board", label: "Board" },
-  { value: "grandparent", label: "Grandparents" },
-  { value: "prospect", label: "Prospects" },
-];
+const inputCls =
+  "w-full rounded-md border border-line bg-card px-3 py-2 text-sm text-ink placeholder-ink-3 outline-none focus:border-ink-3 transition-colors disabled:opacity-50";
 
-const CURRENT_YEAR = new Date().getFullYear();
-
-// ─── Filter builder (for dynamic audiences) ────────────────────────────────
-
-type FilterCondition =
-  | { id: string; type: "category"; value: string }
-  | { id: string; type: "grad_year_range"; min: number; max: number }
-  | { id: string; type: "grad_year_eq"; value: number };
-
-function newId() {
-  return Math.random().toString(36).slice(2);
-}
-
-function conditionsToFilterNode(
-  conditions: FilterCondition[],
-  combinator: "and" | "or"
-): FilterNode | null {
-  if (conditions.length === 0) return null;
-  const nodes: FilterNode[] = conditions.map((c) => {
-    if (c.type === "category") return { type: "category", value: c.value };
-    if (c.type === "grad_year_eq") return { type: "grad_year_eq", value: c.value };
-    return { type: "grad_year_range", min: c.min, max: c.max };
-  });
-  if (nodes.length === 1) return nodes[0];
-  return { type: combinator, filters: nodes };
-}
-
-function FilterBuilder({
-  onConfigChange,
-}: {
-  onConfigChange: (config: FilterNode | null) => void;
-}) {
-  const [conditions, setConditions] = useState<FilterCondition[]>([
-    { id: newId(), type: "category", value: "parent" },
-  ]);
-  const [combinator, setCombinator] = useState<"and" | "or">("and");
-  const [matchCount, setMatchCount] = useState<number | null>(null);
-  const [counting, setCounting] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  function updateConditions(next: FilterCondition[]) {
-    setConditions(next);
-    const config = conditionsToFilterNode(next, combinator);
-    onConfigChange(config);
-    scheduleCount(next, combinator);
-  }
-
-  function updateCombinator(c: "and" | "or") {
-    setCombinator(c);
-    const config = conditionsToFilterNode(conditions, c);
-    onConfigChange(config);
-    scheduleCount(conditions, c);
-  }
-
-  function scheduleCount(conds: FilterCondition[], combo: "and" | "or") {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    const config = conditionsToFilterNode(conds, combo);
-    if (!config) { setMatchCount(null); return; }
-    debounceRef.current = setTimeout(async () => {
-      setCounting(true);
-      try {
-        const res = await fetch("/api/audiences/count", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ filter: config }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setMatchCount(data.count as number);
-        }
-      } catch {
-        // count is best-effort
-      } finally {
-        setCounting(false);
-      }
-    }, 600);
-  }
-
-  function addCondition() {
-    updateConditions([...conditions, { id: newId(), type: "category", value: "student" }]);
-  }
-
-  function removeCondition(id: string) {
-    updateConditions(conditions.filter((c) => c.id !== id));
-  }
-
-  function setType(id: string, type: FilterCondition["type"]) {
-    updateConditions(
-      conditions.map((c) => {
-        if (c.id !== id) return c;
-        if (type === "category") return { id, type: "category", value: "parent" };
-        if (type === "grad_year_eq") return { id, type: "grad_year_eq", value: CURRENT_YEAR };
-        return { id, type: "grad_year_range", min: CURRENT_YEAR, max: CURRENT_YEAR + 4 };
-      })
-    );
-  }
-
-  const SELECT = "rounded-md border border-line bg-card px-2.5 py-1.5 text-sm text-ink outline-none focus:border-ink-3 transition-colors";
-  const INPUT = "w-20 rounded-md border border-line bg-card px-2.5 py-1.5 text-sm text-ink outline-none focus:border-ink-3 transition-colors";
-
-  return (
-    <div className="space-y-3">
-      <div className="space-y-2">
-        {conditions.map((cond, i) => (
-          <div key={cond.id} className="flex items-center gap-2 flex-wrap">
-            {i > 0 && (
-              <select
-                className={SELECT + " w-16"}
-                value={combinator}
-                onChange={(e) => updateCombinator(e.target.value as "and" | "or")}
-              >
-                <option value="and">AND</option>
-                <option value="or">OR</option>
-              </select>
-            )}
-            {i === 0 && <span className="text-sm text-ink-3 w-16">WHERE</span>}
-
-            {/* Field type */}
-            <select
-              className={SELECT}
-              value={cond.type}
-              onChange={(e) => setType(cond.id, e.target.value as FilterCondition["type"])}
-            >
-              <option value="category">Role / Category</option>
-              <option value="grad_year_eq">Graduating Year (exact)</option>
-              <option value="grad_year_range">Graduating Year (range)</option>
-            </select>
-
-            {/* Value(s) */}
-            {cond.type === "category" && (
-              <select
-                className={SELECT}
-                value={cond.value}
-                onChange={(e) =>
-                  updateConditions(
-                    conditions.map((c) =>
-                      c.id === cond.id ? { ...c, value: e.target.value } : c
-                    ) as FilterCondition[]
-                  )
-                }
-              >
-                {CATEGORY_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
-            )}
-
-            {cond.type === "grad_year_eq" && (
-              <input
-                type="number"
-                className={INPUT}
-                value={cond.value}
-                min={2000}
-                max={2100}
-                onChange={(e) =>
-                  updateConditions(
-                    conditions.map((c) =>
-                      c.id === cond.id
-                        ? { ...c, value: parseInt(e.target.value, 10) || CURRENT_YEAR }
-                        : c
-                    ) as FilterCondition[]
-                  )
-                }
-              />
-            )}
-
-            {cond.type === "grad_year_range" && (
-              <>
-                <input
-                  type="number"
-                  className={INPUT}
-                  value={cond.min}
-                  min={2000}
-                  max={2100}
-                  onChange={(e) =>
-                    updateConditions(
-                      conditions.map((c) =>
-                        c.id === cond.id
-                          ? { ...c, min: parseInt(e.target.value, 10) || CURRENT_YEAR }
-                          : c
-                      )
-                    )
-                  }
-                />
-                <span className="text-sm text-ink-3">–</span>
-                <input
-                  type="number"
-                  className={INPUT}
-                  value={cond.max}
-                  min={2000}
-                  max={2100}
-                  onChange={(e) =>
-                    updateConditions(
-                      conditions.map((c) =>
-                        c.id === cond.id
-                          ? { ...c, max: parseInt(e.target.value, 10) || CURRENT_YEAR + 4 }
-                          : c
-                      )
-                    )
-                  }
-                />
-              </>
-            )}
-
-            {conditions.length > 1 && (
-              <button
-                type="button"
-                onClick={() => removeCondition(cond.id)}
-                className="ml-auto rounded p-1 text-ink-3 transition-colors hover:bg-muted hover:text-ink-soft"
-              >
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
-
-      <div className="flex items-center justify-between">
-        <button
-          type="button"
-          onClick={addCondition}
-          className="text-xs text-ink-2 transition-colors hover:text-ink-hover"
-        >
-          + Add condition
-        </button>
-        <span className="text-xs text-ink-3">
-          {counting ? (
-            "Counting…"
-          ) : matchCount !== null ? (
-            <span className={matchCount > 0 ? "text-ink-soft font-medium" : "text-ink-3"}>
-              {matchCount.toLocaleString()} {matchCount === 1 ? "contact" : "contacts"} match
-            </span>
-          ) : null}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-// ─── Form ──────────────────────────────────────────────────────────────────────
-
-function AddGroupForm({
-  onSuccess,
-}: {
-  onSuccess: () => void;
-}) {
+function AddGroupForm({ catalog, onSuccess }: { catalog: RuleCatalog; onSuccess: () => void }) {
   const [state, formAction, isPending] = useActionState(addGroup, initialState);
   useActionToast(state, (s) => ({ success: s.success ? "Audience created" : null }));
-  const [mode, setMode] = useState<"manual" | "dynamic">("manual");
-  const [filterConfig, setFilterConfig] = useState<FilterNode | null>(null);
+  const [mode, setMode] = useState<"static" | "smart">("smart");
+  const [rule, setRule] = useState<FilterNode | null>(null);
 
   useEffect(() => {
     if (state.success) onSuccess();
@@ -284,116 +30,61 @@ function AddGroupForm({
   return (
     <form action={formAction} noValidate>
       <div className="space-y-4">
-        {/* Name */}
-        <div>
-          <label htmlFor="ag-name" className="block text-sm font-medium text-ink-soft mb-1">
-            Audience Name <span className="text-red-500">*</span>
-          </label>
-          <input
-            id="ag-name"
-            name="name"
-            type="text"
-            required
-            className="w-full rounded-md border border-line bg-card px-3 py-2 text-sm text-ink placeholder-ink-3 outline-none focus:border-ink-3 transition-colors disabled:opacity-50"
-            placeholder="Class of 2028 Families"
-            disabled={isPending}
-          />
-        </div>
-
-        {/* Description */}
-        <div>
-          <label htmlFor="ag-desc" className="block text-sm font-medium text-ink-soft mb-1">
-            Description
-          </label>
-          <textarea
-            id="ag-desc"
-            name="description"
-            rows={2}
-            className="w-full rounded-md border border-line bg-card px-3 py-2 text-sm text-ink placeholder-ink-3 outline-none focus:border-ink-3 transition-colors disabled:opacity-50 resize-none"
-            placeholder="Optional description…"
-            disabled={isPending}
-          />
-        </div>
-
-        {/* Mode tabs */}
-        <div>
-          <div className="flex gap-1 rounded-lg border border-line bg-canvas p-1 w-fit">
+        <div className="grid gap-2 sm:grid-cols-2">
+          {([
+            { v: "smart" as const, icon: Sparkles, title: "Smart audience", body: "Saved rules like Grade 5 AND Division Boys. Always current — checked every time you send." },
+            { v: "static" as const, icon: Hand, title: "Hand-picked", body: "You choose the people. Good for committees and one-off lists." },
+          ]).map((o) => (
             <button
+              key={o.v}
               type="button"
-              onClick={() => setMode("manual")}
-              className={
-                "rounded-md px-3 py-1.5 text-xs font-medium transition-colors " +
-                (mode === "manual" ? "bg-card text-ink shadow-sm" : "text-ink-2 hover:text-ink-soft")
-              }
+              onClick={() => setMode(o.v)}
+              className={`rounded-xl border px-4 py-3 text-left transition-colors ${mode === o.v ? "border-ink bg-card shadow-card" : "border-line bg-canvas hover:border-line-strong"}`}
             >
-              Manual
+              <p className="flex items-center gap-1.5 text-[13px] font-medium text-ink"><o.icon size={13} strokeWidth={2} />{o.title}</p>
+              <p className="mt-0.5 text-[11px] leading-relaxed text-ink-3">{o.body}</p>
             </button>
-            <button
-              type="button"
-              onClick={() => setMode("dynamic")}
-              className={
-                "rounded-md px-3 py-1.5 text-xs font-medium transition-colors " +
-                (mode === "dynamic" ? "bg-card text-ink shadow-sm" : "text-ink-2 hover:text-ink-soft")
-              }
-            >
-              Dynamic rules
-            </button>
-          </div>
-
-          <p className="mt-1.5 text-xs text-ink-3">
-            {mode === "manual"
-              ? "After creating, you'll add contacts from the audience page."
-              : "Membership is computed live from contact data — always stays current."}
-          </p>
+          ))}
         </div>
 
-        {/* Dynamic filter builder */}
-        {mode === "dynamic" && (
+        <div>
+          <label htmlFor="ag-name" className="mb-1 block text-sm font-medium text-ink-soft">
+            Audience name <span className="text-red-500">*</span>
+          </label>
+          <input id="ag-name" name="name" type="text" required className={inputCls} placeholder={mode === "smart" ? "5th grade boys" : "Dinner committee"} disabled={isPending} />
+        </div>
+
+        <div>
+          <label htmlFor="ag-desc" className="mb-1 block text-sm font-medium text-ink-soft">Description</label>
+          <textarea id="ag-desc" name="description" rows={2} className={`${inputCls} resize-none`} placeholder="Optional" disabled={isPending} />
+        </div>
+
+        {mode === "smart" ? (
           <div className="rounded-lg border border-line bg-canvas p-4">
-            <FilterBuilder onConfigChange={setFilterConfig} />
-            {filterConfig && (
-              <input
-                type="hidden"
-                name="filter_config"
-                value={JSON.stringify(filterConfig)}
-              />
-            )}
+            <RuleBuilder catalog={catalog} onChange={setRule} />
+            {rule && <input type="hidden" name="filter_config" value={JSON.stringify(rule)} />}
           </div>
+        ) : (
+          <p className="text-xs text-ink-3">After creating it, you&apos;ll add people from the audience page.</p>
         )}
 
-        {state.error && (
-          <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
-            {state.error}
-          </p>
-        )}
+        {state.error && <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{state.error}</p>}
       </div>
 
       <div className="mt-6 flex items-center justify-end gap-3">
         <button
           type="submit"
-          disabled={isPending || (mode === "dynamic" && !filterConfig)}
-          className="inline-flex items-center gap-2 rounded-md bg-ink px-4 py-2 text-sm font-medium text-on-ink transition-colors hover:bg-ink-hover disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={isPending || (mode === "smart" && !rule)}
+          className="inline-flex items-center gap-2 rounded-md bg-ink px-4 py-2 text-sm font-medium text-on-ink transition-colors hover:bg-ink-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isPending ? (
-            <>
-              <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-              </svg>
-              Saving…
-            </>
-          ) : (
-            "Save Audience"
-          )}
+          {isPending ? "Saving…" : "Save audience"}
         </button>
       </div>
     </form>
   );
 }
 
-// ─── Button + modal ────────────────────────────────────────────────────────────
-
-export function AddGroupButton() {
+export function AddGroupButton({ catalog }: { catalog: RuleCatalog }) {
   const [open, setOpen] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
 
@@ -408,45 +99,29 @@ export function AddGroupButton() {
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-md bg-ink px-3.5 py-2 text-sm font-medium text-on-ink transition-colors hover:bg-ink-hover"
-      >
-        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-        </svg>
-        Add Custom Audience
+      <button onClick={() => setOpen(true)} className="inline-flex items-center gap-1.5 rounded-md bg-ink px-3.5 py-2 text-sm font-medium text-on-ink transition-colors hover:bg-ink-hover">
+        <Plus size={14} strokeWidth={2} />
+        Add custom audience
       </button>
 
       {open && (
         <div
           ref={overlayRef}
           onClick={(e) => { if (e.target === overlayRef.current) setOpen(false); }}
-          className="animate-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4"
+          className="animate-backdrop fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/30 px-4 py-10"
         >
-          <div className="animate-pop-in w-full max-w-lg rounded-xl border border-line bg-card shadow-pop">
+          <div className="animate-pop-in w-full max-w-2xl rounded-xl border border-line bg-card shadow-pop">
             <div className="flex items-center justify-between border-b border-muted px-6 py-4">
               <div>
-                <h2 className="text-sm font-semibold text-ink">Add Custom Audience</h2>
-                <p className="text-xs text-ink-2 mt-0.5">Tag-based or dynamic rule-based.</p>
+                <h2 className="text-sm font-semibold text-ink">Add custom audience</h2>
+                <p className="mt-0.5 text-xs text-ink-2">Smart (rule-based) or hand-picked.</p>
               </div>
-              <button
-                onClick={() => setOpen(false)}
-                aria-label="Close"
-                className="rounded-md p-1 text-ink-3 transition-colors hover:bg-muted hover:text-ink-soft"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                </svg>
+              <button onClick={() => setOpen(false)} aria-label="Close" className="rounded-md p-1 text-ink-3 transition-colors hover:bg-muted hover:text-ink-soft">
+                <X size={16} />
               </button>
             </div>
             <div className="px-6 py-5">
-              <AddGroupForm onSuccess={() => setOpen(false)} />
-            </div>
-            <div className="border-t border-muted px-6 py-3">
-              <button onClick={() => setOpen(false)} className="text-sm text-ink-2 hover:text-ink-soft transition-colors">
-                Cancel
-              </button>
+              <AddGroupForm catalog={catalog} onSuccess={() => setOpen(false)} />
             </div>
           </div>
         </div>

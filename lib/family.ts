@@ -126,3 +126,78 @@ export const SOURCE_LABELS: Record<string, string> = {
   blackbaud: "Blackbaud",
   signup: "Parent signup",
 };
+
+// ─── Who a message to an audience actually reaches ───────────────────────────
+
+export type ReachSummary = {
+  /** People matched by the audience itself. */
+  matched: number;
+  students: number;
+  /** Parents/guardians (with receives_messages) of matched students, de-duplicated. */
+  parentsOfStudents: number;
+  /** Matched students with no parent who receives messages. */
+  studentsWithoutParent: number;
+  /** Everyone who would get one message: matched adults + parents of matched students, once each. */
+  recipients: number;
+  withEmail: number;
+  withPhone: number;
+  withWhatsapp: number;
+};
+
+type ReachPerson = { id: string; categories: string[] | null; email: string | null; phone: string | null; whatsapp: string | null };
+
+/**
+ * Families first: a student in an audience is reached through the parents
+ * who receive messages; adults are reached directly; a household with three
+ * matched kids still counts each parent once. Org-scoped.
+ */
+export async function reachSummary(supabase: SupabaseClient, orgId: string, matched: ReachPerson[]): Promise<ReachSummary> {
+  const students = matched.filter((p) => (p.categories ?? []).includes("student"));
+  const adults = matched.filter((p) => !(p.categories ?? []).includes("student"));
+
+  const studentIds = students.map((s) => s.id);
+  const parentIdsByStudent = new Map<string, string[]>();
+  for (let i = 0; i < studentIds.length; i += 150) {
+    const { data } = await supabase
+      .from("guardian_students")
+      .select("guardian_id, student_id")
+      .eq("org_id", orgId)
+      .eq("receives_messages", true)
+      .in("student_id", studentIds.slice(i, i + 150));
+    for (const row of (data ?? []) as { guardian_id: string; student_id: string }[]) {
+      parentIdsByStudent.set(row.student_id, [...(parentIdsByStudent.get(row.student_id) ?? []), row.guardian_id]);
+    }
+  }
+  const parentIds = [...new Set([...parentIdsByStudent.values()].flat())];
+  const parents: ReachPerson[] = [];
+  for (let i = 0; i < parentIds.length; i += 150) {
+    const { data } = await supabase
+      .from("people")
+      .select("id, categories, email, phone, whatsapp")
+      .eq("org_id", orgId)
+      .eq("status", "active")
+      .in("id", parentIds.slice(i, i + 150));
+    parents.push(...((data ?? []) as ReachPerson[]));
+  }
+  const activeParentIds = new Set(parents.map((p) => p.id));
+
+  const reached = new Map<string, ReachPerson>();
+  for (const p of [...adults, ...parents]) reached.set(p.id, p);
+  const studentsWithoutParent = students.filter((s) => !(parentIdsByStudent.get(s.id) ?? []).some((id) => activeParentIds.has(id))).length;
+  // A student nobody receives messages for is reached directly if they have contact info of their own
+  for (const s of students) {
+    if (!(parentIdsByStudent.get(s.id) ?? []).some((id) => activeParentIds.has(id)) && (s.email || s.phone || s.whatsapp)) reached.set(s.id, s);
+  }
+
+  const all = [...reached.values()];
+  return {
+    matched: matched.length,
+    students: students.length,
+    parentsOfStudents: activeParentIds.size,
+    studentsWithoutParent,
+    recipients: all.length,
+    withEmail: all.filter((p) => p.email).length,
+    withPhone: all.filter((p) => p.phone).length,
+    withWhatsapp: all.filter((p) => p.whatsapp?.trim() || p.phone).length,
+  };
+}

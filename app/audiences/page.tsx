@@ -8,8 +8,9 @@ import { DemoWorkspaceControl } from "@/app/components/DemoWorkspaceControl";
 import { AdminOnly } from "@/app/components/AdminOnly";
 import { resolveGroupMemberIds, type GroupRow } from "@/lib/audienceMembers";
 import { getCategoryCounts } from "@/lib/categoryCounts";
+import { getRuleCatalog } from "@/lib/audienceCatalog";
 import { AddGroupButton } from "@/app/groups/AddGroupButton";
-import { Plus, Users, ArrowRight } from "lucide-react";
+import { Plus, Users, ArrowRight, Sparkles } from "lucide-react";
 
 const SYSTEM_AUDIENCES = [
   { slug: "parents", label: "Parents", category: "parent" },
@@ -29,7 +30,7 @@ export default async function AudiencesPage() {
   // Everything runs in parallel: category counts are computed in the DB, and
   // each group's member count is resolved as soon as the group list arrives
   // (same resolution the audience detail page and message sends use).
-  const [categoryCounts, customAudiences, demoLoaded] = await Promise.all([
+  const [categoryCounts, customAudiences, demoLoaded, catalog] = await Promise.all([
     getCategoryCounts(supabase, orgId),
     supabase
       .from("groups")
@@ -45,6 +46,7 @@ export default async function AudiencesPage() {
         )
       ),
     isDemoWorkspaceLoaded(supabase, orgId),
+    getRuleCatalog(supabase, orgId),
   ]);
 
   const systemAudiences = SYSTEM_AUDIENCES.map((a) => ({
@@ -148,7 +150,7 @@ export default async function AudiencesPage() {
         <section>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-[11px] font-semibold text-ink-3 uppercase tracking-wider">Custom audiences</h2>
-            <AddGroupButton />
+            <AddGroupButton catalog={catalog} />
           </div>
 
           {customAudiences.length === 0 ? (
@@ -158,7 +160,7 @@ export default async function AudiencesPage() {
               </div>
               <p className="text-[13px] font-semibold text-ink">No custom audiences</p>
               <p className="text-[12px] text-ink-3 mt-1 max-w-xs">
-                Create tag-based or rule-based groups — dinner committees, graduating classes, volunteers.
+                Create smart (rule-based) or hand-picked groups — 5th grade boys, the basketball team, the dinner committee.
               </p>
             </div>
           ) : (
@@ -187,6 +189,11 @@ export default async function AudiencesPage() {
                           >
                             {g.name}
                           </Link>
+                          {g.is_dynamic && (
+                            <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-brand-tint px-1.5 py-0.5 align-middle text-[10px] font-semibold text-brand">
+                              <Sparkles size={9} strokeWidth={2.5} /> Smart
+                            </span>
+                          )}
                         </td>
                         <td className="px-3 py-3 max-w-xs">
                           {g.description ? (
