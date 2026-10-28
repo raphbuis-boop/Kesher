@@ -23,14 +23,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getChannelConfig, type ChannelConfig } from "@/lib/channels";
 import { buildEmailHtml, buildEmailText, formatFrom, resolveGreeting, type EmailBranding } from "@/lib/email/render";
 import { looksLikeFundraising } from "@/lib/fundraising";
-import { buildConfirmUrl } from "@/lib/links";
+import { buildConfirmUrl, buildPreferencesUrl } from "@/lib/links";
 import { loadBrandingSettings } from "@/lib/settings";
 import { applyTemplate, getTemplate, type MessageTemplate } from "@/lib/templates";
 import { renderTemplate } from "@/lib/template";
 import { childrenLabel } from "@/lib/family";
 import { buildUnsubscribeUrls } from "@/lib/unsubscribe";
 import { chunk } from "@/lib/supabase-paging";
-import { gsmFriendly, SMS_STOP_FOOTER } from "@/lib/sms";
+import { gsmFriendly, smsFooter } from "@/lib/sms";
 import { addressFor, resolveRecipients } from "./recipients";
 import { realSenders, simulatedSenders, type EmailItem, type Senders } from "./senders";
 import type { Channel, Child, MessageInput, Person } from "./types";
@@ -172,6 +172,8 @@ type RenderCtx = {
   fromHeader: string;
   replyTo?: string;
   senderLabel: string;
+  /** Put the parent's preferences link at the end of texts (Settings → Messaging) */
+  smsPrefLink: boolean;
 };
 
 function personContext(person: Person, children: Child[]) {
@@ -194,6 +196,7 @@ function emailItem(ctx: RenderCtx, row: Row, person: Person, children: Child[]):
     attachmentUrls: ctx.input.attachmentUrls,
     unsubscribeUrl: unsubscribe.page,
     confirmUrl,
+    preferencesUrl: buildPreferencesUrl(person.id),
   };
   return {
     to: row.contact_value,
@@ -218,8 +221,10 @@ function textBody(ctx: RenderCtx, row: Row, person: Person, children: Child[], c
   if (line) body = `${line}: ${body}`;
   const confirmUrl = ctx.input.confirmButton ? buildConfirmUrl(row.id) : null;
   if (confirmUrl) body += `\n\nTap to say you've read this: ${confirmUrl}`;
+  const prefUrl = buildPreferencesUrl(person.id);
   // CTIA requires an opt-out instruction in every SMS. WhatsApp's template carries its own.
-  return channel === "sms" ? gsmFriendly(body) + SMS_STOP_FOOTER : body;
+  if (channel === "sms") return gsmFriendly(body) + smsFooter(ctx.smsPrefLink ? prefUrl : null);
+  return prefUrl ? `${body}\n\nMessage preferences: ${prefUrl}` : body;
 }
 
 // ─── Fallbacks ────────────────────────────────────────────────────────────────
@@ -312,11 +317,12 @@ export async function executeMessage(ctx: EngineCtx, messageId: string, opts: { 
   };
 
   try {
-    const [cfg, simulated, template, baseBranding] = await Promise.all([
+    const [cfg, simulated, template, baseBranding, prefLinkSetting] = await Promise.all([
       ctx.cfg ? Promise.resolve(ctx.cfg) : getChannelConfig(orgId),
       isSimulated(supabase, orgId),
       getTemplate(supabase, orgId, msg.template_id),
       loadBrandingSettings(supabase, orgId),
+      supabase.from("settings").select("value").eq("org_id", orgId).eq("key", "sms_pref_link").maybeSingle().then((r) => (r.data?.value as string | undefined) ?? null),
     ]);
 
     // ── Phase A ──
@@ -342,6 +348,7 @@ export async function executeMessage(ctx: EngineCtx, messageId: string, opts: { 
       fromHeader: formatFrom(fromName, fromEmail),
       replyTo: branding.replyToEmail || (branding.senderEmail && !senderOnVerifiedDomain ? branding.senderEmail : "") || undefined,
       senderLabel: template?.sender_name?.trim() || baseBranding.schoolName || "Your school",
+      smsPrefLink: prefLinkSetting !== "false",
     };
     const senders = ctx.senders ?? (simulated ? simulatedSenders() : realSenders(cfg));
 

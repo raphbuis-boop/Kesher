@@ -8,7 +8,7 @@ import { isHebrewDateStyle } from "@/lib/hebrewDate";
 
 export type MessagingResult = { ok: true; message?: string } | { ok: false; error: string };
 
-export async function saveMessagingSettings(input: { timezone: string; requireApproval: boolean; hebrewDates: string }): Promise<MessagingResult> {
+export async function saveMessagingSettings(input: { timezone: string; requireApproval: boolean; hebrewDates: string; smsPrefLink: boolean }): Promise<MessagingResult> {
   try {
     const { orgId } = await requireRole(ADMIN_ROLES);
     if (!isValidTimezone(input.timezone)) return { ok: false, error: "That isn't a time zone Kesher recognizes." };
@@ -19,6 +19,7 @@ export async function saveMessagingSettings(input: { timezone: string; requireAp
         { org_id: orgId, key: "timezone", value: input.timezone },
         { org_id: orgId, key: "require_approval", value: input.requireApproval ? "true" : "false" },
         { org_id: orgId, key: "hebrew_dates", value: input.hebrewDates },
+        { org_id: orgId, key: "sms_pref_link", value: input.smsPrefLink ? "true" : "false" },
       ],
       { onConflict: "org_id,key" }
     );

@@ -11,6 +11,11 @@
 
 export const SMS_STOP_FOOTER = "\nReply STOP to opt out.";
 
+/** The line(s) every text ends with: the STOP instruction and, unless the school turned it off, the parent's preferences link. */
+export function smsFooter(preferencesUrl?: string | null): string {
+  return preferencesUrl ? `${SMS_STOP_FOOTER}\nPreferences: ${preferencesUrl}` : SMS_STOP_FOOTER;
+}
+
 const GSM7_BASIC = "@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !\"#¤%&'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà";
 const GSM7_EXTENDED = "^{}\\[~]|€\f";
 const BASIC = new Set(GSM7_BASIC);
@@ -68,7 +73,7 @@ export function gsmFriendly(text: string): string {
 }
 
 /** Estimate for the message people will actually receive: merge fields filled in, plus the STOP line. */
-export function smsEstimate(sampleTexts: string[], fallback: string): SmsInfo {
-  const texts = (sampleTexts.length > 0 ? sampleTexts : [fallback]).map((t) => gsmFriendly(t) + SMS_STOP_FOOTER);
+export function smsEstimate(sampleTexts: string[], fallback: string, footer: string = SMS_STOP_FOOTER): SmsInfo {
+  const texts = (sampleTexts.length > 0 ? sampleTexts : [fallback]).map((t) => gsmFriendly(t) + footer);
   return texts.map(smsInfo).sort((a, b) => b.segments - a.segments)[0];
 }

@@ -8,7 +8,7 @@ import { submitMessage, previewSend, checkSendWindow, type Channel, type Preview
 import type { MessageInput } from "@/lib/send/types";
 import { WEEKDAY_NAMES, addDays, formatInZone, formatTimeOnly, localDateString, weekdayOf } from "@/lib/schoolTime";
 import { describeOffset, zmanimTime, type ZmanimAnchor } from "@/lib/zmanim";
-import { smsEstimate } from "@/lib/sms";
+import { SMS_STOP_FOOTER, smsEstimate } from "@/lib/sms";
 import { hebrewDateString, type HebrewDateStyle } from "@/lib/hebrewDate";
 import { TEMPLATE_TOKENS, renderTemplate } from "@/lib/template";
 import { FUNDRAISING_WHATSAPP_NOTE, looksLikeFundraising } from "@/lib/fundraising";
@@ -457,6 +457,7 @@ export function ComposeFlow({
   canEmergency = false,
   schoolTimezone,
   confirmLinksReady = true,
+  smsFooterText = SMS_STOP_FOOTER,
   hebrewStyle = "latin",
   zmanimWindows = [],
   schedulerHealthy = true,
@@ -475,6 +476,8 @@ export function ComposeFlow({
   customTokens?: { token: string; label: string }[];
   canEmergency?: boolean;
   schoolTimezone: string;
+  /** What every text ends with (STOP line, plus the preferences link when on), for the length estimate */
+  smsFooterText?: string;
   /** Show the Hebrew date next to dates */
   hebrewStyle?: HebrewDateStyle;
   /** Upcoming Shabbosim / Yom Tov (empty unless Shabbos mode is on and times are loaded) */
@@ -729,7 +732,7 @@ export function ComposeFlow({
 
   // What the carrier will count: real merge fields filled in, plus the STOP line every text carries
   const smsSamples = (preview?.samples ?? []).filter((x) => x.channel === "sms").map((x) => x.text);
-  const smsCounter = activeChannels.includes("sms") && body.trim() ? smsEstimate(smsSamples, renderTemplate(body, PREVIEW_PERSON)) : null;
+  const smsCounter = activeChannels.includes("sms") && body.trim() ? smsEstimate(smsSamples, renderTemplate(body, PREVIEW_PERSON), smsFooterText) : null;
   const smsTotal = smsCounter ? smsCounter.segments * (preview?.perChannel.sms ?? 0) : 0;
   const hasEmail = activeChannels.includes("email");
   const hasWhatsApp = activeChannels.includes("whatsapp");

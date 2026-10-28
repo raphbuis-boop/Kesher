@@ -83,6 +83,7 @@ export default async function SettingsPage() {
         getRequireApproval(supabase, orgId),
         getDispatcherHealth(supabase),
         getHebrewDateStyle(supabase, orgId),
+        supabase.from("settings").select("value").eq("org_id", orgId).eq("key", "sms_pref_link").maybeSingle(),
         getShabbosSettings(supabase, orgId),
         getUpcomingWindows(supabase, orgId, new Date(), 6),
         supabase.from("window_overrides").select("reason, created_at").eq("org_id", orgId).order("created_at", { ascending: false }).limit(5),
@@ -92,7 +93,7 @@ export default async function SettingsPage() {
       ])
     : null;
 
-  const [demoLoaded, simulated, importsRes, channelsOverview, membersRes, invitesRes, fieldDefs, newContactsMode, pendingRes, googleConnection, sheetsRes, requestsRes, templates, templateAssignments, groupsRes, schoolTimezone, requireApproval, dispatcherHealth, hebrewStyle, shabbosSettings, shabbosWindows, overridesRes, signupSettings, signupVerifies, signupPending] = admin ?? [];
+  const [demoLoaded, simulated, importsRes, channelsOverview, membersRes, invitesRes, fieldDefs, newContactsMode, pendingRes, googleConnection, sheetsRes, requestsRes, templates, templateAssignments, groupsRes, schoolTimezone, requireApproval, dispatcherHealth, hebrewStyle, prefLinkRes, shabbosSettings, shabbosWindows, overridesRes, signupSettings, signupVerifies, signupPending] = admin ?? [];
 
   const audienceChoices: AudienceChoice[] = [
     ...[["parents", "Parents"], ["students", "Students"], ["grandparents", "Grandparents"], ["alumni", "Alumni"], ["faculty", "Faculty"], ["staff", "Staff"], ["board", "Board"], ["donors", "Donors"], ["prospects", "Prospects"]].map(
@@ -173,6 +174,7 @@ export default async function SettingsPage() {
             timezone={schoolTimezone ?? "America/New_York"}
             requireApproval={requireApproval ?? false}
             hebrewDates={hebrewStyle ?? "latin"}
+            smsPrefLink={prefLinkRes?.data?.value !== "false"}
             schedulerLastRun={dispatcherHealth?.lastRunAt ?? null}
             schedulerHealthy={dispatcherHealth?.healthy ?? false}
             siteUrl={getAbsoluteBaseUrl() ?? ""}

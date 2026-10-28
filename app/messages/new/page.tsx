@@ -14,7 +14,8 @@ import { getRequireApproval, getSchoolTimezone, localDateString, localTimeString
 import { validZmanimRule } from "@/lib/zmanim";
 import { getShabbosSettings, getUpcomingWindows } from "@/lib/shabbos";
 import { getDispatcherHealth } from "@/lib/send/health";
-import { linksConfigured } from "@/lib/links";
+import { buildPreferencesUrl, linksConfigured } from "@/lib/links";
+import { smsFooter } from "@/lib/sms";
 import { getHebrewDateStyle } from "@/lib/hebrewDate";
 import type { MessageInput } from "@/lib/send/types";
 
@@ -77,6 +78,8 @@ export default async function NewMessagePage({ searchParams }: { searchParams: P
   }
 
   const hebrewStyle = await getHebrewDateStyle(supabase, orgId);
+  const { data: prefLinkSetting } = await supabase.from("settings").select("value").eq("org_id", orgId).eq("key", "sms_pref_link").maybeSingle();
+  const smsFooterText = smsFooter(prefLinkSetting?.value === "false" ? null : buildPreferencesUrl("00000000-0000-0000-0000-000000000000"));
   const shabbos = await getShabbosSettings(supabase, orgId);
   const zmanimWindows = shabbos?.enabled ? await getUpcomingWindows(supabase, orgId, new Date(), 10) : [];
 
@@ -130,6 +133,7 @@ export default async function NewMessagePage({ searchParams }: { searchParams: P
           confirmLinksReady={linksConfigured()}
           zmanimWindows={zmanimWindows}
           hebrewStyle={hebrewStyle}
+          smsFooterText={smsFooterText}
           schedulerHealthy={health.healthy}
           isAdmin={admin}
           requireApproval={requireApproval}
