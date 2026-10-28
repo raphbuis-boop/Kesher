@@ -1,5 +1,5 @@
 /**
- * WhatsApp (Meta Cloud API) diagnostics — logged-in users only.
+ * WhatsApp (Meta Cloud API) diagnostics — owners and admins only.
  *
  * GET  → phone number status, WABA app subscription, template status, plus which
  *        phone number ID / template the server is configured with. Every Meta
@@ -12,7 +12,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { ADMIN_ROLES, PermissionError, requireRole } from "@/lib/org";
 import { META_GRAPH_BASE } from "@/lib/meta-whatsapp-provider";
 
 export const dynamic = "force-dynamic";
@@ -54,10 +54,18 @@ async function metaFetch(path: string, token: string, method: "GET" | "POST" = "
   }
 }
 
-async function requireUser() {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  return user;
+// The WhatsApp account is still global (env vars), and POST changes its webhook
+// subscription — so this is owner/admin only, like the rest of Settings.
+async function requireAdmin(): Promise<NextResponse | null> {
+  try {
+    await requireRole(ADMIN_ROLES);
+    return null;
+  } catch (err) {
+    if (err instanceof PermissionError) {
+      return NextResponse.json({ error: err.message }, { status: 403 });
+    }
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
 }
 
 function config() {
@@ -76,9 +84,8 @@ function config() {
 }
 
 export async function GET() {
-  if (!(await requireUser())) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const denied = await requireAdmin();
+  if (denied) return denied;
 
   const cfg = config();
   const token = process.env.META_WHATSAPP_ACCESS_TOKEN;
@@ -127,9 +134,8 @@ export async function GET() {
 }
 
 export async function POST() {
-  if (!(await requireUser())) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
+  const denied = await requireAdmin();
+  if (denied) return denied;
 
   const token = process.env.META_WHATSAPP_ACCESS_TOKEN;
   if (!token) {
