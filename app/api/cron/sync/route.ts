@@ -1,18 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { isCronAuthorized } from "@/lib/cron-auth";
 import { runSourceNow } from "@/lib/sync/runs";
 import { fetchBatchForSource, isRunnableKind } from "@/lib/sync/connectors";
 import type { SyncSourceRow } from "@/lib/sync/engine";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
-
-/** Vercel Cron sends "Authorization: Bearer $CRON_SECRET" when CRON_SECRET is set. */
-export function isCronAuthorized(req: NextRequest): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
-  return req.headers.get("authorization") === `Bearer ${secret}`;
-}
 
 /**
  * Nightly sync of every school's auto-sync sources (Google Sheets today; SIS

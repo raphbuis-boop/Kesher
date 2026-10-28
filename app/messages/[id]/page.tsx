@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic";
 
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getOrgId } from "@/lib/org";
 import { CampaignClient } from "./CampaignClient";
@@ -133,6 +133,8 @@ export default async function CampaignPage({
   const recRes = { data: [firstRecipients, ...rest].flatMap((r) => r.data ?? []) };
 
   if (msgRes.error || !msgRes.data) notFound();
+  // Not sent yet: there are no results to show, so open it for editing instead
+  if (["draft", "pending_approval", "scheduled", "rejected", "cancelled"].includes((msgRes.data as { status: string }).status)) redirect(`/messages/new?edit=${id}`);
 
   const message = msgRes.data as unknown as CampaignMessage;
   const recipients = (recRes.data ?? []) as unknown as CampaignRecipient[];

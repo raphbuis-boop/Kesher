@@ -2,7 +2,10 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { getOrgId } from "@/lib/org";
+import { getMembership, isAdminRole } from "@/lib/org";
+import { describeClockRule, formatInZone, getSchoolTimezone, validClockRule } from "@/lib/schoolTime";
+import { getDispatcherHealth } from "@/lib/send/health";
+import { MessageRowActions, RecurringRowActions } from "./RowActions";
 import { isDemoWorkspaceLoaded } from "@/lib/demoWorkspace";
 import { DemoWorkspaceControl } from "@/app/components/DemoWorkspaceControl";
 import { AdminOnly } from "@/app/components/AdminOnly";
@@ -23,7 +26,16 @@ type Message = {
   status: string;
   sent_at: string | null;
   created_at: string;
+  scheduled_for?: string | null;
+  rejection_reason?: string | null;
+  recurring_id?: string | null;
 };
+
+type Recurring = { id: string; name: string; active: boolean; rule: unknown; audience_label: string; next_run_at: string | null; timezone: string };
+
+const SENT_STATUSES = ["sending", "sent", "failed"];
+const DRAFT_STATUSES = ["draft", "rejected", "cancelled"];
+const COLUMNS = "id, subject, body, channel, audience_label, recipient_count, sent_count, failed_count, status, sent_at, created_at, scheduled_for, rejection_reason, recurring_id";
 
 function timeAgo(d: string) {
   const diff = Date.now() - new Date(d).getTime();
@@ -66,25 +78,41 @@ export default async function MessagesPage({
   const page = parsePage(pageParam);
 
   const supabase = await createSupabaseServerClient();
-  const orgId = await getOrgId();
-  const [{ data, count }, demoLoaded] = await Promise.all([
-    supabase
-      .from("messages")
-      .select("id, subject, body, channel, audience_label, recipient_count, sent_count, failed_count, status, sent_at, created_at", { count: "exact" })
-      .eq("org_id", orgId)
-      .order("created_at", { ascending: false })
-      .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1),
+  const { orgId, userId, role } = await getMembership();
+  const admin = isAdminRole(role);
+
+  // Drafts are personal; waiting requests are everyone's for admins, your own otherwise
+  const forTab = (key: string) => {
+    let q = supabase.from("messages").select(COLUMNS, { count: "exact" }).eq("org_id", orgId);
+    if (key === "sent") q = q.in("status", SENT_STATUSES).order("created_at", { ascending: false });
+    else if (key === "drafts") q = q.in("status", DRAFT_STATUSES).eq("created_by", userId).order("created_at", { ascending: false });
+    else if (key === "scheduled") q = q.eq("status", "scheduled").order("scheduled_for", { ascending: true });
+    else q = (admin ? q : q.eq("created_by", userId)).eq("status", "pending_approval").order("requested_at", { ascending: true });
+    return q;
+  };
+  const countFor = async (key: string) => (await forTab(key).limit(1)).count ?? 0;
+  const tabKey = ["sent", "drafts", "scheduled", "approval"].includes(activeTab) ? activeTab : "sent";
+
+  const [{ data, count }, demoLoaded, timezone, health, draftsN, scheduledN, approvalN, recurringRes] = await Promise.all([
+    forTab(tabKey).range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1),
     isDemoWorkspaceLoaded(supabase, orgId),
+    getSchoolTimezone(supabase, orgId),
+    getDispatcherHealth(supabase),
+    countFor("drafts"),
+    countFor("scheduled"),
+    countFor("approval"),
+    supabase.from("recurring_sends").select("id, name, active, rule, audience_label, next_run_at, timezone").eq("org_id", orgId).order("created_at", { ascending: false }),
   ]);
 
   const messages = (data ?? []) as Message[];
-  const totalMessages = count ?? messages.length;
+  const recurring = (recurringRes.data ?? []) as Recurring[];
+  const totalMessages = tabKey === "sent" ? (count ?? messages.length) : await countFor("sent");
 
   const TABS = [
     { key: "sent",      label: "Sent",      count: totalMessages },
-    { key: "drafts",    label: "Drafts",    count: 0 },
-    { key: "scheduled", label: "Scheduled", count: 0 },
-    { key: "templates", label: "Templates", count: 0 },
+    { key: "drafts",    label: "Drafts",    count: draftsN },
+    { key: "scheduled", label: "Scheduled", count: scheduledN + recurring.filter((r) => r.active).length },
+    { key: "approval",  label: admin ? "Needs approval" : "My requests", count: approvalN },
   ];
 
   return (
@@ -138,17 +166,88 @@ export default async function MessagesPage({
 
       {/* Content */}
       <div className="px-6 py-4">
-        {activeTab !== "sent" ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-line py-24 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-card border border-line mb-4">
-              <Send size={18} className="text-line-strong" strokeWidth={1.5} />
-            </div>
-            <p className="text-[13px] font-semibold text-ink">
-              {activeTab === "drafts"    && "No drafts saved"}
-              {activeTab === "scheduled" && "No scheduled messages"}
-              {activeTab === "templates" && "No templates created"}
-            </p>
-            <p className="text-[12px] text-ink-3 mt-1">Coming soon.</p>
+        {tabKey !== "sent" ? (
+          <div className="space-y-4">
+            {tabKey === "scheduled" && (scheduledN > 0 || recurring.some((r) => r.active)) && !health.healthy && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-[12px] text-amber-800">
+                Scheduled messages aren&apos;t being sent: the background sender hasn&apos;t checked in{health.lastRunAt ? ` since ${formatInZone(health.lastRunAt, timezone)}` : " yet"}.{" "}
+                {admin ? <>Set it up once in <Link href="/settings#messaging" className="underline">Settings → Messaging</Link>.</> : "Ask an admin to check Settings → Messaging."}
+              </div>
+            )}
+
+            {tabKey === "scheduled" && recurring.length > 0 && (
+              <div className="overflow-hidden rounded-xl border border-line bg-card shadow-card">
+                <div className="border-b border-muted-2 bg-canvas px-5 py-2.5 text-[10px] font-semibold uppercase tracking-wide text-ink-3">Repeating sends</div>
+                {recurring.map((r, i) => (
+                  <div key={r.id} className={`flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 ${i < recurring.length - 1 ? "border-b border-muted" : ""}`}>
+                    <div className="min-w-0">
+                      <p dir="auto" className="truncate text-[13px] font-medium text-ink">{r.name}</p>
+                      <p className="text-[11px] text-ink-3">
+                        {validClockRule(r.rule) ? describeClockRule(r.rule) : "Custom schedule"} · {r.audience_label}
+                        {" · "}
+                        {r.active ? (r.next_run_at ? `next ${formatInZone(r.next_run_at, r.timezone)}` : "no upcoming date") : "paused"}
+                      </p>
+                    </div>
+                    {admin && <RecurringRowActions id={r.id} active={r.active} />}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {messages.length === 0 ? (
+              tabKey === "scheduled" && recurring.length > 0 ? null : (
+                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-line py-20 text-center">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-line bg-card">
+                    <Send size={18} className="text-line-strong" strokeWidth={1.5} />
+                  </div>
+                  <p className="text-[13px] font-semibold text-ink">
+                    {tabKey === "drafts" && "No drafts saved"}
+                    {tabKey === "scheduled" && "Nothing scheduled"}
+                    {tabKey === "approval" && (admin ? "Nothing waiting for approval" : "No requests waiting")}
+                  </p>
+                  <p className="mt-1 text-[12px] text-ink-3">
+                    {tabKey === "drafts" && "Use Save draft in the composer to pick a message up later."}
+                    {tabKey === "scheduled" && "Choose Schedule for later in the composer to send at a set time, or repeat weekly."}
+                    {tabKey === "approval" && "Messages from members that need an admin's OK show up here."}
+                  </p>
+                </div>
+              )
+            ) : (
+              <div className="overflow-hidden rounded-xl border border-line bg-card shadow-card">
+                {messages.map((msg, i) => {
+                  const meta = CHANNEL_META[msg.channel] ?? CHANNEL_META.email;
+                  const ChannelIcon = meta.icon;
+                  return (
+                    <div key={msg.id} className={`flex flex-wrap items-center justify-between gap-3 px-5 py-3.5 ${i < messages.length - 1 ? "border-b border-muted" : ""}`}>
+                      <div className="min-w-0">
+                        <p dir="auto" className="truncate text-[13px] font-medium text-ink">
+                          {msg.subject?.trim() || (msg.body.trim() ? msg.body.replace(/\{\{(\w+)\}\}/g, "[$1]").slice(0, 70) + (msg.body.length > 70 ? "…" : "") : "(no text yet)")}
+                        </p>
+                        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-ink-3">
+                          <span className={`inline-flex items-center gap-1 rounded-full px-1.5 py-px text-[10px] font-semibold ${meta.bg} ${meta.color}`}>
+                            <ChannelIcon size={9} strokeWidth={2} />
+                            {meta.label}
+                          </span>
+                          <span>{msg.audience_label}</span>
+                          {msg.status === "scheduled" && msg.scheduled_for && <span className="font-medium text-ink-2">{formatInZone(msg.scheduled_for, timezone)}{msg.recurring_id ? " · repeating" : ""}</span>}
+                          {msg.status === "pending_approval" && <span className="font-medium text-amber-700">Waiting for approval{msg.scheduled_for ? ` · wanted ${formatInZone(msg.scheduled_for, timezone)}` : ""}</span>}
+                          {msg.status === "rejected" && <span className="font-medium text-red-600">Sent back{msg.rejection_reason ? `: ${msg.rejection_reason}` : ""}</span>}
+                          {msg.status === "cancelled" && <span>Cancelled</span>}
+                          {msg.status === "draft" && <span>Saved {timeAgo(msg.created_at)}</span>}
+                        </p>
+                      </div>
+                      <MessageRowActions id={msg.id} kind={tabKey === "drafts" ? "draft" : tabKey === "scheduled" ? "scheduled" : "approval"} isAdmin={admin} />
+                    </div>
+                  );
+                })}
+                <Pagination
+                  page={page}
+                  pageSize={PAGE_SIZE}
+                  total={count ?? messages.length}
+                  buildHref={(p) => (p === 1 ? `/messages?tab=${tabKey}` : `/messages?tab=${tabKey}&page=${p}`)}
+                />
+              </div>
+            )}
           </div>
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-line py-24 text-center">

@@ -8,7 +8,11 @@ import { getCategoryCounts } from "@/lib/categoryCounts";
 import { resolveGroupMemberIds, type GroupRow } from "@/lib/audienceMembers";
 import { getAudienceTemplateMap, listTemplates } from "@/lib/templates";
 import { getCustomFieldDefs } from "@/lib/customFields";
-import { ComposeFlow, type AudienceOption } from "./ComposeFlow";
+import { redirect } from "next/navigation";
+import { ComposeFlow, type AudienceOption, type ComposeInitial } from "./ComposeFlow";
+import { getRequireApproval, getSchoolTimezone, localDateString, localTimeString, validClockRule } from "@/lib/schoolTime";
+import { getDispatcherHealth } from "@/lib/send/health";
+import type { MessageInput } from "@/lib/send/types";
 
 const SYSTEM_AUDIENCES: { slug: string; label: string; category: string }[] = [
   { slug: "parents", label: "Parents", category: "parent" },
@@ -22,11 +26,48 @@ const SYSTEM_AUDIENCES: { slug: string; label: string; category: string }[] = [
   { slug: "prospects", label: "Prospects", category: "prospect" },
 ];
 
-export default async function NewMessagePage({ searchParams }: { searchParams: Promise<{ audiences?: string }> }) {
-  const { audiences: audiencesParam } = await searchParams;
+const EDITABLE = ["draft", "pending_approval", "scheduled", "rejected", "cancelled"];
+const MEMBER_EDITABLE = ["draft", "pending_approval", "rejected"];
+
+export default async function NewMessagePage({ searchParams }: { searchParams: Promise<{ audiences?: string; edit?: string; recurring?: string }> }) {
+  const { audiences: audiencesParam, edit, recurring } = await searchParams;
   const initialAudienceSlugs = audiencesParam ? audiencesParam.split(",") : undefined;
   const supabase = await createSupabaseServerClient();
-  const { orgId, role } = await getMembership();
+  const { orgId, role, userId } = await getMembership();
+  const admin = isAdminRole(role);
+
+  const [timezone, requireApproval, health] = await Promise.all([getSchoolTimezone(supabase, orgId), getRequireApproval(supabase, orgId), getDispatcherHealth(supabase)]);
+
+  // Editing a draft / scheduled / waiting message, or a repeating send
+  let initial: ComposeInitial | undefined;
+  if (edit) {
+    const { data: m } = await supabase.from("messages").select("id, status, created_by, payload, scheduled_for, rejection_reason").eq("org_id", orgId).eq("id", edit).maybeSingle();
+    const row = m as { id: string; status: string; created_by: string | null; payload: MessageInput | null; scheduled_for: string | null; rejection_reason: string | null } | null;
+    if (!row || !row.payload || !(admin ? EDITABLE : MEMBER_EDITABLE).includes(row.status) || (!admin && row.created_by !== userId)) redirect("/messages");
+    initial = {
+      messageId: row.id,
+      recurringId: null,
+      status: row.status,
+      rejectionReason: row.rejection_reason,
+      input: row.payload,
+      when: row.scheduled_for ? { date: localDateString(new Date(row.scheduled_for), timezone), time: localTimeString(new Date(row.scheduled_for), timezone) } : null,
+      repeatWeeks: null,
+    };
+  } else if (recurring && admin) {
+    const { data: r } = await supabase.from("recurring_sends").select("id, payload, rule, next_run_at").eq("org_id", orgId).eq("id", recurring).maybeSingle();
+    const rec = r as { id: string; payload: MessageInput; rule: unknown; next_run_at: string | null } | null;
+    if (!rec || !validClockRule(rec.rule)) redirect("/messages");
+    const next = rec.next_run_at ? new Date(rec.next_run_at) : null;
+    initial = {
+      messageId: null,
+      recurringId: rec.id,
+      status: null,
+      rejectionReason: null,
+      input: rec.payload,
+      when: next ? { date: localDateString(next, timezone), time: localTimeString(next, timezone) } : null,
+      repeatWeeks: rec.rule.everyWeeks,
+    };
+  }
 
   const [counts, groupsRes, templates, audienceTemplates, fieldDefs] = await Promise.all([
     getCategoryCounts(supabase, orgId),
@@ -61,7 +102,7 @@ export default async function NewMessagePage({ searchParams }: { searchParams: P
     <div className="min-h-screen bg-canvas">
       <header className="sticky top-0 z-10 border-b border-line bg-card/95 backdrop-blur-sm px-6 py-3.5">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-[13px] font-semibold text-ink">New Message</h1>
+          <h1 className="text-[13px] font-semibold text-ink">{initial ? "Edit message" : "New Message"}</h1>
           <p className="text-[11px] text-ink-3 mt-px">Compose once, reach every family on the channel they read.</p>
         </div>
       </header>
@@ -73,7 +114,13 @@ export default async function NewMessagePage({ searchParams }: { searchParams: P
           templates={templates.map((t) => ({ id: t.id, name: t.name, defaultSubject: t.default_subject }))}
           audienceTemplates={audienceTemplates}
           customTokens={fieldDefs.map((d) => ({ token: `{{${d.key}}}`, label: d.label }))}
-          canEmergency={isAdminRole(role)}
+          canEmergency={admin}
+          schoolTimezone={timezone}
+          schedulerHealthy={health.healthy}
+          isAdmin={admin}
+          requireApproval={requireApproval}
+          initial={initial}
+          key={initial?.messageId ?? initial?.recurringId ?? "new"}
         />
       </div>
     </div>

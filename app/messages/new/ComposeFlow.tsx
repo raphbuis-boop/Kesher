@@ -4,11 +4,25 @@ import { toast } from "@/app/components/ui/toast";
 import { GlassDropzone, postWithProgress } from "@/app/components/ui/GlassDropzone";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { submitMessage, previewSend, type Channel, type PreviewResult } from "../actions";
+import { submitMessage, previewSend, type Channel, type PreviewResult, type SubmitAction, type SubmitResult } from "../actions";
+import type { MessageInput } from "@/lib/send/types";
+import { WEEKDAY_NAMES, addDays, formatTimeOnly, localDateString, weekdayOf } from "@/lib/schoolTime";
 import { TEMPLATE_TOKENS, renderTemplate } from "@/lib/template";
 import { FUNDRAISING_WHATSAPP_NOTE, looksLikeFundraising } from "@/lib/fundraising";
 
 export type TemplateOption = { id: string; name: string; defaultSubject: string | null };
+
+/** An existing draft / scheduled / waiting message (or repeating send) being edited. */
+export type ComposeInitial = {
+  messageId: string | null;
+  recurringId: string | null;
+  status: string | null;
+  rejectionReason: string | null;
+  input: MessageInput;
+  /** School-local */
+  when: { date: string; time: string } | null;
+  repeatWeeks: number | null;
+};
 
 export type AudienceOption = {
   slug: string;
@@ -422,6 +436,11 @@ export function ComposeFlow({
   audienceTemplates = {},
   customTokens = [],
   canEmergency = false,
+  schoolTimezone,
+  schedulerHealthy = true,
+  isAdmin = true,
+  requireApproval = false,
+  initial,
 }: {
   audiences: AudienceOption[];
   fromEmail?: string;
@@ -433,29 +452,46 @@ export function ComposeFlow({
   /** Custom fields offered as merge tokens, e.g. { token: "{{division}}", label: "Division" } */
   customTokens?: { token: string; label: string }[];
   canEmergency?: boolean;
+  schoolTimezone: string;
+  /** False when the background job that sends scheduled messages hasn't run recently */
+  schedulerHealthy?: boolean;
+  isAdmin?: boolean;
+  /** Members' messages wait for an admin when this is on */
+  requireApproval?: boolean;
+  initial?: ComposeInitial;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const bodyRef = useRef<HTMLTextAreaElement>(null);
 
-  const initialSelected = initialAudienceSlugs ? audiences.filter((a) => initialAudienceSlugs.includes(a.slug)) : [];
+  const init = initial?.input;
+  const initialSelected = init ? audiences.filter((a) => init.audienceSlugs.includes(a.slug)) : initialAudienceSlugs ? audiences.filter((a) => initialAudienceSlugs.includes(a.slug)) : [];
   const [selectedAudiences, setSelectedAudiences] = useState<AudienceOption[]>(initialSelected);
   const defaultTemplateFor = (list: AudienceOption[]) => list.map((a) => audienceTemplates[a.slug]).find(Boolean) ?? null;
-  const [templateId, setTemplateId] = useState<string | null>(defaultTemplateFor(initialSelected));
-  const [templateTouched, setTemplateTouched] = useState(false);
+  const [templateId, setTemplateId] = useState<string | null>(init ? init.templateId : defaultTemplateFor(initialSelected));
+  const [templateTouched, setTemplateTouched] = useState(!!init);
 
-  const [channels, setChannels] = useState<Channel[]>(["email"]);
-  const [channelMode, setChannelMode] = useState<"all" | "best">("all");
-  const [subject, setSubject] = useState("");
-  const [body, setBody] = useState("");
-  const [greetingOn, setGreetingOn] = useState(false);
-  const [attachments, setAttachments] = useState<Attachment[]>([]);
-  const [isFundraising, setIsFundraising] = useState(false);
-  const [isEmergency, setIsEmergency] = useState(false);
-  const [familyPrefix, setFamilyPrefix] = useState(false);
-  const [confirmButton, setConfirmButton] = useState(false);
-  const [studentsDirect, setStudentsDirect] = useState(false);
-  const [excluded, setExcluded] = useState<Set<string>>(new Set());
+  const [channels, setChannels] = useState<Channel[]>(init?.channels?.length ? init.channels : ["email"]);
+  const [channelMode, setChannelMode] = useState<"all" | "best">(init?.channelMode ?? "all");
+  const [subject, setSubject] = useState(init?.subject ?? "");
+  const [body, setBody] = useState(init?.body ?? "");
+  const [greetingOn, setGreetingOn] = useState(!!init?.greeting);
+  const [attachments, setAttachments] = useState<Attachment[]>(
+    (init?.attachmentUrls ?? []).map((url) => ({ url, fileName: decodeURIComponent(url.split("/").pop() ?? "attachment"), contentType: "", size: 0 }))
+  );
+  const [isFundraising, setIsFundraising] = useState(init?.isFundraising ?? false);
+  const [isEmergency, setIsEmergency] = useState(init?.isEmergency ?? false);
+  const [familyPrefix, setFamilyPrefix] = useState(init?.familyPrefix ?? false);
+  const [confirmButton, setConfirmButton] = useState(init?.confirmButton ?? false);
+  const [studentsDirect, setStudentsDirect] = useState(init?.studentsDirect ?? false);
+  const [excluded, setExcluded] = useState<Set<string>>(new Set(init?.excludePersonIds ?? []));
+
+  // When: now, or a school-local date and time (optionally repeating weekly)
+  const [later, setLater] = useState(!!initial?.when || !!initial?.recurringId);
+  const [today] = useState(() => localDateString(new Date(), schoolTimezone));
+  const [date, setDate] = useState(initial?.when?.date ?? addDays(today, 1));
+  const [time, setTime] = useState(initial?.when?.time ?? "09:00");
+  const [repeatWeeks, setRepeatWeeks] = useState<number>(initial?.repeatWeeks ?? 0);
   const [previewTab, setPreviewTab] = useState<Channel>("email");
   const [showPreview, setShowPreview] = useState(true);
   const [showMore, setShowMore] = useState(false);
@@ -546,22 +582,75 @@ export function ComposeFlow({
   const channelProblemFor = (c: Channel) => preview?.problems.find((p) => p.channel === c)?.problem ?? null;
   const subjectOk = !activeChannels.includes("email") || subject.trim().length > 0;
   const blockingProblem = preview?.problems && preview.problems.length > 0;
-  const canSend = ready && subjectOk && !!preview && total > 0 && !blockingProblem && activeChannels.length > 0;
 
-  function handleConfirmedSend() {
+  const memberRequest = !isAdmin && requireApproval;
+  const primaryAction: SubmitAction = memberRequest ? "request_approval" : later ? "schedule" : "send_now";
+  const whenValid = !later || (/^\d{4}-\d{2}-\d{2}$/.test(date) && date >= today && /^\d{2}:\d{2}$/.test(time));
+  const tzShort = useMemo(() => {
+    try {
+      return new Intl.DateTimeFormat("en-US", { timeZone: schoolTimezone, timeZoneName: "short" }).formatToParts(new Date()).find((p) => p.type === "timeZoneName")?.value ?? schoolTimezone;
+    } catch {
+      return schoolTimezone;
+    }
+  }, [schoolTimezone]);
+
+  const canSend = ready && subjectOk && !!preview && total > 0 && !blockingProblem && activeChannels.length > 0 && whenValid;
+
+  function handleResult(result: SubmitResult) {
+    if (!result.success) {
+      setSendError(result.error);
+      toast.error(result.error);
+      return;
+    }
+    switch (result.kind) {
+      case "sent":
+        toast.success("Message sent");
+        router.push(`/messages/${result.messageId}`);
+        break;
+      case "sending":
+        toast.success(`Sending… ${result.remaining.toLocaleString()} still to go — it continues automatically`);
+        router.push(`/messages/${result.messageId}`);
+        break;
+      case "scheduled":
+        toast.success(`Scheduled for ${result.whenLabel}`);
+        router.push("/messages?tab=scheduled");
+        break;
+      case "recurring":
+        toast.success(`${result.ruleLabel}. Next: ${result.whenLabel}`);
+        router.push("/messages?tab=scheduled");
+        break;
+      case "draft":
+        toast.success("Draft saved");
+        router.push("/messages?tab=drafts");
+        break;
+      case "pending_approval":
+        toast.success("Sent to an admin for approval");
+        router.push("/messages?tab=approval");
+        break;
+    }
+    router.refresh();
+  }
+
+  function run(act: SubmitAction) {
     setConfirmOpen(false);
     setSendError(null);
     startTransition(async () => {
-      const result = await submitMessage({ ...input, channels: activeChannels });
-      if (result.success) {
-        toast.success(result.state === "sent" ? "Message sent" : `Sending… ${result.remaining.toLocaleString()} still to go — it continues automatically`);
-        router.push(`/messages/${result.messageId}`);
-        router.refresh();
-      } else {
-        setSendError(result.error);
-        toast.error(result.error);
-      }
+      const result = await submitMessage(
+        { ...input, channels: act === "draft" ? channels : activeChannels },
+        {
+          action: act,
+          when: later && act !== "draft" && act !== "send_now" ? { date, time } : null,
+          repeatWeeks: later && act === "schedule" && repeatWeeks > 0 ? repeatWeeks : null,
+          messageId: initial?.messageId ?? null,
+          recurringId: initial?.recurringId ?? null,
+        }
+      );
+      handleResult(result);
     });
+  }
+
+  function handleConfirmedSend() {
+    run(primaryAction);
   }
 
   const SMS_LIMIT = 160;
@@ -780,7 +869,7 @@ export function ComposeFlow({
                             )}
                             <div className="min-w-0">
                               <p className="max-w-[140px] truncate text-xs font-medium text-ink-soft">{a.fileName}</p>
-                              <p className="text-[10px] tabular-nums text-ink-3">{sizeLabel}</p>
+                              {a.size > 0 && <p className="text-[10px] tabular-nums text-ink-3">{sizeLabel}</p>}
                             </div>
                             <button type="button" onClick={() => setAttachments((prev) => prev.filter((_, j) => j !== i))} className="ml-1 text-line-strong transition-colors hover:text-ink-2" aria-label="Remove attachment">
                               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
@@ -853,6 +942,71 @@ export function ComposeFlow({
           </details>
         )}
 
+        {/* ── EDITING BANNER ── */}
+        {initial && (initial.status === "rejected" || initial.status === "pending_approval" || initial.status === "scheduled" || initial.recurringId) && (
+          <div className={"border-t border-muted px-6 py-3 text-xs " + (initial.status === "rejected" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-800")}>
+            {initial.status === "rejected" && <>An admin sent this back{initial.rejectionReason ? <>: <span className="font-medium">&ldquo;{initial.rejectionReason}&rdquo;</span></> : "."} Edit it and send it for approval again.</>}
+            {initial.status === "pending_approval" && (isAdmin ? "Waiting for your approval. Send it as is, change it first, or schedule it." : "Waiting for an admin to approve it. Saving changes keeps it in the queue.")}
+            {initial.status === "scheduled" && "This message is scheduled. Saving changes updates it; nothing has been sent."}
+            {initial.recurringId && "Editing a repeating send. Changes apply to future sends, not ones already scheduled."}
+          </div>
+        )}
+
+        {/* ── WHEN ── */}
+        <div className="border-t border-muted px-6 py-5">
+          <div className="flex items-start gap-4">
+            <span className="mt-1.5 w-16 flex-shrink-0 text-xs font-semibold uppercase tracking-wider text-ink-3">When</span>
+            <div className="flex-1 space-y-3">
+              <div className="inline-flex rounded-lg border border-line p-0.5" role="group" aria-label="When to send">
+                {([[false, memberRequest ? "As soon as approved" : "Send now"], [true, "Schedule for later"]] as const).map(([v, label]) => (
+                  <button
+                    key={label}
+                    type="button"
+                    aria-pressed={later === v}
+                    disabled={!!initial?.recurringId && !v}
+                    onClick={() => {
+                      setLater(v);
+                      if (!v) setRepeatWeeks(0);
+                    }}
+                    className={"rounded-md px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 " + (later === v ? "bg-ink text-on-ink" : "text-ink-2 hover:text-ink")}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {later && (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input type="date" value={date} min={today} onChange={(e) => setDate(e.target.value)} aria-label="Date" className={SELECT_CLS} />
+                    <input type="time" value={time} onChange={(e) => setTime(e.target.value)} aria-label="Time" className={SELECT_CLS} />
+                    <span className="text-xs text-ink-3">{tzShort} (your school&apos;s time zone)</span>
+                  </div>
+                  {isAdmin && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <label htmlFor="compose-repeat" className="text-xs text-ink-2">Repeat</label>
+                      <select id="compose-repeat" value={repeatWeeks} onChange={(e) => setRepeatWeeks(Number(e.target.value))} className={SELECT_CLS}>
+                        {!initial?.recurringId && <option value={0}>Doesn&apos;t repeat</option>}
+                        <option value={1}>Every week</option>
+                        {[2, 3, 4, 6].map((n) => <option key={n} value={n}>Every {n} weeks</option>)}
+                      </select>
+                      {repeatWeeks > 0 && /^\d{4}-\d{2}-\d{2}$/.test(date) && (
+                        <span className="text-xs text-ink-3">on {WEEKDAY_NAMES[weekdayOf(date)]}s at {formatTimeOnly(time)}</span>
+                      )}
+                    </div>
+                  )}
+                  <p className="text-[11px] text-ink-3">Who gets it is worked out when it sends, so families who join or leave before then are accounted for.</p>
+                  {!schedulerHealthy && (
+                    <p className="rounded-md bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
+                      Scheduled messages aren&apos;t being picked up right now: the background sender hasn&apos;t checked in. {isAdmin ? "See Settings → Messaging for the one-time setup." : "Ask an admin to check Settings → Messaging."}
+                    </p>
+                  )}
+                </div>
+              )}
+              {memberRequest && <p className="text-[11px] text-ink-3">An admin approves messages from members before they go out.</p>}
+            </div>
+          </div>
+        </div>
+
         {/* ── SEND ── */}
         <div className="rounded-b-xl border-t border-muted bg-canvas px-6 py-5">
           {sendError && <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">{sendError}</div>}
@@ -897,15 +1051,25 @@ export function ComposeFlow({
                 )
               ) : null}
             </p>
-            <button
-              type="button"
-              onClick={() => setConfirmOpen(true)}
-              disabled={!canSend || isPending}
-              className="inline-flex items-center gap-2 rounded-lg bg-ink px-5 py-2.5 text-sm font-medium text-on-ink transition-colors hover:bg-ink-hover disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {isPending ? "Sending…" : "Review & send"}
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => run("draft")}
+                disabled={isPending || (selectedAudiences.length === 0 && !body.trim() && !subject.trim())}
+                className="inline-flex items-center rounded-lg border border-line px-4 py-2.5 text-sm font-medium text-ink-soft transition-colors hover:bg-card disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Save draft
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmOpen(true)}
+                disabled={!canSend || isPending}
+                className="inline-flex items-center gap-2 rounded-lg bg-ink px-5 py-2.5 text-sm font-medium text-on-ink transition-colors hover:bg-ink-hover disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {isPending ? "Working…" : memberRequest ? "Review & request approval" : later ? "Review & schedule" : "Review & send"}
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -915,9 +1079,11 @@ export function ComposeFlow({
         <div className="animate-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setConfirmOpen(false)}>
           <div role="dialog" aria-modal="true" aria-labelledby="confirm-send-title" className="animate-pop-in w-full max-w-md rounded-xl border border-line bg-card shadow-pop" onClick={(e) => e.stopPropagation()}>
             <div className="border-b border-muted px-5 py-4">
-              <h2 id="confirm-send-title" className="text-sm font-semibold text-ink">Send to {preview.people.toLocaleString()} {preview.people === 1 ? "person" : "people"}?</h2>
+              <h2 id="confirm-send-title" className="text-sm font-semibold text-ink">
+                {memberRequest ? "Ask an admin to send to" : later ? `Schedule for ${date} ${formatTimeOnly(time)} ${tzShort} to` : "Send to"} {preview.people.toLocaleString()} {preview.people === 1 ? "person" : "people"}?
+              </h2>
               <p className="mt-0.5 text-xs text-ink-2">
-                {preview.messages.toLocaleString()} message{preview.messages === 1 ? "" : "s"}: {(["email", "whatsapp", "sms"] as Channel[]).filter((c) => preview.perChannel[c] > 0).map((c) => `${preview.perChannel[c].toLocaleString()} ${c === "sms" ? "text" : channelLabel(c)}`).join(" · ")}. Remove anyone who shouldn&apos;t get it.
+                {preview.messages.toLocaleString()} message{preview.messages === 1 ? "" : "s"}: {(["email", "whatsapp", "sms"] as Channel[]).filter((c) => preview.perChannel[c] > 0).map((c) => `${preview.perChannel[c].toLocaleString()} ${c === "sms" ? "text" : channelLabel(c)}`).join(" · ")}. {later ? "This is who it reaches today; the list is checked again when it sends." : "Remove anyone who shouldn&apos;t get it."}
               </p>
             </div>
             <div className="max-h-72 divide-y divide-canvas overflow-y-auto">
@@ -949,7 +1115,7 @@ export function ComposeFlow({
               <div className="flex items-center justify-end gap-3">
                 <button type="button" onClick={() => setConfirmOpen(false)} className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-ink-soft transition-colors hover:bg-canvas">Cancel</button>
                 <button type="button" onClick={handleConfirmedSend} disabled={preview.people_list.length === 0 || previewLoading} className="inline-flex items-center gap-2 rounded-lg bg-ink px-4 py-2 text-sm font-medium text-on-ink transition-colors hover:bg-ink-hover disabled:cursor-not-allowed disabled:opacity-40">
-                  Confirm &amp; send
+                  {memberRequest ? "Send for approval" : later ? (repeatWeeks > 0 ? "Confirm & repeat" : "Confirm & schedule") : "Confirm & send"}
                 </button>
               </div>
             </div>

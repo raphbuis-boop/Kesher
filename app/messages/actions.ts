@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { getMembership } from "@/lib/org";
+import { getMembership, isAdminRole } from "@/lib/org";
 import { getChannelConfig } from "@/lib/channels";
 import { loadBrandingSettings } from "@/lib/settings";
 import { getTemplate } from "@/lib/templates";
@@ -13,6 +13,19 @@ import { validateUnsubscribeEnv } from "@/lib/unsubscribe";
 import { availableChannels, executeMessage, whatsappAllowedFor } from "@/lib/send/engine";
 import { resolveRecipients } from "@/lib/send/recipients";
 import { sendWindowStatus } from "@/lib/send/window";
+import { messageColumns } from "@/lib/send/record";
+import { nextRunFor } from "@/lib/send/dispatch";
+import {
+  describeClockRule,
+  formatInZone,
+  getRequireApproval,
+  getSchoolTimezone,
+  isDateString,
+  isTimeString,
+  weekdayOf,
+  zonedToUtc,
+  type ClockRule,
+} from "@/lib/schoolTime";
 import { CHANNELS, type Channel, type ExcludedReason, type MessageInput } from "@/lib/send/types";
 
 export type { Channel, MessageInput } from "@/lib/send/types";
@@ -159,9 +172,29 @@ export async function previewSend(raw: MessageInput): Promise<PreviewResult> {
 
 // ─── Send ─────────────────────────────────────────────────────────────────────
 
+export type SubmitAction = "send_now" | "schedule" | "draft" | "request_approval";
+
+export type SubmitOptions = {
+  action: SubmitAction;
+  /** School-local date and time (school timezone, not the browser's) for "schedule" / a requested time */
+  when?: { date: string; time: string } | null;
+  /** schedule only: repeat every N weeks on that weekday (admins) */
+  repeatWeeks?: number | null;
+  /** Editing an existing draft / scheduled / waiting message */
+  messageId?: string | null;
+  /** Editing a repeating send */
+  recurringId?: string | null;
+};
+
 export type SubmitResult =
-  | { success: true; messageId: string; state: "sent" | "sending"; sent: number; failed: number; remaining: number }
+  | { success: true; kind: "sent" | "sending"; messageId: string; sent: number; failed: number; remaining: number }
+  | { success: true; kind: "scheduled"; messageId: string; whenLabel: string }
+  | { success: true; kind: "draft"; messageId: string }
+  | { success: true; kind: "pending_approval"; messageId: string; whenLabel: string | null }
+  | { success: true; kind: "recurring"; recurringId: string; whenLabel: string; ruleLabel: string }
   | { success: false; error: string };
+
+const fail = (error: string): SubmitResult => ({ success: false, error });
 
 function validate(input: MessageInput): string | null {
   if (input.audienceSlugs.length === 0) return "At least one audience is required.";
@@ -171,67 +204,159 @@ function validate(input: MessageInput): string | null {
   return null;
 }
 
+/** Statuses a message can still be edited in; members only touch their own unapproved ones. */
+const EDITABLE = ["draft", "pending_approval", "scheduled", "rejected", "cancelled"];
+const MEMBER_EDITABLE = ["draft", "pending_approval", "rejected"];
+
+type Existing = { id: string; status: string; created_by: string | null };
+
+async function loadExisting(orgId: string, id: string): Promise<Existing | null> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.from("messages").select("id, status, created_by").eq("org_id", orgId).eq("id", id).maybeSingle();
+  return (data as Existing | null) ?? null;
+}
+
 /**
- * Sends a message now: saves it, then runs the send engine right here. Large
- * sends that don't finish in time keep going (Continue sending / the
- * scheduler picks up whatever is still queued; nobody gets it twice).
+ * One entry point for the compose screen's buttons:
+ *   send_now          save + send right here (admins, or members when approval isn't required)
+ *   schedule          send later at a school-local date/time (optionally repeating weekly)
+ *   draft             save without sending
+ *   request_approval  members: ask an admin to send it
+ * Members' send/schedule turn into an approval request when the school requires
+ * approval. The audience is resolved when the message actually goes out, so
+ * a scheduled message reaches the roster as it is then.
  */
-export async function submitMessage(raw: MessageInput): Promise<SubmitResult> {
+export async function submitMessage(raw: MessageInput, opts: SubmitOptions = { action: "send_now" }): Promise<SubmitResult> {
   try {
-    const input = clean(raw);
-    const bad = validate(input);
-    if (bad) return { success: false, error: bad };
-
-    const { orgId } = await getMembership();
+    const { orgId, userId, role } = await getMembership();
+    const admin = isAdminRole(role);
     const supabase = await createSupabaseServerClient();
+
+    let input = clean(raw);
+    if (!admin) input = { ...input, isEmergency: false }; // only owners/admins can flag emergencies
     const isSim = await simulated(orgId);
+    const tz = await getSchoolTimezone(supabase, orgId);
+    const needsApproval = !admin && (await getRequireApproval(supabase, orgId));
 
-    const window = await sendWindowStatus();
-    if (window.blocked) return { success: false, error: window.message };
+    let action = opts.action;
+    if (needsApproval && (action === "send_now" || action === "schedule")) action = "request_approval";
+    const repeating = !!opts.repeatWeeks || !!opts.recurringId;
+    if (repeating && !admin) return fail("Only owners and admins can set up repeating sends.");
+    if (repeating && action !== "schedule") return fail("A repeating send needs a start date and time.");
 
-    // Fundraising never goes on WhatsApp (Meta blocks it to US numbers)
-    const { channels, notes } = effectiveChannels(input);
-    if (channels.length === 0) return { success: false, error: notes[0] ?? "Choose a channel." };
-    const finalInput: MessageInput = { ...input, channels };
+    if (action === "draft") {
+      if (!input.body && !input.subject && input.audienceSlugs.length === 0) return fail("There's nothing to save yet.");
+    } else {
+      const bad = validate(input);
+      if (bad) return fail(bad);
+    }
 
-    const problems = await channelProblems(orgId, finalInput, isSim);
-    if (problems.length > 0) return { success: false, error: problems.map((p) => p.problem).join(" ") };
+    // When
+    let scheduledFor: Date | null = null;
+    if (action === "schedule" || (action === "request_approval" && opts.when)) {
+      if (!opts.when || !isDateString(opts.when.date) || !isTimeString(opts.when.time)) return fail("Pick a date and time.");
+      scheduledFor = zonedToUtc(opts.when.date, opts.when.time, tz);
+      if (scheduledFor.getTime() < Date.now() + 60_000) return fail("Pick a time in the future.");
+    }
 
-    const { data: row, error } = await supabase
-      .from("messages")
-      .insert({
-        org_id: orgId,
-        subject: channels.includes("email") ? finalInput.subject : null,
-        body: finalInput.body,
-        channel: channels.length === 1 ? channels[0] : "multi",
-        channels,
-        channel_mode: finalInput.channelMode,
-        audience_slug: finalInput.audienceSlugs.join(","),
-        audience_label: finalInput.audienceLabel || "Audience",
-        recipient_count: 0,
-        status: "sending",
-        template_id: finalInput.templateId,
-        is_fundraising: finalInput.isFundraising,
-        is_emergency: finalInput.isEmergency,
-        family_prefix: finalInput.familyPrefix,
+    let finalInput = input;
+    if (action !== "draft") {
+      // Fundraising never goes on WhatsApp (Meta blocks it to US numbers)
+      const { channels, notes } = effectiveChannels(input);
+      if (channels.length === 0) return fail(notes[0] ?? "Choose a channel.");
+      finalInput = { ...input, channels };
+      const problems = await channelProblems(orgId, finalInput, isSim);
+      if (problems.length > 0) return fail(problems.map((p) => p.problem).join(" "));
+    }
+    if (action === "send_now") {
+      const window = await sendWindowStatus(supabase, orgId);
+      if (window.blocked) return fail(window.message);
+    }
+
+    // Editing something that already exists?
+    let existing: Existing | null = null;
+    if (opts.messageId) {
+      existing = await loadExisting(orgId, opts.messageId);
+      if (!existing) return fail("That message no longer exists.");
+      const allowed = admin ? EDITABLE : MEMBER_EDITABLE;
+      if (!allowed.includes(existing.status)) return fail(existing.status === "sending" || existing.status === "sent" ? "This message has already been sent." : "You can't edit this message.");
+      if (!admin && existing.created_by !== userId) return fail("You can only edit your own drafts and requests.");
+    }
+
+    // Repeating send (admins): a blueprint the dispatcher turns into one message per occurrence
+    if (repeating) {
+      const when = opts.when!;
+      const rule: ClockRule = { kind: "clock", everyWeeks: opts.repeatWeeks ?? 1, weekday: weekdayOf(when.date), time: when.time, startDate: when.date };
+      const next = await nextRunFor(rule, tz, new Date());
+      if (!next) return fail("Couldn't work out when this repeats. Check the day, time and number of weeks.");
+      const record = {
+        name: (input.subject || input.body).slice(0, 80),
+        timezone: tz,
+        rule,
         payload: finalInput,
-      })
-      .select("id")
-      .single();
-    if (error || !row) return { success: false, error: error?.message ?? "Failed to create message record." };
+        subject: finalInput.channels.includes("email") ? finalInput.subject : null,
+        body: finalInput.body,
+        audience_label: finalInput.audienceLabel || "Audience",
+        next_run_at: next.toISOString(),
+        active: true,
+      };
+      let recurringId = opts.recurringId ?? null;
+      if (recurringId) {
+        const { data, error } = await supabase.from("recurring_sends").update(record).eq("org_id", orgId).eq("id", recurringId).select("id");
+        if (error || !data?.length) return fail(error?.message ?? "That repeating send no longer exists.");
+      } else {
+        const { data, error } = await supabase.from("recurring_sends").insert({ org_id: orgId, created_by: userId, ...record }).select("id").single();
+        if (error || !data) return fail(error?.message ?? "Couldn't save the repeating send.");
+        recurringId = data.id as string;
+      }
+      // A draft/scheduled copy that was converted into a repeating send
+      if (existing) await supabase.from("messages").delete().eq("org_id", orgId).eq("id", existing.id).in("status", EDITABLE);
+      revalidatePath("/messages");
+      return { success: true, kind: "recurring", recurringId, whenLabel: formatInZone(next, tz), ruleLabel: describeClockRule(rule) };
+    }
 
-    const result = await executeMessage({ supabase, orgId }, row.id as string, { deadlineMs: Date.now() + 50_000 });
+    const now = new Date().toISOString();
+    const patch: Record<string, unknown> = {
+      ...messageColumns(finalInput),
+      error_detail: null,
+      rejected_by: null,
+      rejected_at: null,
+      rejection_reason: null,
+    };
+    if (action === "draft") Object.assign(patch, { status: "draft", scheduled_for: null, requested_at: null, approved_by: null, approved_at: null });
+    else if (action === "request_approval") Object.assign(patch, { status: "pending_approval", scheduled_for: scheduledFor?.toISOString() ?? null, requested_at: now, approved_by: null, approved_at: null });
+    else if (action === "schedule") Object.assign(patch, { status: "scheduled", scheduled_for: scheduledFor!.toISOString(), requested_at: existing?.status === "pending_approval" ? undefined : null, approved_by: userId, approved_at: now });
+    else Object.assign(patch, { status: "sending", claimed_at: now, scheduled_for: null, approved_by: userId, approved_at: now });
+    for (const k of Object.keys(patch)) if (patch[k] === undefined) delete patch[k];
+
+    let messageId: string;
+    if (existing) {
+      // Guarded on status so a message the dispatcher just claimed can't be overwritten
+      const { data, error } = await supabase.from("messages").update(patch).eq("org_id", orgId).eq("id", existing.id).in("status", admin ? EDITABLE : MEMBER_EDITABLE).select("id");
+      if (error) return fail(error.message);
+      if (!data?.length) return fail("This message changed while you were editing it. Reload and try again.");
+      messageId = existing.id;
+    } else {
+      const { data, error } = await supabase.from("messages").insert({ org_id: orgId, created_by: userId, recipient_count: 0, ...patch }).select("id").single();
+      if (error || !data) return fail(error?.message ?? "Failed to create message record.");
+      messageId = data.id as string;
+    }
     revalidatePath("/messages");
     revalidatePath("/dashboard");
 
-    if (result.state === "failed") return { success: false, error: result.error };
-    if (result.state === "skipped") return { success: false, error: result.reason };
-    if (result.state === "partial") return { success: true, messageId: row.id as string, state: "sending", sent: result.sent, failed: result.failed, remaining: result.remaining };
-    return { success: true, messageId: row.id as string, state: "sent", sent: result.sent, failed: result.failed, remaining: 0 };
+    if (action === "draft") return { success: true, kind: "draft", messageId };
+    if (action === "request_approval") return { success: true, kind: "pending_approval", messageId, whenLabel: scheduledFor ? formatInZone(scheduledFor, tz) : null };
+    if (action === "schedule") return { success: true, kind: "scheduled", messageId, whenLabel: formatInZone(scheduledFor!, tz) };
+
+    const result = await executeMessage({ supabase, orgId }, messageId, { deadlineMs: Date.now() + 50_000 });
+    if (result.state === "failed") return fail(result.error);
+    if (result.state === "skipped") return fail(result.reason);
+    if (result.state === "partial") return { success: true, kind: "sending", messageId, sent: result.sent, failed: result.failed, remaining: result.remaining };
+    return { success: true, kind: "sent", messageId, sent: result.sent, failed: result.failed, remaining: 0 };
   } catch (err) {
     const e = err instanceof Error ? err : new Error(String(err));
     console.error("[submitMessage] UNCAUGHT EXCEPTION:", e.message, e.stack);
-    return { success: false, error: `Server error: ${e.message}` };
+    return fail(`Server error: ${e.message}`);
   }
 }
 
@@ -245,4 +370,153 @@ export async function continueSending(messageId: string): Promise<{ ok: true; re
   if (result.state === "failed") return { ok: false, error: result.error };
   if (result.state === "skipped") return { ok: false, error: result.reason };
   return { ok: true, remaining: result.state === "partial" ? result.remaining : 0 };
+}
+
+// ─── Approvals, cancel, delete ────────────────────────────────────────────────
+
+export type ActionResult = { ok: true; message?: string } | { ok: false; error: string };
+
+async function pendingOrScheduled(orgId: string, id: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.from("messages").select("id, status, created_by, scheduled_for, payload").eq("org_id", orgId).eq("id", id).maybeSingle();
+  return { supabase, row: data as { id: string; status: string; created_by: string | null; scheduled_for: string | null; payload: MessageInput | null } | null };
+}
+
+/** Admin: approve a member's request. Goes out now, or at the time they asked for. */
+export async function approveMessage(messageId: string): Promise<ActionResult> {
+  try {
+    const { orgId, userId, role } = await getMembership();
+    if (!isAdminRole(role)) return { ok: false, error: "Only owners and admins can approve messages." };
+    const { supabase, row } = await pendingOrScheduled(orgId, messageId);
+    if (!row || row.status !== "pending_approval") return { ok: false, error: "This message isn't waiting for approval." };
+    if (!row.payload) return { ok: false, error: "This message has no send settings saved." };
+
+    const problems = await channelProblems(orgId, row.payload, await simulated(orgId));
+    if (problems.length > 0) return { ok: false, error: problems.map((p) => p.problem).join(" ") };
+
+    const now = new Date();
+    const later = row.scheduled_for && new Date(row.scheduled_for).getTime() > now.getTime() + 60_000;
+    if (!later) {
+      const window = await sendWindowStatus(supabase, orgId);
+      if (window.blocked) return { ok: false, error: window.message };
+    }
+    const { data, error } = await supabase
+      .from("messages")
+      .update(
+        later
+          ? { status: "scheduled", approved_by: userId, approved_at: now.toISOString() }
+          : { status: "sending", claimed_at: now.toISOString(), scheduled_for: null, approved_by: userId, approved_at: now.toISOString() }
+      )
+      .eq("org_id", orgId)
+      .eq("id", messageId)
+      .eq("status", "pending_approval")
+      .select("id");
+    if (error) return { ok: false, error: error.message };
+    if (!data?.length) return { ok: false, error: "Someone else already handled this message." };
+    revalidatePath("/messages");
+    revalidatePath("/dashboard");
+    if (later) return { ok: true, message: "Approved — it will send at the scheduled time." };
+    const result = await executeMessage({ supabase, orgId }, messageId, { deadlineMs: Date.now() + 50_000 });
+    if (result.state === "failed") return { ok: false, error: result.error };
+    return { ok: true, message: "Approved and sent." };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Couldn't approve." };
+  }
+}
+
+export async function rejectMessage(messageId: string, reason: string): Promise<ActionResult> {
+  try {
+    const { orgId, userId, role } = await getMembership();
+    if (!isAdminRole(role)) return { ok: false, error: "Only owners and admins can reject messages." };
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("messages")
+      .update({ status: "rejected", rejected_by: userId, rejected_at: new Date().toISOString(), rejection_reason: reason.trim().slice(0, 500) || null })
+      .eq("org_id", orgId)
+      .eq("id", messageId)
+      .eq("status", "pending_approval")
+      .select("id");
+    if (error) return { ok: false, error: error.message };
+    if (!data?.length) return { ok: false, error: "This message isn't waiting for approval." };
+    revalidatePath("/messages");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Couldn't reject." };
+  }
+}
+
+/** Stop a scheduled message or withdraw a request (admins any; members their own requests). */
+export async function cancelMessage(messageId: string): Promise<ActionResult> {
+  try {
+    const { orgId, userId, role } = await getMembership();
+    const { supabase, row } = await pendingOrScheduled(orgId, messageId);
+    if (!row) return { ok: false, error: "That message no longer exists." };
+    if (!isAdminRole(role) && (row.created_by !== userId || row.status !== "pending_approval")) return { ok: false, error: "Only owners and admins can cancel scheduled messages." };
+    const { data, error } = await supabase
+      .from("messages")
+      .update({ status: "cancelled" })
+      .eq("org_id", orgId)
+      .eq("id", messageId)
+      .in("status", ["scheduled", "pending_approval"])
+      .select("id");
+    if (error) return { ok: false, error: error.message };
+    if (!data?.length) return { ok: false, error: "It's too late to cancel — this message has already started sending." };
+    revalidatePath("/messages");
+    revalidatePath("/dashboard");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Couldn't cancel." };
+  }
+}
+
+/** Delete a draft, or a rejected/cancelled message that was never sent. */
+export async function deleteUnsentMessage(messageId: string): Promise<ActionResult> {
+  try {
+    const { orgId, userId, role } = await getMembership();
+    const { supabase, row } = await pendingOrScheduled(orgId, messageId);
+    if (!row) return { ok: true };
+    if (!["draft", "rejected", "cancelled"].includes(row.status)) return { ok: false, error: "Only drafts and unsent messages can be deleted." };
+    if (!isAdminRole(role) && row.created_by !== userId) return { ok: false, error: "You can only delete your own drafts." };
+    const { error } = await supabase.from("messages").delete().eq("org_id", orgId).eq("id", messageId).in("status", ["draft", "rejected", "cancelled"]);
+    if (error) return { ok: false, error: error.message };
+    revalidatePath("/messages");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Couldn't delete." };
+  }
+}
+
+export async function setRecurringActive(recurringId: string, active: boolean): Promise<ActionResult> {
+  try {
+    const { orgId, role } = await getMembership();
+    if (!isAdminRole(role)) return { ok: false, error: "Only owners and admins can change repeating sends." };
+    const supabase = await createSupabaseServerClient();
+    const { data: rec } = await supabase.from("recurring_sends").select("id, timezone, rule").eq("org_id", orgId).eq("id", recurringId).maybeSingle();
+    if (!rec) return { ok: false, error: "That repeating send no longer exists." };
+    // Resuming picks up from the next future occurrence — it never sends what was missed while paused
+    const next = active ? await nextRunFor(rec.rule, rec.timezone as string, new Date()) : null;
+    if (active && !next) return { ok: false, error: "This repeating send's schedule is no longer valid. Edit it first." };
+    const { error } = await supabase.from("recurring_sends").update({ active, next_run_at: next ? next.toISOString() : null }).eq("org_id", orgId).eq("id", recurringId);
+    if (error) return { ok: false, error: error.message };
+    revalidatePath("/messages");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Couldn't update." };
+  }
+}
+
+export async function deleteRecurring(recurringId: string): Promise<ActionResult> {
+  try {
+    const { orgId, role } = await getMembership();
+    if (!isAdminRole(role)) return { ok: false, error: "Only owners and admins can change repeating sends." };
+    const supabase = await createSupabaseServerClient();
+    // Scheduled-but-unsent occurrences go with it
+    await supabase.from("messages").update({ status: "cancelled" }).eq("org_id", orgId).eq("recurring_id", recurringId).eq("status", "scheduled");
+    const { error } = await supabase.from("recurring_sends").delete().eq("org_id", orgId).eq("id", recurringId);
+    if (error) return { ok: false, error: error.message };
+    revalidatePath("/messages");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Couldn't delete." };
+  }
 }

@@ -23,6 +23,10 @@ import { getAudienceTemplateMap, listTemplates } from "@/lib/templates";
 import { PROVIDERS } from "@/lib/sync/connectors";
 import type { SyncStats } from "@/lib/sync/engine";
 import { getNewContactsMode } from "@/lib/sync/engine";
+import { MessagingSettings } from "./panels/MessagingSettings";
+import { getRequireApproval, getSchoolTimezone } from "@/lib/schoolTime";
+import { getDispatcherHealth } from "@/lib/send/health";
+import { getAbsoluteBaseUrl } from "@/lib/site-url";
 
 export default async function SettingsPage() {
   const supabase = await createSupabaseServerClient();
@@ -68,10 +72,13 @@ export default async function SettingsPage() {
         listTemplates(supabase, orgId),
         getAudienceTemplateMap(supabase, orgId),
         supabase.from("groups").select("id, name").eq("org_id", orgId).order("name"),
+        getSchoolTimezone(supabase, orgId),
+        getRequireApproval(supabase, orgId),
+        getDispatcherHealth(supabase),
       ])
     : null;
 
-  const [demoLoaded, simulated, importsRes, channelsOverview, membersRes, invitesRes, fieldDefs, newContactsMode, pendingRes, googleConnection, sheetsRes, requestsRes, templates, templateAssignments, groupsRes] = admin ?? [];
+  const [demoLoaded, simulated, importsRes, channelsOverview, membersRes, invitesRes, fieldDefs, newContactsMode, pendingRes, googleConnection, sheetsRes, requestsRes, templates, templateAssignments, groupsRes, schoolTimezone, requireApproval, dispatcherHealth] = admin ?? [];
 
   const audienceChoices: AudienceChoice[] = [
     ...[["parents", "Parents"], ["students", "Students"], ["grandparents", "Grandparents"], ["alumni", "Alumni"], ["faculty", "Faculty"], ["staff", "Staff"], ["board", "Board"], ["donors", "Donors"], ["prospects", "Prospects"]].map(
@@ -108,6 +115,15 @@ export default async function SettingsPage() {
   const panels: Partial<Record<SectionId, React.ReactNode>> = admin && channelsOverview
     ? {
         channels: <ChannelsSettings overview={channelsOverview} simulated={simulated ?? false} />,
+        messaging: (
+          <MessagingSettings
+            timezone={schoolTimezone ?? "America/New_York"}
+            requireApproval={requireApproval ?? false}
+            schedulerLastRun={dispatcherHealth?.lastRunAt ?? null}
+            schedulerHealthy={dispatcherHealth?.healthy ?? false}
+            siteUrl={getAbsoluteBaseUrl() ?? ""}
+          />
+        ),
         templates: (
           <div className="space-y-5">
           <TemplatesSettings
