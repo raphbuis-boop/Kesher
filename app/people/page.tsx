@@ -1,5 +1,7 @@
 export const dynamic = "force-dynamic";
 
+import Link from "next/link";
+import { UserCheck } from "lucide-react";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getOrgId } from "@/lib/org";
 import { isDemoWorkspaceLoaded } from "@/lib/demoWorkspace";
@@ -35,12 +37,14 @@ export default async function PeoplePage({
   // Tags are needed to resolve tag-name search, so the people page query
   // chains off them; counts and the demo check run alongside.
   const tagsPromise = supabase.from("tags").select("id, name").eq("org_id", orgId).order("name");
-  const [tagsResult, peopleResult, counts, demoLoaded] = await Promise.all([
+  const [tagsResult, peopleResult, counts, demoLoaded, pendingResult] = await Promise.all([
     tagsPromise,
     tagsPromise.then(({ data }) => listPeople(supabase, orgId, (data ?? []) as Tag[], query)),
     getCategoryCounts(supabase, orgId),
     isDemoWorkspaceLoaded(supabase, orgId),
+    supabase.from("people").select("id", { count: "exact", head: true }).eq("org_id", orgId).eq("status", "pending"),
   ]);
+  const pendingReview = pendingResult.count ?? 0;
 
   if (peopleResult.error) throw new Error(peopleResult.error.message);
 
@@ -60,6 +64,11 @@ export default async function PeoplePage({
           </div>
           <div className="flex items-center gap-3 shrink-0">
             {demoLoaded && <AdminOnly><DemoWorkspaceControl mode="remove" /></AdminOnly>}
+            {pendingReview > 0 && (
+              <Link href="/people/review" className="btn btn-secondary btn-sm">
+                <UserCheck size={12} /> Review {pendingReview} new
+              </Link>
+            )}
             <AddPersonButton tags={tags} />
           </div>
         </div>

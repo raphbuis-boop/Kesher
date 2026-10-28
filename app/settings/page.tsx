@@ -10,6 +10,8 @@ import { getChannelStatuses } from "./channels";
 import { SettingsShell, type SectionId, type TeamInvite, type TeamMember } from "./SettingsShell";
 import { getCustomFieldDefs } from "@/lib/customFields";
 import { CustomFieldsSettings } from "./panels/CustomFieldsSettings";
+import { NewContactsSetting } from "./panels/NewContactsSetting";
+import { getNewContactsMode } from "@/lib/sync/engine";
 
 export default async function SettingsPage() {
   const supabase = await createSupabaseServerClient();
@@ -42,16 +44,19 @@ export default async function SettingsPage() {
           .is("revoked_at", null)
           .order("created_at", { ascending: false }),
         getCustomFieldDefs(supabase, orgId),
+        getNewContactsMode(supabase, orgId),
+        supabase.from("people").select("id", { count: "exact", head: true }).eq("org_id", orgId).eq("status", "pending"),
       ])
     : null;
 
-  const [demoLoaded, simulated, importsRes, channels, membersRes, invitesRes, fieldDefs] = admin ?? [];
+  const [demoLoaded, simulated, importsRes, channels, membersRes, invitesRes, fieldDefs, newContactsMode, pendingRes] = admin ?? [];
 
   // Server-loaded panels shown inside the matching Settings section (admins only)
   const panels: Partial<Record<SectionId, React.ReactNode>> = admin
     ? {
         data: (
           <div className="space-y-5">
+            <NewContactsSetting mode={newContactsMode ?? "review"} pending={pendingRes?.count ?? 0} />
             <CustomFieldsSettings defs={fieldDefs ?? []} />
           </div>
         ),
