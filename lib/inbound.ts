@@ -8,6 +8,7 @@ import { toE164 } from "@/lib/phone";
 import { addSuppression, releaseSuppressions } from "@/lib/suppressions";
 import { autoReplyText, parseKeyword, type ReplyKind } from "@/lib/optout";
 import { chunk } from "@/lib/supabase-paging";
+import { recordInboundThread } from "@/lib/inbox";
 
 /**
  * Everything that arrives from a parent by text or WhatsApp, from any provider.
@@ -213,6 +214,28 @@ export async function processInbound(admin: SupabaseClient, ev: InboundEvent, de
     // A reply (not an opt-out) counts as the recipient replying
     if (matchedRecipient && !kw) await admin.from("message_recipients").update({ replied_at: ev.receivedAt }).eq("id", matchedRecipient.id).is("replied_at", null);
     else if (matchedRecipient && kw?.type === "stop") await admin.from("message_recipients").update({ replied_at: ev.receivedAt }).eq("id", matchedRecipient.id).is("replied_at", null);
+  }
+
+  // …and the conversation in the inbox. STOP / START appear in every affected school's thread; a real message in the most recent school's.
+  try {
+    const threadOrgs = kw?.type === "stop" || kw?.type === "start" ? all : kw?.type === "help" ? [] : primary ? [primary] : [];
+    for (const orgId of threadOrgs) {
+      const recipient = hits.find((h) => h.org_id === orgId);
+      await recordInboundThread(admin, {
+        orgId,
+        personId: recipient?.person_id ?? null,
+        address,
+        channel: ev.channel,
+        body: ev.body,
+        providerMessageId: all.length > 1 ? `${ev.providerMessageId}:${orgId}` : ev.providerMessageId,
+        receivedAt: ev.receivedAt,
+        kind: kw?.type === "stop" ? "optout" : kw?.type === "start" ? "optin" : "message",
+        replyToRecipientId: recipient?.id ?? null,
+        profileName: ev.profileName,
+      });
+    }
+  } catch (err) {
+    console.error("[inbound] couldn't add to the inbox:", err instanceof Error ? err.message : err);
   }
   return outcome;
 }

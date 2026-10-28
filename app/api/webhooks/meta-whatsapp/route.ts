@@ -33,6 +33,7 @@ import { NextRequest, NextResponse, after } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { fallbackForFailedRow } from "@/lib/send/engine";
 import { processInbound } from "@/lib/inbound";
+import { updateThreadMessageStatus } from "@/lib/inbox";
 
 // ─── GET — Meta's webhook verification challenge ──────────────────────────────
 
@@ -163,6 +164,10 @@ async function processPayload(payload: MetaWebhookPayload) {
           console.log(
             `[meta-status] status update: wamid=${status.id} status=${status.status} recipient=${status.recipient_id} timestamp=${status.timestamp}`
           );
+
+          // Replies sent from the inbox are tracked on the conversation too
+          if (status.status === "delivered" || status.status === "read") await updateThreadMessageStatus(supabase, status.id, status.status).catch(() => undefined);
+          if (status.status === "failed") await updateThreadMessageStatus(supabase, status.id, "failed", formatErrorDetail(status.errors?.[0])).catch(() => undefined);
 
           if (status.status === "delivered") {
             const { data: updated, error } = await supabase

@@ -11,6 +11,7 @@ import {
   Users,
   Layers,
   MessageSquare,
+  Inbox,
   Activity,
   Upload,
   Settings,
@@ -34,6 +35,7 @@ const PRIMARY_NAV: NavItemDef[] = [
   { href: "/people", label: "People", icon: Users },
   { href: "/audiences", label: "Audiences", icon: Layers, extra: ["/groups"] },
   { href: "/messages", label: "Messages", icon: MessageSquare },
+  { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/activity", label: "Activity", icon: Activity },
   { href: "/imports", label: "Imports", icon: Upload },
 ];
@@ -88,14 +90,39 @@ function Wordmark() {
   );
 }
 
+/** Conversations with unread parent replies, refreshed on navigation and every minute. */
+function useUnreadConversations(enabled: boolean): number {
+  const pathname = usePathname();
+  const [unread, setUnread] = useState(0);
+  useEffect(() => {
+    if (!enabled) return;
+    let cancelled = false;
+    const load = () =>
+      fetch("/api/inbox/unread", { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : { unread: 0 }))
+        .then((j: { unread?: number }) => {
+          if (!cancelled) setUnread(j.unread ?? 0);
+        })
+        .catch(() => undefined);
+    load();
+    const t = setInterval(load, 60_000);
+    return () => {
+      cancelled = true;
+      clearInterval(t);
+    };
+  }, [pathname, enabled]);
+  return unread;
+}
+
 function NavItem({
   href,
   label,
   icon: Icon,
   exact = false,
   extra = [],
+  badge = 0,
   onNavigate,
-}: NavItemDef & { onNavigate: () => void }) {
+}: NavItemDef & { onNavigate: () => void; badge?: number }) {
   const pathname = usePathname();
   const isActive = exact
     ? pathname === href
@@ -119,7 +146,12 @@ function NavItem({
         className={`shrink-0 ${isActive ? "text-brand" : "text-ink-3 group-hover:text-ink-2"}`}
       />
       <span className="nav-label truncate">{label}</span>
-      <span role="tooltip" className="nav-tip">{label}</span>
+      {badge > 0 && (
+        <span className="nav-label ml-auto rounded-full bg-brand px-1.5 text-[10px] font-semibold leading-4 text-on-ink" aria-label={`${badge} unread`}>
+          {badge > 99 ? "99+" : badge}
+        </span>
+      )}
+      <span role="tooltip" className="nav-tip">{label}{badge > 0 ? ` (${badge})` : ""}</span>
     </Link>
   );
 }
@@ -154,6 +186,8 @@ export function Nav() {
   const pathname = usePathname();
   const collapsed = useCollapsed();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const hidden = PUBLIC_PATHS.includes(pathname) || pathname.startsWith("/invite/") || pathname === "/no-workspace" || FAMILY_PREFIXES.some((p) => pathname.startsWith(p));
+  const unread = useUnreadConversations(!hidden);
 
   // Cmd/Ctrl+B toggles the sidebar; Escape closes the mobile drawer
   useEffect(() => {
@@ -171,7 +205,7 @@ export function Nav() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  if (PUBLIC_PATHS.includes(pathname) || pathname.startsWith("/invite/") || pathname === "/no-workspace" || FAMILY_PREFIXES.some((p) => pathname.startsWith(p))) return null;
+  if (hidden) return null;
 
   const closeMobile = () => setMobileOpen(false);
 
@@ -238,7 +272,7 @@ export function Nav() {
         {/* Primary nav */}
         <div className="sidebar-scroll flex-1 px-2.5 pb-2 space-y-0.5">
           {PRIMARY_NAV.map((item) => (
-            <NavItem key={item.href} {...item} onNavigate={closeMobile} />
+            <NavItem key={item.href} {...item} badge={item.href === "/inbox" ? unread : 0} onNavigate={closeMobile} />
           ))}
         </div>
 

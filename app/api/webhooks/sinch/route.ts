@@ -39,6 +39,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { fallbackForFailedRow } from "@/lib/send/engine";
 import { processInbound } from "@/lib/inbound";
+import { updateThreadMessageStatus } from "@/lib/inbox";
 
 // ─── Sinch payload types ──────────────────────────────────────────────────────
 
@@ -174,6 +175,10 @@ export async function POST(req: NextRequest) {
     console.log(
       `[sinch-webhook] delivery_report messageId=${messageId} status=${status} channel=${channel}`
     );
+
+    // Replies sent from the inbox are tracked on the conversation too
+    if (status === "DELIVERED") await updateThreadMessageStatus(supabase, messageId, "delivered").catch(() => undefined);
+    if (status === "FAILED") await updateThreadMessageStatus(supabase, messageId, "failed", report.reason?.description ?? undefined).catch(() => undefined);
 
     if (status === "DELIVERED") {
       const { data: updated, error } = await supabase
