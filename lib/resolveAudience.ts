@@ -55,7 +55,8 @@ export async function resolveAudience(filterConfig: FilterNode, knownOrgId?: str
   const { data } = await supabase
     .from("people")
     .select("id, categories, graduation_year")
-    .eq("org_id", orgId);
+    .eq("org_id", orgId)
+    .eq("status", "active");
 
   const people = (data ?? []) as PersonRow[];
   return people.filter((p) => matchesNode(p, filterConfig)).map((p) => p.id);

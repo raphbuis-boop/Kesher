@@ -34,7 +34,8 @@ export default async function NewMessagePage({
     supabase
       .from("people")
       .select("id, categories, email, phone, whatsapp")
-      .eq("org_id", orgId),
+      .eq("org_id", orgId)
+      .eq("status", "active"),
     supabase
       .from("groups")
       .select("id, name, is_dynamic, filter_config, group_tags ( tag_id )")

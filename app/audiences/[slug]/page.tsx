@@ -101,7 +101,7 @@ export default async function AudiencePage({
       getGroupMembers(supabase, orgId, group),
       isDynamicGroup
         ? null
-        : supabase.from("people").select("id, first_name, last_name, email").eq("org_id", orgId),
+        : supabase.from("people").select("id, first_name, last_name, email").eq("org_id", orgId).eq("status", "active"),
     ]);
     people = members;
 

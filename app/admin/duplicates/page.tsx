@@ -27,6 +27,7 @@ export default async function DuplicatesPage() {
     .from("people")
     .select("id, first_name, last_name, email, phone, categories, created_at")
     .eq("org_id", orgId)
+    .eq("status", "active")
     .order("last_name");
 
   if (error) {

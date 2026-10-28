@@ -96,6 +96,7 @@ export async function getSystemAudienceMembers(
     .from("people")
     .select(MEMBER_COLUMNS)
     .eq("org_id", orgId)
+    .eq("status", "active")
     .contains("categories", [category])
     .order("last_name");
   if (error) throw new Error(`getSystemAudienceMembers(${category}): ${error.message}`);
@@ -115,6 +116,7 @@ export async function getGroupMembers(
     .from("people")
     .select(MEMBER_COLUMNS)
     .eq("org_id", orgId)
+    .eq("status", "active")
     .in("id", ids)
     .order("last_name");
   if (error) throw new Error(`getGroupMembers(${group.id}): ${error.message}`);

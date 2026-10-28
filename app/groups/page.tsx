@@ -42,7 +42,7 @@ export default async function GroupsPage() {
       .select("id, name, description, created_at, group_tags ( tag_id )")
       .eq("org_id", orgId)
       .order("created_at", { ascending: false }),
-    supabase.from("people").select("id, person_tags ( tag_id )").eq("org_id", orgId),
+    supabase.from("people").select("id, person_tags ( tag_id )").eq("org_id", orgId).eq("status", "active"),
     supabase.from("tags").select("id, name").eq("org_id", orgId).order("name"),
   ]);
 

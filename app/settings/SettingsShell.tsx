@@ -17,6 +17,10 @@ import {
   Moon,
   Monitor,
   ArrowRight,
+  LayoutTemplate,
+  Send,
+  Flame,
+  UserPlus,
 } from "lucide-react";
 import type { BrandingSettings } from "@/lib/settings";
 import type { ChannelStatus } from "./channels";
@@ -51,12 +55,16 @@ const SECTIONS = [
   { id: "school", label: "School", icon: School },
   { id: "team", label: "Team", icon: Users },
   { id: "channels", label: "Channels", icon: Radio },
+  { id: "templates", label: "Templates", icon: LayoutTemplate },
+  { id: "messaging", label: "Messaging", icon: Send },
+  { id: "shabbos", label: "Shabbos & Yom Tov", icon: Flame },
+  { id: "parents", label: "Parent signup", icon: UserPlus },
   { id: "data", label: "Data", icon: Database },
   { id: "appearance", label: "Appearance", icon: SunMoon },
   { id: "danger", label: "Danger zone", icon: TriangleAlert },
 ] as const;
 
-type SectionId = (typeof SECTIONS)[number]["id"];
+export type SectionId = (typeof SECTIONS)[number]["id"];
 
 const initialState: SettingsState = { success: false, error: null };
 
@@ -871,6 +879,7 @@ export function SettingsShell({
   members,
   invites,
   logoUploadsEnabled,
+  panels = {},
 }: {
   currentUserId: string;
   profile: { name: string; email: string };
@@ -882,6 +891,8 @@ export function SettingsShell({
   members: TeamMember[];
   invites: TeamInvite[];
   logoUploadsEnabled: boolean;
+  /** Extra server-loaded content per section (rendered after the built-in content). */
+  panels?: Partial<Record<SectionId, React.ReactNode>>;
 }) {
   // What each role can open (the server actions enforce the same rules)
   const visible = SECTIONS.filter((s) =>
@@ -953,6 +964,7 @@ export function SettingsShell({
           {active === "data" && <DataSection imports={imports} logoUrl={branding.logoUrl} />}
           {active === "appearance" && <AppearanceSection />}
           {active === "danger" && <DangerSection schoolName={branding.schoolName} role={role} />}
+          {panels[active] && <div className={active === "data" || active === "channels" ? "mt-5" : ""}>{panels[active]}</div>}
         </div>
       </div>
     </div>

@@ -7,7 +7,9 @@ import { isDemoWorkspaceLoaded } from "@/lib/demoWorkspace";
 import { DemoWorkspaceControl } from "@/app/components/DemoWorkspaceControl";
 import { AdminOnly } from "@/app/components/AdminOnly";
 import { getChannelStatuses } from "./channels";
-import { SettingsShell, type TeamInvite, type TeamMember } from "./SettingsShell";
+import { SettingsShell, type SectionId, type TeamInvite, type TeamMember } from "./SettingsShell";
+import { getCustomFieldDefs } from "@/lib/customFields";
+import { CustomFieldsSettings } from "./panels/CustomFieldsSettings";
 
 export default async function SettingsPage() {
   const supabase = await createSupabaseServerClient();
@@ -39,10 +41,22 @@ export default async function SettingsPage() {
           .is("accepted_at", null)
           .is("revoked_at", null)
           .order("created_at", { ascending: false }),
+        getCustomFieldDefs(supabase, orgId),
       ])
     : null;
 
-  const [demoLoaded, simulated, importsRes, channels, membersRes, invitesRes] = admin ?? [];
+  const [demoLoaded, simulated, importsRes, channels, membersRes, invitesRes, fieldDefs] = admin ?? [];
+
+  // Server-loaded panels shown inside the matching Settings section (admins only)
+  const panels: Partial<Record<SectionId, React.ReactNode>> = admin
+    ? {
+        data: (
+          <div className="space-y-5">
+            <CustomFieldsSettings defs={fieldDefs ?? []} />
+          </div>
+        ),
+      }
+    : {};
 
   return (
     <div className="min-h-screen bg-canvas">
@@ -69,6 +83,7 @@ export default async function SettingsPage() {
         members={(membersRes?.data ?? []) as TeamMember[]}
         invites={withExpiry((invitesRes?.data ?? []) as Omit<TeamInvite, "expired">[])}
         logoUploadsEnabled={!!process.env.BLOB_READ_WRITE_TOKEN}
+        panels={panels}
       />
     </div>
   );
