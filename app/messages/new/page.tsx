@@ -28,11 +28,19 @@ export default async function NewMessagePage({
   const supabase = await createSupabaseServerClient();
   const orgId = await getOrgId();
 
+  // People (for system-audience counts) and groups are fetched in parallel.
   // Fetch all people once — compute system-audience counts in one pass
-  const { data: allPeople } = await supabase
-    .from("people")
-    .select("id, categories, email, phone, whatsapp")
-    .eq("org_id", orgId);
+  const [{ data: allPeople }, { data: groupsData }] = await Promise.all([
+    supabase
+      .from("people")
+      .select("id, categories, email, phone, whatsapp")
+      .eq("org_id", orgId),
+    supabase
+      .from("groups")
+      .select("id, name, is_dynamic, filter_config, group_tags ( tag_id )")
+      .eq("org_id", orgId)
+      .order("name"),
+  ]);
 
   const people = (allPeople ?? []) as {
     id: string;
@@ -71,12 +79,6 @@ export default async function NewMessagePage({
   // Custom audiences — members are resolved with getGroupMembers, the exact
   // function sendMessage uses (tag-based and dynamic groups, org_id-scoped),
   // so this picker's counts never lie about who a send will actually reach.
-  const { data: groupsData } = await supabase
-    .from("groups")
-    .select("id, name, is_dynamic, filter_config, group_tags ( tag_id )")
-    .eq("org_id", orgId)
-    .order("name");
-
   const groups = (groupsData ?? []) as unknown as GroupRow[];
 
   const customAudiences: AudienceOption[] = await Promise.all(
@@ -100,11 +102,11 @@ export default async function NewMessagePage({
   const attachmentsEnabled = !!process.env.BLOB_READ_WRITE_TOKEN;
 
   return (
-    <div className="min-h-screen bg-[#fafafa]">
-      <header className="sticky top-0 z-10 border-b border-[#e7e7e7] bg-white/95 backdrop-blur-sm px-6 py-3.5">
+    <div className="min-h-screen bg-canvas">
+      <header className="sticky top-0 z-10 border-b border-line bg-card/95 backdrop-blur-sm px-6 py-3.5">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-[13px] font-semibold text-[#0f0f0f]">New Message</h1>
-          <p className="text-[11px] text-[#a1a1aa] mt-px">Compose and send to your school community.</p>
+          <h1 className="text-[13px] font-semibold text-ink">New Message</h1>
+          <p className="text-[11px] text-ink-3 mt-px">Compose and send to your school community.</p>
         </div>
       </header>
       <div className="mx-auto max-w-2xl px-6 py-6">

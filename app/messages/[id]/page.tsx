@@ -88,6 +88,8 @@ function buildChartBuckets(
   });
 }
 
+const RECIPIENT_CHUNK = 1000;
+
 export default async function CampaignPage({
   params,
 }: {
@@ -97,7 +99,18 @@ export default async function CampaignPage({
   const supabase = await createSupabaseServerClient();
   const orgId = await getOrgId();
 
-  const [msgRes, recRes] = await Promise.all([
+  const recipientColumns =
+    "id, person_id, contact_value, name, status, provider_id, sent_at, delivered_at, opened_at, clicked_at, read_at, replied_at, bounced_at, complained_at, bounce_type, people(id, first_name, last_name, categories)";
+  const recipientPage = (from: number) =>
+    supabase
+      .from("message_recipients")
+      .select(recipientColumns, { count: from === 0 ? "exact" : undefined })
+      .eq("message_id", id)
+      .order("name")
+      .order("id")
+      .range(from, from + RECIPIENT_CHUNK - 1);
+
+  const [msgRes, firstRecipients] = await Promise.all([
     supabase
       .from("messages")
       .select(
@@ -106,14 +119,17 @@ export default async function CampaignPage({
       .eq("org_id", orgId)
       .eq("id", id)
       .single(),
-    supabase
-      .from("message_recipients")
-      .select(
-        "id, person_id, contact_value, name, status, provider_id, sent_at, delivered_at, opened_at, clicked_at, read_at, replied_at, bounced_at, complained_at, bounce_type, people(id, first_name, last_name, categories)"
-      )
-      .eq("message_id", id)
-      .order("name"),
+    recipientPage(0),
   ]);
+
+  // Stats and the delivery chart need every recipient. PostgREST returns at
+  // most 1,000 rows per request, so fetch any remaining chunks in parallel
+  // (previously campaigns over 1,000 recipients were silently truncated).
+  const totalRecipients = firstRecipients.count ?? 0;
+  const restStarts: number[] = [];
+  for (let from = RECIPIENT_CHUNK; from < totalRecipients; from += RECIPIENT_CHUNK) restStarts.push(from);
+  const rest = await Promise.all(restStarts.map((from) => recipientPage(from)));
+  const recRes = { data: [firstRecipients, ...rest].flatMap((r) => r.data ?? []) };
 
   if (msgRes.error || !msgRes.data) notFound();
 

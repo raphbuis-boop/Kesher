@@ -1,5 +1,6 @@
 "use client";
 
+import { useActionToast } from "@/app/components/ui/toast";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Plus, X, Loader2 } from "lucide-react";
@@ -27,20 +28,20 @@ const initialState: AddPersonState = { success: false, error: null };
 // ─── Shared primitives ────────────────────────────────────────────────────────
 
 const inputCls =
-  "w-full rounded-lg border border-[#e7e7e7] bg-[#fafafa] px-3 py-2 text-[13px] text-[#0f0f0f] placeholder-[#a1a1aa] outline-none transition-colors focus:border-[#a1a1aa] focus:bg-white disabled:opacity-50";
+  "w-full rounded-lg border border-line bg-canvas px-3 py-2 text-[13px] text-ink placeholder-ink-3 outline-none transition-colors focus:border-ink-3 focus:bg-card disabled:opacity-50";
 
-const labelCls = "block text-[11px] font-medium text-[#71717a] mb-1.5";
+const labelCls = "block text-[11px] font-medium text-ink-2 mb-1.5";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-[#a1a1aa]">
+    <p className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-ink-3">
       {children}
     </p>
   );
 }
 
 function Divider() {
-  return <div className="border-t border-[#f5f5f5] my-5" />;
+  return <div className="border-t border-muted my-5" />;
 }
 
 // ─── Form ────────────────────────────────────────────────────────────────────
@@ -57,6 +58,7 @@ function AddPersonForm({
   onCancel: () => void;
 }) {
   const [state, formAction, isPending] = useActionState(addPerson, initialState);
+  useActionToast(state, (s) => ({ success: s.success ? "Contact added" : null }));
   const [selectedCategories, setSelectedCategories] = useState<string[]>(defaultCategories);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
@@ -85,7 +87,7 @@ function AddPersonForm({
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div>
           <label htmlFor="ap_first_name" className={labelCls}>
-            First Name <span className="text-[#d4d4d8]">*</span>
+            First Name <span className="text-line-strong">*</span>
           </label>
           <input
             id="ap_first_name"
@@ -100,7 +102,7 @@ function AddPersonForm({
         </div>
         <div>
           <label htmlFor="ap_last_name" className={labelCls}>
-            Last Name <span className="text-[#d4d4d8]">*</span>
+            Last Name <span className="text-line-strong">*</span>
           </label>
           <input
             id="ap_last_name"
@@ -161,8 +163,8 @@ function AddPersonForm({
                 className={[
                   "rounded-full px-3 py-1.5 text-[11px] font-medium transition-colors disabled:opacity-50",
                   selected
-                    ? "bg-[#0f0f0f] text-white"
-                    : "bg-[#f5f5f5] text-[#71717a] hover:bg-[#e7e7e7] hover:text-[#0f0f0f]",
+                    ? "bg-ink text-on-ink"
+                    : "bg-muted text-ink-2 hover:bg-line hover:text-ink",
                 ].join(" ")}
               >
                 {label}
@@ -204,8 +206,8 @@ function AddPersonForm({
                   className={[
                     "rounded-full px-3 py-1.5 text-[11px] font-medium transition-colors disabled:opacity-50",
                     selected
-                      ? "bg-[#0f0f0f] text-white"
-                      : "bg-[#f5f5f5] text-[#71717a] hover:bg-[#e7e7e7]",
+                      ? "bg-ink text-on-ink"
+                      : "bg-muted text-ink-2 hover:bg-line",
                   ].join(" ")}
                 >
                   {tag.name}
@@ -227,19 +229,19 @@ function AddPersonForm({
       )}
 
       {/* ── Footer buttons ────────────────────────────────────────────── */}
-      <div className="mt-6 flex items-center justify-end gap-2 border-t border-[#f5f5f5] pt-5">
+      <div className="mt-6 flex items-center justify-end gap-2 border-t border-muted pt-5">
         <button
           type="button"
           onClick={onCancel}
           disabled={isPending}
-          className="rounded-md px-3 py-1.5 text-[12px] font-medium text-[#71717a] hover:bg-[#f5f5f5] hover:text-[#0f0f0f] disabled:opacity-50"
+          className="rounded-md px-3 py-1.5 text-[12px] font-medium text-ink-2 hover:bg-muted hover:text-ink disabled:opacity-50"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isPending}
-          className="inline-flex items-center gap-1.5 rounded-md bg-[#0f0f0f] px-4 py-1.5 text-[12px] font-medium text-white hover:bg-[#1a1a1a] disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex items-center gap-1.5 rounded-md bg-ink px-4 py-1.5 text-[12px] font-medium text-on-ink hover:bg-ink-hover disabled:cursor-not-allowed disabled:opacity-40"
         >
           {isPending ? (
             <>
@@ -299,7 +301,7 @@ export function AddPersonButton({
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-md bg-[#0f0f0f] px-3.5 py-2 text-[12px] font-medium text-white hover:bg-[#1a1a1a]"
+        className="inline-flex items-center gap-1.5 rounded-md bg-ink px-3.5 py-2 text-[12px] font-medium text-on-ink hover:bg-ink-hover"
       >
         <Plus size={13} strokeWidth={2} />
         Add Contact
@@ -312,7 +314,7 @@ export function AddPersonButton({
           className="animate-backdrop fixed inset-0 z-[9999] flex items-center justify-center bg-black/25 p-4"
         >
           <div
-            className="animate-fade-up w-full max-w-[480px] rounded-xl border border-[#e7e7e7] bg-white shadow-2xl shadow-black/10"
+            className="animate-pop-in w-full max-w-[480px] rounded-xl border border-line bg-card shadow-pop"
             style={{
               display: "grid",
               gridTemplateRows: "auto minmax(0,1fr)",
@@ -320,14 +322,14 @@ export function AddPersonButton({
             }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-[#f0f0f0] px-6 py-4">
+            <div className="flex items-center justify-between border-b border-muted-2 px-6 py-4">
               <div>
-                <h2 className="text-[13px] font-semibold text-[#0f0f0f]">Add Contact</h2>
-                <p className="mt-px text-[11px] text-[#a1a1aa]">Add a new contact to the directory.</p>
+                <h2 className="text-[13px] font-semibold text-ink">Add Contact</h2>
+                <p className="mt-px text-[11px] text-ink-3">Add a new contact to the directory.</p>
               </div>
               <button
                 onClick={() => setOpen(false)}
-                className="rounded-md p-1.5 text-[#a1a1aa] hover:bg-[#f5f5f5] hover:text-[#71717a]"
+                className="rounded-md p-1.5 text-ink-3 hover:bg-muted hover:text-ink-2"
                 aria-label="Close"
               >
                 <X size={15} strokeWidth={1.75} />

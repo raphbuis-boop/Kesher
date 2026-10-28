@@ -55,13 +55,13 @@ export default async function GroupsPage() {
   const tags = (tagsResult.data ?? []) as Tag[];
 
   return (
-    <div className="min-h-screen bg-[#fafafa]">
+    <div className="min-h-screen bg-canvas">
       {/* Sticky header */}
-      <header className="sticky top-0 z-10 border-b border-[#e7e7e7] bg-white/95 backdrop-blur-sm px-6 py-3.5">
+      <header className="sticky top-0 z-10 border-b border-line bg-card/95 backdrop-blur-sm px-6 py-3.5">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-[13px] font-semibold text-[#0f0f0f]">Custom Audiences</h1>
-            <p className="text-[11px] text-[#a1a1aa] mt-px">
+            <h1 className="text-[13px] font-semibold text-ink">Custom Audiences</h1>
+            <p className="text-[11px] text-ink-3 mt-px">
               Tag-based groups — committees, classes, or any custom segment.
             </p>
           </div>
@@ -71,25 +71,25 @@ export default async function GroupsPage() {
 
       <div className="px-6 py-4">
         {groups.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#e7e7e7] py-24 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white border border-[#e7e7e7] mb-4">
-              <Users size={18} className="text-[#d4d4d8]" strokeWidth={1.5} />
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-line py-24 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-card border border-line mb-4">
+              <Users size={18} className="text-line-strong" strokeWidth={1.5} />
             </div>
-            <p className="text-[13px] font-semibold text-[#0f0f0f]">No custom audiences yet</p>
-            <p className="mt-1 max-w-xs text-[12px] text-[#a1a1aa]">
+            <p className="text-[13px] font-semibold text-ink">No custom audiences yet</p>
+            <p className="mt-1 max-w-xs text-[12px] text-ink-3">
               Create your first — for example, &ldquo;Dinner Committee&rdquo; or &ldquo;Class of 2025&rdquo;.
             </p>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-[#e7e7e7] bg-white">
+          <div className="overflow-hidden rounded-xl border border-line bg-card shadow-card">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-[#f0f0f0] bg-[#fafafa]">
-                  <th className="py-2.5 pl-4 pr-3 text-left text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-wide">Name</th>
-                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-wide">Description</th>
-                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-wide">Tags</th>
-                  <th className="px-3 py-2.5 text-right text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-wide">Contacts</th>
-                  <th className="pl-3 pr-4 py-2.5 text-left text-[10px] font-semibold text-[#a1a1aa] uppercase tracking-wide">Created</th>
+                <tr className="border-b border-muted-2 bg-canvas">
+                  <th className="py-2.5 pl-4 pr-3 text-left text-[10px] font-semibold text-ink-3 uppercase tracking-wide">Name</th>
+                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-ink-3 uppercase tracking-wide">Description</th>
+                  <th className="px-3 py-2.5 text-left text-[10px] font-semibold text-ink-3 uppercase tracking-wide">Tags</th>
+                  <th className="px-3 py-2.5 text-right text-[10px] font-semibold text-ink-3 uppercase tracking-wide">Contacts</th>
+                  <th className="pl-3 pr-4 py-2.5 text-left text-[10px] font-semibold text-ink-3 uppercase tracking-wide">Created</th>
                   <th className="pl-3 pr-4 py-2.5" />
                 </tr>
               </thead>
@@ -100,21 +100,21 @@ export default async function GroupsPage() {
                   return (
                     <tr
                       key={group.id}
-                      className={`group hover:bg-[#fafafa] transition-colors duration-100 ${!isLast ? "border-b border-[#f5f5f5]" : ""}`}
+                      className={`group hover:bg-canvas transition-colors duration-100 ${!isLast ? "border-b border-muted" : ""}`}
                     >
                       <td className="py-3.5 pl-4 pr-3">
                         <Link
                           href={`/audiences/${group.id}`}
-                          className="text-[13px] font-medium text-[#0f0f0f] transition-colors hover:text-[#71717a]"
+                          className="text-[13px] font-medium text-ink transition-colors hover:text-ink-2"
                         >
                           {group.name}
                         </Link>
                       </td>
                       <td className="px-3 py-3.5 max-w-xs">
                         {group.description ? (
-                          <span className="text-[12px] text-[#71717a] line-clamp-2">{group.description}</span>
+                          <span className="text-[12px] text-ink-2 line-clamp-2">{group.description}</span>
                         ) : (
-                          <span className="text-[12px] text-[#d4d4d8]">—</span>
+                          <span className="text-[12px] text-line-strong">—</span>
                         )}
                       </td>
                       <td className="px-3 py-3.5">
@@ -123,26 +123,26 @@ export default async function GroupsPage() {
                             {group.group_tags.map((gt) => {
                               const tag = tags.find((t) => t.id === gt.tag_id);
                               return tag ? (
-                                <span key={gt.tag_id} className="inline-flex items-center rounded-full bg-[#f5f5f5] px-2 py-0.5 text-[10px] font-medium text-[#71717a]">
+                                <span key={gt.tag_id} className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-ink-2">
                                   {tag.name}
                                 </span>
                               ) : null;
                             })}
                           </div>
                         ) : (
-                          <span className="text-[12px] text-[#d4d4d8]">—</span>
+                          <span className="text-[12px] text-line-strong">—</span>
                         )}
                       </td>
                       <td className="px-3 py-3.5 text-right">
-                        <span className="tabular-nums text-[13px] font-medium text-[#0f0f0f]">{count.toLocaleString()}</span>
+                        <span className="tabular-nums text-[13px] font-medium text-ink">{count.toLocaleString()}</span>
                       </td>
                       <td className="pl-3 pr-4 py-3.5">
-                        <span className="tabular-nums text-[12px] text-[#a1a1aa]">{formatDate(group.created_at)}</span>
+                        <span className="tabular-nums text-[12px] text-ink-3">{formatDate(group.created_at)}</span>
                       </td>
                       <td className="pl-3 pr-4 py-3.5 text-right">
                         <Link
                           href={`/messages/new?audiences=${group.id}`}
-                          className="inline-flex items-center gap-1 rounded-md bg-[#0f0f0f] px-2.5 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-[#27272a]"
+                          className="inline-flex items-center gap-1 rounded-md bg-ink px-2.5 py-1.5 text-[11px] font-medium text-on-ink transition-colors hover:bg-ink-hover"
                         >
                           Message
                         </Link>
