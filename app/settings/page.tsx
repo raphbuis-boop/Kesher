@@ -27,6 +27,9 @@ import { MessagingSettings } from "./panels/MessagingSettings";
 import { getRequireApproval, getSchoolTimezone } from "@/lib/schoolTime";
 import { getDispatcherHealth } from "@/lib/send/health";
 import { getAbsoluteBaseUrl } from "@/lib/site-url";
+import { ShabbosSettings, type ShabbosView } from "./panels/ShabbosSettings";
+import { getShabbosSettings, getUpcomingWindows, SHABBOS_DEFAULTS } from "@/lib/shabbos";
+import { formatInZone } from "@/lib/schoolTime";
 
 export default async function SettingsPage() {
   const supabase = await createSupabaseServerClient();
@@ -75,10 +78,13 @@ export default async function SettingsPage() {
         getSchoolTimezone(supabase, orgId),
         getRequireApproval(supabase, orgId),
         getDispatcherHealth(supabase),
+        getShabbosSettings(supabase, orgId),
+        getUpcomingWindows(supabase, orgId, new Date(), 6),
+        supabase.from("window_overrides").select("reason, created_at").eq("org_id", orgId).order("created_at", { ascending: false }).limit(5),
       ])
     : null;
 
-  const [demoLoaded, simulated, importsRes, channelsOverview, membersRes, invitesRes, fieldDefs, newContactsMode, pendingRes, googleConnection, sheetsRes, requestsRes, templates, templateAssignments, groupsRes, schoolTimezone, requireApproval, dispatcherHealth] = admin ?? [];
+  const [demoLoaded, simulated, importsRes, channelsOverview, membersRes, invitesRes, fieldDefs, newContactsMode, pendingRes, googleConnection, sheetsRes, requestsRes, templates, templateAssignments, groupsRes, schoolTimezone, requireApproval, dispatcherHealth, shabbosSettings, shabbosWindows, overridesRes] = admin ?? [];
 
   const audienceChoices: AudienceChoice[] = [
     ...[["parents", "Parents"], ["students", "Students"], ["grandparents", "Grandparents"], ["alumni", "Alumni"], ["faculty", "Faculty"], ["staff", "Staff"], ["board", "Board"], ["donors", "Donors"], ["prospects", "Prospects"]].map(
@@ -111,10 +117,33 @@ export default async function SettingsPage() {
     };
   });
 
+  const tzForTimes = schoolTimezone ?? "America/New_York";
+  const shabbosView: ShabbosView = {
+    enabled: shabbosSettings?.enabled ?? false,
+    location: shabbosSettings ? (shabbosSettings.geoKind === "zip" ? (shabbosSettings.zip ?? "") : (shabbosSettings.geonameid ?? "")) : "",
+    locationName: shabbosSettings?.locationName ?? null,
+    israelSchedule: shabbosSettings?.israelSchedule ?? false,
+    candleMinutes: shabbosSettings?.candleMinutes ?? SHABBOS_DEFAULTS.candleMinutes,
+    havdalahMode: shabbosSettings?.havdalahMode ?? SHABBOS_DEFAULTS.havdalahMode,
+    havdalahMinutes: shabbosSettings?.havdalahMinutes ?? SHABBOS_DEFAULTS.havdalahMinutes,
+    bufferMinutes: shabbosSettings?.bufferMinutes ?? SHABBOS_DEFAULTS.bufferMinutes,
+    fetchedAt: shabbosSettings?.fetchedAt ?? null,
+    fetchError: shabbosSettings?.fetchError ?? null,
+    upcoming: (shabbosWindows ?? []).map((w) => ({
+      label: w.label ?? (w.kind === "yomtov" ? "Yom Tov" : "Shabbos"),
+      candles: formatInZone(w.startsAt, tzForTimes),
+      havdalah: formatInZone(w.endsAt, tzForTimes),
+      resumes: formatInZone(new Date(new Date(w.endsAt).getTime() + (shabbosSettings?.bufferMinutes ?? 0) * 60_000), tzForTimes),
+    })),
+    overrides: ((overridesRes?.data ?? []) as { reason: string; created_at: string }[]).map((o) => ({ reason: o.reason, when: formatInZone(o.created_at, tzForTimes, { withYear: true }) })),
+    isOwner: role === "owner",
+  };
+
   // Server-loaded panels shown inside the matching Settings section (admins only)
   const panels: Partial<Record<SectionId, React.ReactNode>> = admin && channelsOverview
     ? {
         channels: <ChannelsSettings overview={channelsOverview} simulated={simulated ?? false} />,
+        shabbos: <ShabbosSettings view={shabbosView} />,
         messaging: (
           <MessagingSettings
             timezone={schoolTimezone ?? "America/New_York"}

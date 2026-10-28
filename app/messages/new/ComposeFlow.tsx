@@ -4,7 +4,7 @@ import { toast } from "@/app/components/ui/toast";
 import { GlassDropzone, postWithProgress } from "@/app/components/ui/GlassDropzone";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { submitMessage, previewSend, type Channel, type PreviewResult, type SubmitAction, type SubmitResult } from "../actions";
+import { submitMessage, previewSend, checkSendWindow, type Channel, type PreviewResult, type SubmitAction, type SubmitResult } from "../actions";
 import type { MessageInput } from "@/lib/send/types";
 import { WEEKDAY_NAMES, addDays, formatTimeOnly, localDateString, weekdayOf } from "@/lib/schoolTime";
 import { TEMPLATE_TOKENS, renderTemplate } from "@/lib/template";
@@ -495,6 +495,10 @@ export function ComposeFlow({
   const [date, setDate] = useState(initial?.when?.date ?? addDays(today, 1));
   const [time, setTime] = useState(initial?.when?.time ?? "09:00");
   const [repeatWeeks, setRepeatWeeks] = useState<number>(initial?.repeatWeeks ?? 0);
+  // Shabbos / Yom Tov: owners may send anyway in a real emergency (reason is logged)
+  const [overrideOn, setOverrideOn] = useState(false);
+  const [overrideReason, setOverrideReason] = useState("");
+  const [windowNote, setWindowNote] = useState<{ key: string; note: string | null } | null>(null);
   const [previewTab, setPreviewTab] = useState<Channel>("email");
   const [showPreview, setShowPreview] = useState(true);
   const [showMore, setShowMore] = useState(false);
@@ -597,7 +601,25 @@ export function ComposeFlow({
     }
   }, [schoolTimezone]);
 
-  const canSend = ready && subjectOk && !!preview && total > 0 && !blockingProblem && activeChannels.length > 0 && whenValid;
+  const pausedNow = !!preview?.window.blocked && !later && primaryAction === "send_now";
+  const overrideValid = pausedNow && !!preview?.canOverrideWindow && overrideOn && overrideReason.trim().length >= 5;
+  const canSend = ready && subjectOk && !!preview && total > 0 && !blockingProblem && activeChannels.length > 0 && whenValid && (!pausedNow || overrideValid);
+
+  const noteKey = later && whenValid ? `${date} ${time}` : "";
+  useEffect(() => {
+    if (!noteKey) return;
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      const [d, tm] = noteKey.split(" ");
+      const res = await checkSendWindow(d, tm);
+      if (!cancelled) setWindowNote({ key: noteKey, note: res.note });
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [noteKey]);
+  const shownNote = windowNote && windowNote.key === noteKey ? windowNote.note : null;
 
   function handleResult(result: SubmitResult) {
     if (!result.success) {
@@ -615,7 +637,7 @@ export function ComposeFlow({
         router.push(`/messages/${result.messageId}`);
         break;
       case "scheduled":
-        toast.success(`Scheduled for ${result.whenLabel}`);
+        toast.success(`Scheduled for ${result.whenLabel}${result.note ? `. ${result.note}` : ""}`);
         router.push("/messages?tab=scheduled");
         break;
       case "recurring":
@@ -644,6 +666,7 @@ export function ComposeFlow({
           action: act,
           when: later && act !== "draft" && act !== "send_now" ? { date, time } : null,
           repeatWeeks: later && act === "schedule" && repeatWeeks > 0 ? repeatWeeks : null,
+          override: act === "send_now" && overrideValid ? { reason: overrideReason.trim() } : null,
           messageId: initial?.messageId ?? null,
           recurringId: initial?.recurringId ?? null,
         }
@@ -997,6 +1020,7 @@ export function ComposeFlow({
                       )}
                     </div>
                   )}
+                  {shownNote && <p className="rounded-md bg-amber-50 px-3 py-2 text-[11px] text-amber-800">{shownNote}</p>}
                   <p className="text-[11px] text-ink-3">Who gets it is worked out when it sends, so families who join or leave before then are accounted for.</p>
                   {!schedulerHealthy && (
                     <p className="rounded-md bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
@@ -1014,6 +1038,34 @@ export function ComposeFlow({
         <div className="rounded-b-xl border-t border-muted bg-canvas px-6 py-5">
           {sendError && <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">{sendError}</div>}
           {previewError && <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">{previewError}</div>}
+          {pausedNow && preview && preview.window.blocked && (
+            <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-900">
+              <p className="font-medium">Sending is paused</p>
+              <p className="mt-0.5 text-[13px] leading-relaxed">{preview.window.message}</p>
+              <p className="mt-1 text-[12px] text-amber-800">You can still save a draft or choose Schedule for later.</p>
+              {preview.canOverrideWindow && (
+                <div className="mt-3 border-t border-amber-200 pt-3">
+                  <label className="flex cursor-pointer items-start gap-2 text-[13px]">
+                    <input type="checkbox" checked={overrideOn} onChange={(e) => setOverrideOn(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[var(--ink)]" />
+                    <span>
+                      <span className="font-medium">This is an emergency. Send anyway.</span>
+                      <span className="block text-[12px] text-amber-800">Only the school owner can do this. Your name, the time and your reason are recorded.</span>
+                    </span>
+                  </label>
+                  {overrideOn && (
+                    <input
+                      type="text"
+                      value={overrideReason}
+                      onChange={(e) => setOverrideReason(e.target.value)}
+                      placeholder="Reason, e.g. building evacuated"
+                      maxLength={200}
+                      className="mt-2 w-full rounded-md border border-amber-300 bg-card px-3 py-2 text-sm text-ink outline-none focus:border-amber-500"
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           {preview?.notes.map((n) => <p key={n} className="mb-2 text-xs text-ink-2">{n}</p>)}
 
           {preview && preview.unreachableCount > 0 && (

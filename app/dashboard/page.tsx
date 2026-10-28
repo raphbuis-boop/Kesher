@@ -4,6 +4,8 @@ import Link from "next/link";
 import { CONFIRMED_EXPLAINER, OPENED_EXPLAINER } from "@/lib/tracking";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getMembership, isAdminRole } from "@/lib/org";
+import { currentAndNext, getShabbosSettings, getUpcomingWindows } from "@/lib/shabbos";
+import { formatInZone, getSchoolTimezone } from "@/lib/schoolTime";
 import { getBrandingSettings } from "@/lib/settings";
 import { isDemoWorkspaceLoaded } from "@/lib/demoWorkspace";
 import { getCategoryCounts } from "@/lib/categoryCounts";
@@ -147,6 +149,8 @@ export default async function OverviewPage() {
     { data: rawMessages },
     { data: rawImports },
     pendingApproval,
+    shabbosSettings,
+    shabbosTimezone,
   ] = await Promise.all([
     getBrandingSettings(),
     isDemoWorkspaceLoaded(supabase, orgId),
@@ -167,7 +171,11 @@ export default async function OverviewPage() {
     isAdminRole(role)
       ? supabase.from("messages").select("id", { count: "exact", head: true }).eq("org_id", orgId).eq("status", "pending_approval")
       : Promise.resolve({ count: 0 }),
+    getShabbosSettings(supabase, orgId),
+    getSchoolTimezone(supabase, orgId),
   ]);
+  const shabbosWindows = shabbosSettings?.enabled ? await getUpcomingWindows(supabase, orgId, new Date(), 2) : [];
+  const { current: nowWindow, next: nextWindow } = currentAndNext(shabbosWindows, shabbosSettings?.bufferMinutes ?? 0);
 
   const msgList    = (rawMessages ?? []) as MessageRow[];
   const importList = (rawImports  ?? []) as ImportRow[];
@@ -288,6 +296,22 @@ export default async function OverviewPage() {
       </header>
 
       <div className="px-6 py-6 space-y-6 max-w-7xl">
+
+        {shabbosSettings?.enabled && (nowWindow || nextWindow) && (
+          <div className={"flex items-center justify-between rounded-xl border px-4 py-3 text-[13px] " + (nowWindow ? "border-amber-200 bg-amber-50 text-amber-900" : "border-line bg-card text-ink-2")}>
+            {nowWindow ? (
+              <span>
+                <span className="font-semibold">{nowWindow.kind === "yomtov" ? (nowWindow.label ?? "Yom Tov") : "Shabbos"}.</span> Sending is paused until{" "}
+                {formatInZone(new Date(new Date(nowWindow.endsAt).getTime() + shabbosSettings.bufferMinutes * 60_000), shabbosTimezone)}.
+              </span>
+            ) : nextWindow ? (
+              <span>
+                <span className="font-semibold text-ink">{nextWindow.kind === "yomtov" ? `Next: ${nextWindow.label ?? "Yom Tov"}` : "Next Shabbos"}:</span> candle lighting {formatInZone(nextWindow.startsAt, shabbosTimezone)}. Sending pauses then.
+              </span>
+            ) : null}
+            <Link href="/settings#shabbos" className="shrink-0 text-[11px] font-medium text-ink-3 hover:text-ink-2">Settings</Link>
+          </div>
+        )}
 
         {(pendingApproval.count ?? 0) > 0 && (
           <Link href="/messages?tab=approval" className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-900 hover:bg-amber-100">

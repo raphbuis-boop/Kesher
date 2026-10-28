@@ -1,14 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { windowStatusFor, type WindowStatus } from "@/lib/shabbos";
 
 /**
- * Is it OK to send right now? (Shabbos / Yom Tov blocking is added in Phase 3.1;
- * this is the single place every manual and scheduled send asks.)
+ * Is it OK to send at this moment? The single place every manual and scheduled
+ * send asks. Blocked inside a school's Shabbos / Yom Tov window (when the school
+ * has turned that on in Settings → Shabbos & Yom Tov).
  */
-export type SendWindowStatus = { blocked: false } | { blocked: true; message: string; until: string | null };
+export type SendWindowStatus = WindowStatus;
 
 export async function sendWindowStatus(supabase: SupabaseClient, orgId: string, at: Date = new Date()): Promise<SendWindowStatus> {
-  void supabase;
-  void orgId;
-  void at;
-  return { blocked: false };
+  return windowStatusFor(supabase, orgId, at);
 }

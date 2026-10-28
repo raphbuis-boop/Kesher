@@ -23,6 +23,7 @@ import { nextClockOccurrence, validClockRule, DEFAULT_TIMEZONE, type ClockRule }
 import { executeMessage, type EngineCtx } from "./engine";
 import { messageColumns } from "./record";
 import { sendWindowStatus } from "./window";
+import { refreshStaleSchools } from "@/lib/shabbos";
 import type { MessageInput } from "./types";
 
 export const RESUME_AFTER_MS = 3 * 60_000;
@@ -103,7 +104,7 @@ async function createOccurrences(supabase: SupabaseClient, now: Date, summary: D
   }
 }
 
-type DueRow = { id: string; org_id: string; claimed_at?: string | null };
+type DueRow = { id: string; org_id: string; claimed_at?: string | null; window_override_reason?: string | null };
 
 export async function dispatchDue(
   supabase: SupabaseClient,
@@ -114,6 +115,13 @@ export async function dispatchDue(
   const summary: DispatchSummary = { recurringCreated: 0, recurringSkipped: 0, sent: 0, heldForShabbos: 0, resumed: 0, errors: [] };
 
   await supabase.from("system_heartbeats").upsert({ name: HEARTBEAT, last_run_at: now.toISOString(), detail: null }, { onConflict: "name" });
+
+  // Keep each school's Shabbos / Yom Tov times fresh (weekly), before anything asks about them
+  try {
+    await refreshStaleSchools(supabase, now);
+  } catch (err) {
+    summary.errors.push(`shabbos refresh: ${err instanceof Error ? err.message : String(err)}`);
+  }
 
   await createOccurrences(supabase, now, summary);
 
@@ -171,15 +179,16 @@ export async function dispatchDue(
   const cutoff = new Date(now.getTime() - RESUME_AFTER_MS).toISOString();
   const stale: DueRow[] = [];
   for (const q of [
-    supabase.from("messages").select("id, org_id, claimed_at").eq("status", "sending").is("claimed_at", null).lt("created_at", cutoff).limit(30),
-    supabase.from("messages").select("id, org_id, claimed_at").eq("status", "sending").lt("claimed_at", cutoff).limit(30),
+    supabase.from("messages").select("id, org_id, claimed_at, window_override_reason").eq("status", "sending").is("claimed_at", null).lt("created_at", cutoff).limit(30),
+    supabase.from("messages").select("id, org_id, claimed_at, window_override_reason").eq("status", "sending").lt("claimed_at", cutoff).limit(30),
   ]) {
     const { data: rows } = await q;
     stale.push(...((rows ?? []) as DueRow[]));
   }
   for (const row of stale) {
     if (Date.now() >= deadline) break;
-    if ((await windowFor(row.org_id)).blocked) {
+    // An owner's emergency override (logged when it was sent) lets it finish
+    if (!row.window_override_reason && (await windowFor(row.org_id)).blocked) {
       summary.heldForShabbos++;
       continue;
     }

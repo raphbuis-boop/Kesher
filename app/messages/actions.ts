@@ -12,7 +12,7 @@ import { FUNDRAISING_WHATSAPP_NOTE } from "@/lib/fundraising";
 import { validateUnsubscribeEnv } from "@/lib/unsubscribe";
 import { availableChannels, executeMessage, whatsappAllowedFor } from "@/lib/send/engine";
 import { resolveRecipients } from "@/lib/send/recipients";
-import { sendWindowStatus } from "@/lib/send/window";
+import { sendWindowStatus, type SendWindowStatus } from "@/lib/send/window";
 import { messageColumns } from "@/lib/send/record";
 import { nextRunFor } from "@/lib/send/dispatch";
 import {
@@ -96,6 +96,9 @@ export type PreviewResult = {
   /** Channels dropped for this message (e.g. WhatsApp for fundraising) */
   notes: string[];
   samples: { name: string; channel: Channel; address: string; subject: string | null; text: string; childrenLabel: string | null }[];
+  /** Is sending paused right now (Shabbos / Yom Tov)? Owners may override in an emergency. */
+  window: SendWindowStatus;
+  canOverrideWindow: boolean;
   /** Who gets it — for the confirm step */
   people_list: { id: string; name: string; channels: { channel: Channel; address: string }[]; childrenLabel: string | null }[];
 };
@@ -114,10 +117,11 @@ function effectiveChannels(input: MessageInput): { channels: Channel[]; notes: s
 /** Exactly who a send would reach on each channel, and why anyone is left out. */
 export async function previewSend(raw: MessageInput): Promise<PreviewResult> {
   const input = clean(raw);
-  const { orgId } = await getMembership();
+  const { orgId, role } = await getMembership();
   const supabase = await createSupabaseServerClient();
   const isSim = await simulated(orgId);
   const { channels, notes } = effectiveChannels(input);
+  const window = await sendWindowStatus(supabase, orgId);
   const [cfg, branding, template] = await Promise.all([getChannelConfig(orgId), loadBrandingSettings(supabase, orgId), getTemplate(supabase, orgId, input.templateId)]);
 
   const resolution = await resolveRecipients(supabase, orgId, {
@@ -164,6 +168,8 @@ export async function previewSend(raw: MessageInput): Promise<PreviewResult> {
     unreachableCount: resolution.unreachable.length,
     studentsWithoutParent: resolution.studentsWithoutParent,
     problems: await channelProblems(orgId, { ...input, channels }, isSim),
+    window,
+    canOverrideWindow: role === "owner",
     notes,
     samples,
     people_list: [...byPerson.values()],
@@ -186,11 +192,13 @@ export type SubmitOptions = {
   recurringId?: string | null;
   /** This is a reminder for an earlier message */
   resendOf?: string | null;
+  /** Owner only: send during Shabbos / Yom Tov for a real emergency. The reason is logged. */
+  override?: { reason: string } | null;
 };
 
 export type SubmitResult =
   | { success: true; kind: "sent" | "sending"; messageId: string; sent: number; failed: number; remaining: number }
-  | { success: true; kind: "scheduled"; messageId: string; whenLabel: string }
+  | { success: true; kind: "scheduled"; messageId: string; whenLabel: string; note: string | null }
   | { success: true; kind: "draft"; messageId: string }
   | { success: true; kind: "pending_approval"; messageId: string; whenLabel: string | null }
   | { success: true; kind: "recurring"; recurringId: string; whenLabel: string; ruleLabel: string }
@@ -270,9 +278,24 @@ export async function submitMessage(raw: MessageInput, opts: SubmitOptions = { a
       const problems = await channelProblems(orgId, finalInput, isSim);
       if (problems.length > 0) return fail(problems.map((p) => p.problem).join(" "));
     }
+    let overrideReason: string | null = null;
+    let overrideLabel: string | null = null;
     if (action === "send_now") {
       const window = await sendWindowStatus(supabase, orgId);
-      if (window.blocked) return fail(window.message);
+      if (window.blocked) {
+        if (!opts.override) return fail(window.message);
+        if (role !== "owner") return fail("Only the school owner can send during Shabbos or Yom Tov.");
+        const reason = opts.override.reason.trim();
+        if (reason.length < 5) return fail("Type a reason for the emergency send, in a few words. It's recorded.");
+        overrideReason = reason.slice(0, 500);
+        overrideLabel = window.label;
+      }
+    }
+    // A scheduled time inside Shabbos isn't an error — it just waits until Shabbos is over
+    let scheduleNote: string | null = null;
+    if (action === "schedule" && scheduledFor) {
+      const w = await sendWindowStatus(supabase, orgId, scheduledFor);
+      if (w.blocked && !w.approximate && w.until) scheduleNote = `That time is during ${w.label?.trim() || "Shabbos / Yom Tov"}, so it will go out after it ends, at ${formatInZone(w.until, tz)}.`;
     }
 
     // Editing something that already exists?
@@ -329,7 +352,7 @@ export async function submitMessage(raw: MessageInput, opts: SubmitOptions = { a
     if (action === "draft") Object.assign(patch, { status: "draft", scheduled_for: null, requested_at: null, approved_by: null, approved_at: null });
     else if (action === "request_approval") Object.assign(patch, { status: "pending_approval", scheduled_for: scheduledFor?.toISOString() ?? null, requested_at: now, approved_by: null, approved_at: null });
     else if (action === "schedule") Object.assign(patch, { status: "scheduled", scheduled_for: scheduledFor!.toISOString(), requested_at: existing?.status === "pending_approval" ? undefined : null, approved_by: userId, approved_at: now });
-    else Object.assign(patch, { status: "sending", claimed_at: now, scheduled_for: null, approved_by: userId, approved_at: now });
+    else Object.assign(patch, { status: "sending", claimed_at: now, scheduled_for: null, approved_by: userId, approved_at: now, window_override_reason: overrideReason });
     for (const k of Object.keys(patch)) if (patch[k] === undefined) delete patch[k];
 
     let messageId: string;
@@ -349,7 +372,12 @@ export async function submitMessage(raw: MessageInput, opts: SubmitOptions = { a
 
     if (action === "draft") return { success: true, kind: "draft", messageId };
     if (action === "request_approval") return { success: true, kind: "pending_approval", messageId, whenLabel: scheduledFor ? formatInZone(scheduledFor, tz) : null };
-    if (action === "schedule") return { success: true, kind: "scheduled", messageId, whenLabel: formatInZone(scheduledFor!, tz) };
+    if (action === "schedule") return { success: true, kind: "scheduled", messageId, whenLabel: formatInZone(scheduledFor!, tz), note: scheduleNote };
+
+    if (overrideReason) {
+      // Logged before anything is sent
+      await supabase.from("window_overrides").insert({ org_id: orgId, message_id: messageId, user_id: userId, reason: overrideReason, window_label: overrideLabel });
+    }
 
     const result = await executeMessage({ supabase, orgId }, messageId, { deadlineMs: Date.now() + 50_000 });
     if (result.state === "failed") return fail(result.error);
@@ -522,4 +550,15 @@ export async function deleteRecurring(recurringId: string): Promise<ActionResult
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Couldn't delete." };
   }
+}
+
+/** For the schedule picker: is this school-local date/time inside Shabbos / Yom Tov? */
+export async function checkSendWindow(date: string, time: string): Promise<{ held: boolean; note: string | null }> {
+  if (!isDateString(date) || !isTimeString(time)) return { held: false, note: null };
+  const { orgId } = await getMembership();
+  const supabase = await createSupabaseServerClient();
+  const tz = await getSchoolTimezone(supabase, orgId);
+  const w = await sendWindowStatus(supabase, orgId, zonedToUtc(date, time, tz));
+  if (!w.blocked || w.approximate || !w.until) return { held: false, note: null };
+  return { held: true, note: `That time is during ${w.label?.trim() || "Shabbos / Yom Tov"}. The message will wait and go out at ${formatInZone(w.until, tz)}.` };
 }
