@@ -103,10 +103,7 @@ export function RuleBuilder({
   useEffect(() => {
     onChange(rule);
     if (timer.current) clearTimeout(timer.current);
-    if (!rule) {
-      setPreview(null);
-      return;
-    }
+    if (!rule) return;
     const mine = ++seq.current;
     timer.current = setTimeout(async () => {
       setLoading(true);
@@ -146,7 +143,8 @@ export function RuleBuilder({
     );
   }
 
-  const r = preview?.reach;
+  const shown = rule ? preview : null;
+  const r = shown?.reach;
   return (
     <div className="space-y-3">
       <div className="space-y-2">
@@ -189,13 +187,13 @@ export function RuleBuilder({
       <div className="rounded-lg border border-line bg-card p-3" aria-live="polite">
         {!rule ? (
           <p className="text-[12px] text-ink-3">Pick a value to see who matches.</p>
-        ) : !preview ? (
+        ) : !shown ? (
           <p className="text-[12px] text-ink-3">{loading ? "Counting…" : "—"}</p>
         ) : (
           <div className="space-y-2">
             <p className={`text-[13px] ${loading ? "opacity-50" : ""}`}>
-              <span className="font-semibold tabular-nums text-ink">{preview.count.toLocaleString()}</span>{" "}
-              <span className="text-ink-2">{preview.count === 1 ? "person matches" : "people match"}</span>
+              <span className="font-semibold tabular-nums text-ink">{shown.count.toLocaleString()}</span>{" "}
+              <span className="text-ink-2">{shown.count === 1 ? "person matches" : "people match"}</span>
             </p>
             {r && r.matched > 0 && (
               <p className="text-[11px] leading-relaxed text-ink-3">
@@ -205,14 +203,14 @@ export function RuleBuilder({
                 {r.studentsWithoutParent > 0 && <span className="text-amber-700"> · {r.studentsWithoutParent} {r.studentsWithoutParent === 1 ? "student has" : "students have"} no parent linked</span>}
               </p>
             )}
-            {preview.sample.length > 0 && (
+            {shown.sample.length > 0 && (
               <ul className="grid gap-x-4 gap-y-0.5 sm:grid-cols-2">
-                {preview.sample.map((p) => (
+                {shown.sample.map((p) => (
                   <li key={p.id} className="truncate text-[12px] text-ink">
                     {p.name} {p.detail && <span className="text-[11px] text-ink-3">· {p.detail}</span>}
                   </li>
                 ))}
-                {preview.count > preview.sample.length && <li className="text-[11px] text-ink-3">+ {(preview.count - preview.sample.length).toLocaleString()} more</li>}
+                {shown.count > shown.sample.length && <li className="text-[11px] text-ink-3">+ {(shown.count - shown.sample.length).toLocaleString()} more</li>}
               </ul>
             )}
           </div>

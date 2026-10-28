@@ -11,6 +11,8 @@ import { SettingsShell, type SectionId, type TeamInvite, type TeamMember } from 
 import { getCustomFieldDefs } from "@/lib/customFields";
 import { CustomFieldsSettings } from "./panels/CustomFieldsSettings";
 import { NewContactsSetting } from "./panels/NewContactsSetting";
+import { Panel } from "./panels/ui";
+import Link from "next/link";
 import { GoogleSheetsSettings, type SheetSourceView } from "./panels/GoogleSheetsSettings";
 import { getGoogleConnection, googleConfigError } from "@/lib/google";
 import { IntegrationsSettings } from "./panels/IntegrationsSettings";
@@ -101,6 +103,13 @@ export default async function SettingsPage() {
               customFields={(fieldDefs ?? []).map((d) => ({ key: d.key, label: d.label }))}
             />
             <IntegrationsSettings providers={PROVIDERS} requested={((requestsRes?.data ?? []) as { provider: string }[]).map((r) => r.provider)} />
+            <Panel
+              title="New school year"
+              description="At the end of the year, promote every student one grade and graduate your last grade. You preview everything first and can undo it."
+              footer={<Link href="/settings/rollover" className="btn btn-primary">Start rollover</Link>}
+            >
+              <p className="text-[12px] text-ink-3">Graduates are archived, not deleted, so their message history stays.</p>
+            </Panel>
             <CustomFieldsSettings defs={fieldDefs ?? []} />
           </div>
         ),
