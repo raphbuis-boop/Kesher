@@ -13,6 +13,9 @@ import { validateUnsubscribeEnv } from "@/lib/unsubscribe";
 import { availableChannels, executeMessage, whatsappAllowedFor } from "@/lib/send/engine";
 import { resolveRecipients } from "@/lib/send/recipients";
 import { sendWindowStatus, type SendWindowStatus } from "@/lib/send/window";
+import { describeZmanimRule, MAX_OFFSET_MINUTES, zmanimTime, type ZmanimAnchor, type ZmanimRule } from "@/lib/zmanim";
+import { getUpcomingWindows } from "@/lib/shabbos";
+import { localDateString } from "@/lib/schoolTime";
 import { messageColumns } from "@/lib/send/record";
 import { nextRunFor } from "@/lib/send/dispatch";
 import {
@@ -192,6 +195,12 @@ export type SubmitOptions = {
   recurringId?: string | null;
   /** This is a reminder for an earlier message */
   resendOf?: string | null;
+  /**
+   * Tie the send time to the Jewish calendar instead of the clock: "3 hours before candle lighting",
+   * "30 minutes after Havdalah". windowStartsAt picks which Shabbos / Yom Tov (an ISO instant from the
+   * school's cached times); repeatWeeks repeats it on regular Shabbosim. offsetMinutes < 0 is before.
+   */
+  zmanim?: { anchor: ZmanimAnchor; offsetMinutes: number; windowStartsAt: string; repeatWeeks?: number | null } | null;
   /** Owner only: send during Shabbos / Yom Tov for a real emergency. The reason is logged. */
   override?: { reason: string } | null;
 };
@@ -250,7 +259,7 @@ export async function submitMessage(raw: MessageInput, opts: SubmitOptions = { a
 
     let action = opts.action;
     if (needsApproval && (action === "send_now" || action === "schedule")) action = "request_approval";
-    const repeating = !!opts.repeatWeeks || !!opts.recurringId;
+    const repeating = !!opts.repeatWeeks || !!opts.recurringId || (!!opts.zmanim && !!opts.zmanim.repeatWeeks);
     if (repeating && !admin) return fail("Only owners and admins can set up repeating sends.");
     if (repeating && action !== "schedule") return fail("A repeating send needs a start date and time.");
 
@@ -263,7 +272,22 @@ export async function submitMessage(raw: MessageInput, opts: SubmitOptions = { a
 
     // When
     let scheduledFor: Date | null = null;
-    if (action === "schedule" || (action === "request_approval" && opts.when)) {
+    let zmanimRule: ZmanimRule | null = null;
+    if (opts.zmanim && (action === "schedule" || action === "request_approval")) {
+      // Relative to the Jewish calendar: work out the actual time from the school's Hebcal windows
+      const z = opts.zmanim;
+      if (z.anchor !== "candle_lighting" && z.anchor !== "havdalah") return fail("Choose candle lighting or Havdalah.");
+      if (!Number.isInteger(z.offsetMinutes) || Math.abs(z.offsetMinutes) > MAX_OFFSET_MINUTES) return fail("That's too far from candle lighting / Havdalah. Use up to 72 hours.");
+      const windows = await getUpcomingWindows(supabase, orgId, new Date(), 24);
+      const w = windows.find((x) => new Date(x.startsAt).getTime() === new Date(z.windowStartsAt).getTime());
+      if (!w) return fail("That Shabbos isn't in your calendar. Check Settings → Shabbos & Yom Tov.");
+      scheduledFor = zmanimTime(w, z.anchor, z.offsetMinutes);
+      if (z.repeatWeeks) {
+        if (w.kind !== "shabbos") return fail("Repeating sends start on a regular Shabbos. Pick a Shabbos that isn't Yom Tov, or schedule this one on its own.");
+        zmanimRule = { kind: "zmanim", anchor: z.anchor, offsetMinutes: z.offsetMinutes, everyWeeks: Math.min(12, Math.max(1, Math.round(z.repeatWeeks))), startDate: localDateString(new Date(w.startsAt), tz) };
+      }
+      if (!zmanimRule && scheduledFor.getTime() < Date.now() + 60_000) return fail("That time has already passed. Choose a later Shabbos.");
+    } else if (action === "schedule" || (action === "request_approval" && opts.when)) {
       if (!opts.when || !isDateString(opts.when.date) || !isTimeString(opts.when.time)) return fail("Pick a date and time.");
       scheduledFor = zonedToUtc(opts.when.date, opts.when.time, tz);
       if (scheduledFor.getTime() < Date.now() + 60_000) return fail("Pick a time in the future.");
@@ -310,9 +334,16 @@ export async function submitMessage(raw: MessageInput, opts: SubmitOptions = { a
 
     // Repeating send (admins): a blueprint the dispatcher turns into one message per occurrence
     if (repeating) {
-      const when = opts.when!;
-      const rule: ClockRule = { kind: "clock", everyWeeks: opts.repeatWeeks ?? 1, weekday: weekdayOf(when.date), time: when.time, startDate: when.date };
-      const next = await nextRunFor(rule, tz, new Date());
+      if (opts.recurringId && opts.zmanim && !zmanimRule) return fail("Choose how often this repeats.");
+      const rule: ClockRule | ZmanimRule = zmanimRule ?? {
+        kind: "clock",
+        everyWeeks: opts.repeatWeeks ?? 1,
+        weekday: weekdayOf(opts.when!.date),
+        time: opts.when!.time,
+        startDate: opts.when!.date,
+      };
+      // For a zmanim rule the first send is the chosen Shabbos itself, if it's still ahead
+      const next = zmanimRule ? (await nextRunFor(rule, tz, new Date(Date.now() + 60_000), { supabase, orgId })) : await nextRunFor(rule, tz, new Date());
       if (!next) return fail("Couldn't work out when this repeats. Check the day, time and number of weeks.");
       const record = {
         name: (input.subject || input.body).slice(0, 80),
@@ -337,7 +368,7 @@ export async function submitMessage(raw: MessageInput, opts: SubmitOptions = { a
       // A draft/scheduled copy that was converted into a repeating send
       if (existing) await supabase.from("messages").delete().eq("org_id", orgId).eq("id", existing.id).in("status", EDITABLE);
       revalidatePath("/messages");
-      return { success: true, kind: "recurring", recurringId, whenLabel: formatInZone(next, tz), ruleLabel: describeClockRule(rule) };
+      return { success: true, kind: "recurring", recurringId, whenLabel: formatInZone(next, tz), ruleLabel: rule.kind === "zmanim" ? describeZmanimRule(rule) : describeClockRule(rule) };
     }
 
     const now = new Date().toISOString();
@@ -525,7 +556,7 @@ export async function setRecurringActive(recurringId: string, active: boolean): 
     const { data: rec } = await supabase.from("recurring_sends").select("id, timezone, rule").eq("org_id", orgId).eq("id", recurringId).maybeSingle();
     if (!rec) return { ok: false, error: "That repeating send no longer exists." };
     // Resuming picks up from the next future occurrence — it never sends what was missed while paused
-    const next = active ? await nextRunFor(rec.rule, rec.timezone as string, new Date()) : null;
+    const next = active ? await nextRunFor(rec.rule, rec.timezone as string, new Date(), { supabase, orgId }) : null;
     if (active && !next) return { ok: false, error: "This repeating send's schedule is no longer valid. Edit it first." };
     const { error } = await supabase.from("recurring_sends").update({ active, next_run_at: next ? next.toISOString() : null }).eq("org_id", orgId).eq("id", recurringId);
     if (error) return { ok: false, error: error.message };

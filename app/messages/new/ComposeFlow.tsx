@@ -6,7 +6,8 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { submitMessage, previewSend, checkSendWindow, type Channel, type PreviewResult, type SubmitAction, type SubmitResult } from "../actions";
 import type { MessageInput } from "@/lib/send/types";
-import { WEEKDAY_NAMES, addDays, formatTimeOnly, localDateString, weekdayOf } from "@/lib/schoolTime";
+import { WEEKDAY_NAMES, addDays, formatInZone, formatTimeOnly, localDateString, weekdayOf } from "@/lib/schoolTime";
+import { describeOffset, zmanimTime, type ZmanimAnchor } from "@/lib/zmanim";
 import { TEMPLATE_TOKENS, renderTemplate } from "@/lib/template";
 import { FUNDRAISING_WHATSAPP_NOTE, looksLikeFundraising } from "@/lib/fundraising";
 
@@ -22,7 +23,12 @@ export type ComposeInitial = {
   /** School-local */
   when: { date: string; time: string } | null;
   repeatWeeks: number | null;
+  /** A repeating send tied to candle lighting / Havdalah */
+  zmanim: { anchor: ZmanimAnchor; offsetMinutes: number } | null;
 };
+
+/** A Shabbos or Yom Tov from the school's cached times, for "around Shabbos" scheduling */
+export type ZmanimWindowOption = { startsAt: string; endsAt: string; kind: "shabbos" | "yomtov"; label: string | null };
 
 export type AudienceOption = {
   slug: string;
@@ -438,6 +444,7 @@ export function ComposeFlow({
   canEmergency = false,
   schoolTimezone,
   confirmLinksReady = true,
+  zmanimWindows = [],
   schedulerHealthy = true,
   isAdmin = true,
   requireApproval = false,
@@ -454,6 +461,8 @@ export function ComposeFlow({
   customTokens?: { token: string; label: string }[];
   canEmergency?: boolean;
   schoolTimezone: string;
+  /** Upcoming Shabbosim / Yom Tov (empty unless Shabbos mode is on and times are loaded) */
+  zmanimWindows?: ZmanimWindowOption[];
   /** False when the site URL or signing key is missing, so "I've read this" links can't be made */
   confirmLinksReady?: boolean;
   /** False when the background job that sends scheduled messages hasn't run recently */
@@ -496,6 +505,16 @@ export function ComposeFlow({
   const [time, setTime] = useState(initial?.when?.time ?? "09:00");
   const [repeatWeeks, setRepeatWeeks] = useState<number>(initial?.repeatWeeks ?? 0);
   // Shabbos / Yom Tov: owners may send anyway in a real emergency (reason is logged)
+  // Around Shabbos: "3 hours before candle lighting", "30 minutes after Havdalah"
+  const [zmanimMode, setZmanimMode] = useState(!!initial?.zmanim);
+  const [zAnchor, setZAnchor] = useState<ZmanimAnchor>(initial?.zmanim?.anchor ?? "candle_lighting");
+  const initialOffset = initial?.zmanim?.offsetMinutes ?? -180;
+  const [zAmount, setZAmount] = useState(Math.abs(initialOffset) % 60 === 0 ? Math.abs(initialOffset) / 60 : Math.abs(initialOffset));
+  const [zUnit, setZUnit] = useState<"hours" | "minutes">(Math.abs(initialOffset) % 60 === 0 ? "hours" : "minutes");
+  const [zDirection, setZDirection] = useState<"before" | "after">(initialOffset > 0 ? "after" : "before");
+  const [nowMs] = useState(() => Date.now());
+  const firstUsable = zmanimWindows.find((w) => w.kind === "shabbos" && new Date(w.startsAt).getTime() > nowMs) ?? zmanimWindows[0];
+  const [zWindow, setZWindow] = useState<string>(firstUsable?.startsAt ?? "");
   const [overrideOn, setOverrideOn] = useState(false);
   const [overrideReason, setOverrideReason] = useState("");
   const [windowNote, setWindowNote] = useState<{ key: string; note: string | null } | null>(null);
@@ -592,7 +611,6 @@ export function ComposeFlow({
 
   const memberRequest = !isAdmin && requireApproval;
   const primaryAction: SubmitAction = memberRequest ? "request_approval" : later ? "schedule" : "send_now";
-  const whenValid = !later || (/^\d{4}-\d{2}-\d{2}$/.test(date) && date >= today && /^\d{2}:\d{2}$/.test(time));
   const tzShort = useMemo(() => {
     try {
       return new Intl.DateTimeFormat("en-US", { timeZone: schoolTimezone, timeZoneName: "short" }).formatToParts(new Date()).find((p) => p.type === "timeZoneName")?.value ?? schoolTimezone;
@@ -600,12 +618,22 @@ export function ComposeFlow({
       return schoolTimezone;
     }
   }, [schoolTimezone]);
+  const zOffset = (zUnit === "hours" ? zAmount * 60 : zAmount) * (zDirection === "before" ? -1 : 1);
+  const zSelected = zmanimWindows.find((w) => w.startsAt === zWindow);
+  const zAt = zSelected ? zmanimTime(zSelected, zAnchor, zOffset) : null;
+  const zmanimActive = later && zmanimMode;
+  const whenValid = !later
+    ? true
+    : zmanimActive
+      ? !!zAt && zAmount >= 0 && Math.abs(zOffset) <= 72 * 60 && (repeatWeeks > 0 ? zSelected?.kind === "shabbos" : zAt.getTime() > nowMs + 60_000)
+      : /^\d{4}-\d{2}-\d{2}$/.test(date) && date >= today && /^\d{2}:\d{2}$/.test(time);
+  const scheduleLabel = zmanimActive && zAt ? formatInZone(zAt, schoolTimezone) : `${date} ${formatTimeOnly(time)} ${tzShort}`;
 
   const pausedNow = !!preview?.window.blocked && !later && primaryAction === "send_now";
   const overrideValid = pausedNow && !!preview?.canOverrideWindow && overrideOn && overrideReason.trim().length >= 5;
   const canSend = ready && subjectOk && !!preview && total > 0 && !blockingProblem && activeChannels.length > 0 && whenValid && (!pausedNow || overrideValid);
 
-  const noteKey = later && whenValid ? `${date} ${time}` : "";
+  const noteKey = later && !zmanimActive && whenValid ? `${date} ${time}` : "";
   useEffect(() => {
     if (!noteKey) return;
     let cancelled = false;
@@ -664,8 +692,12 @@ export function ComposeFlow({
         { ...input, channels: act === "draft" ? channels : activeChannels },
         {
           action: act,
-          when: later && act !== "draft" && act !== "send_now" ? { date, time } : null,
-          repeatWeeks: later && act === "schedule" && repeatWeeks > 0 ? repeatWeeks : null,
+          when: later && !zmanimActive && act !== "draft" && act !== "send_now" ? { date, time } : null,
+          repeatWeeks: later && !zmanimActive && act === "schedule" && repeatWeeks > 0 ? repeatWeeks : null,
+          zmanim:
+            zmanimActive && (act === "schedule" || act === "request_approval")
+              ? { anchor: zAnchor, offsetMinutes: zOffset, windowStartsAt: zWindow, repeatWeeks: act === "schedule" && repeatWeeks > 0 ? repeatWeeks : null }
+              : null,
           override: act === "send_now" && overrideValid ? { reason: overrideReason.trim() } : null,
           messageId: initial?.messageId ?? null,
           recurringId: initial?.recurringId ?? null,
@@ -983,24 +1015,88 @@ export function ComposeFlow({
           <div className="flex items-start gap-4">
             <span className="mt-1.5 w-16 flex-shrink-0 text-xs font-semibold uppercase tracking-wider text-ink-3">When</span>
             <div className="flex-1 space-y-3">
-              <div className="inline-flex rounded-lg border border-line p-0.5" role="group" aria-label="When to send">
-                {([[false, memberRequest ? "As soon as approved" : "Send now"], [true, "Schedule for later"]] as const).map(([v, label]) => (
-                  <button
-                    key={label}
-                    type="button"
-                    aria-pressed={later === v}
-                    disabled={!!initial?.recurringId && !v}
-                    onClick={() => {
-                      setLater(v);
-                      if (!v) setRepeatWeeks(0);
-                    }}
-                    className={"rounded-md px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 " + (later === v ? "bg-ink text-on-ink" : "text-ink-2 hover:text-ink")}
-                  >
-                    {label}
-                  </button>
-                ))}
+              <div className="inline-flex flex-wrap rounded-lg border border-line p-0.5" role="group" aria-label="When to send">
+                {([
+                  ["now", memberRequest ? "As soon as approved" : "Send now"],
+                  ["clock", "Schedule for later"],
+                  ...(zmanimWindows.length > 0 ? ([["zmanim", "Around Shabbos"]] as const) : []),
+                ] as const).map(([mode, label]) => {
+                  const active = mode === "now" ? !later : mode === "zmanim" ? zmanimActive : later && !zmanimMode;
+                  return (
+                    <button
+                      key={mode}
+                      type="button"
+                      aria-pressed={active}
+                      disabled={!!initial?.recurringId && mode === "now"}
+                      onClick={() => {
+                        setLater(mode !== "now");
+                        setZmanimMode(mode === "zmanim");
+                        if (mode === "now") setRepeatWeeks(0);
+                      }}
+                      className={"rounded-md px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 " + (active ? "bg-ink text-on-ink" : "text-ink-2 hover:text-ink")}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
-              {later && (
+              {zmanimActive && (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-ink-2">
+                    <input type="number" min={0} max={72 * (zUnit === "hours" ? 1 : 60)} value={zAmount} onChange={(e) => setZAmount(Math.max(0, Number(e.target.value) || 0))} aria-label="Amount" className={`${SELECT_CLS} !w-16`} />
+                    <select value={zUnit} onChange={(e) => setZUnit(e.target.value as "hours" | "minutes")} aria-label="Unit" className={SELECT_CLS}>
+                      <option value="hours">hours</option>
+                      <option value="minutes">minutes</option>
+                    </select>
+                    <select value={zDirection} onChange={(e) => setZDirection(e.target.value as "before" | "after")} aria-label="Before or after" className={SELECT_CLS}>
+                      <option value="before">before</option>
+                      <option value="after">after</option>
+                    </select>
+                    <select value={zAnchor} onChange={(e) => setZAnchor(e.target.value as ZmanimAnchor)} aria-label="Anchor" className={SELECT_CLS}>
+                      <option value="candle_lighting">candle lighting</option>
+                      <option value="havdalah">Havdalah (Motzei Shabbos)</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-ink-2">
+                    <label htmlFor="compose-zwindow">For</label>
+                    <select id="compose-zwindow" value={zWindow} onChange={(e) => setZWindow(e.target.value)} className={SELECT_CLS}>
+                      {zmanimWindows.map((w) => (
+                        <option key={w.startsAt} value={w.startsAt} disabled={repeatWeeks > 0 && w.kind !== "shabbos"}>
+                          {(w.label ?? (w.kind === "yomtov" ? "Yom Tov" : "Shabbos"))} · candles {formatInZone(w.startsAt, schoolTimezone, { withZone: false })}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {isAdmin && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <label htmlFor="compose-zrepeat" className="text-xs text-ink-2">Repeat</label>
+                      <select id="compose-zrepeat" value={repeatWeeks} onChange={(e) => setRepeatWeeks(Number(e.target.value))} className={SELECT_CLS}>
+                        {!initial?.recurringId && <option value={0}>Just this once</option>}
+                        <option value={1}>Every Shabbos</option>
+                        {[2, 3, 4].map((n) => <option key={n} value={n}>Every {n} weeks</option>)}
+                      </select>
+                    </div>
+                  )}
+                  <p className="rounded-md bg-muted px-3 py-2 text-[12px] text-ink-2">
+                    {zAt ? (
+                      <>
+                        {describeOffset(zAnchor, zOffset)}: <span className="font-medium text-ink">{formatInZone(zAt, schoolTimezone)}</span>
+                        {repeatWeeks > 0 && <span className="text-ink-3"> · then {repeatWeeks === 1 ? "every Shabbos" : `every ${repeatWeeks} weeks`}; weeks with Yom Tov are skipped</span>}
+                        {zAt.getTime() <= nowMs + 60_000 && repeatWeeks === 0 && <span className="block text-amber-700">That time has already passed. Choose a later Shabbos.</span>}
+                      </>
+                    ) : (
+                      "Choose a Shabbos."
+                    )}
+                  </p>
+                  <p className="text-[11px] text-ink-3">The time follows the seasons by itself. Who gets it is worked out when it sends.</p>
+                  {!schedulerHealthy && (
+                    <p className="rounded-md bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
+                      Scheduled messages aren&apos;t being picked up right now: the background sender hasn&apos;t checked in. {isAdmin ? "See Settings → Messaging for the one-time setup." : "Ask an admin to check Settings → Messaging."}
+                    </p>
+                  )}
+                </div>
+              )}
+              {later && !zmanimMode && (
                 <div className="space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
                     <input type="date" value={date} min={today} onChange={(e) => setDate(e.target.value)} aria-label="Date" className={SELECT_CLS} />
@@ -1135,7 +1231,7 @@ export function ComposeFlow({
           <div role="dialog" aria-modal="true" aria-labelledby="confirm-send-title" className="animate-pop-in w-full max-w-md rounded-xl border border-line bg-card shadow-pop" onClick={(e) => e.stopPropagation()}>
             <div className="border-b border-muted px-5 py-4">
               <h2 id="confirm-send-title" className="text-sm font-semibold text-ink">
-                {memberRequest ? "Ask an admin to send to" : later ? `Schedule for ${date} ${formatTimeOnly(time)} ${tzShort} to` : "Send to"} {preview.people.toLocaleString()} {preview.people === 1 ? "person" : "people"}?
+                {memberRequest ? "Ask an admin to send to" : later ? `Schedule for ${scheduleLabel} to` : "Send to"} {preview.people.toLocaleString()} {preview.people === 1 ? "person" : "people"}?
               </h2>
               <p className="mt-0.5 text-xs text-ink-2">
                 {preview.messages.toLocaleString()} message{preview.messages === 1 ? "" : "s"}: {(["email", "whatsapp", "sms"] as Channel[]).filter((c) => preview.perChannel[c] > 0).map((c) => `${preview.perChannel[c].toLocaleString()} ${c === "sms" ? "text" : channelLabel(c)}`).join(" · ")}. {later ? "This is who it reaches today; the list is checked again when it sends." : "Remove anyone who shouldn&apos;t get it."}

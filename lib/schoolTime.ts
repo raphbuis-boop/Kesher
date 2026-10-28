@@ -146,6 +146,10 @@ export function weekdayOf(date: string): number {
   return new Date(Date.UTC(y, mo - 1, d)).getUTCDay();
 }
 
+export function dayNumberOf(date: string): number {
+  return dayNumber(date);
+}
+
 function dayNumber(date: string): number {
   const [y, mo, d] = date.split("-").map(Number);
   return Math.floor(Date.UTC(y, mo - 1, d) / 86_400_000);

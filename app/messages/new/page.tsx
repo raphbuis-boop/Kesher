@@ -11,6 +11,8 @@ import { getCustomFieldDefs } from "@/lib/customFields";
 import { redirect } from "next/navigation";
 import { ComposeFlow, type AudienceOption, type ComposeInitial } from "./ComposeFlow";
 import { getRequireApproval, getSchoolTimezone, localDateString, localTimeString, validClockRule } from "@/lib/schoolTime";
+import { validZmanimRule } from "@/lib/zmanim";
+import { getShabbosSettings, getUpcomingWindows } from "@/lib/shabbos";
 import { getDispatcherHealth } from "@/lib/send/health";
 import { linksConfigured } from "@/lib/links";
 import type { MessageInput } from "@/lib/send/types";
@@ -53,22 +55,28 @@ export default async function NewMessagePage({ searchParams }: { searchParams: P
       input: row.payload,
       when: row.scheduled_for ? { date: localDateString(new Date(row.scheduled_for), timezone), time: localTimeString(new Date(row.scheduled_for), timezone) } : null,
       repeatWeeks: null,
+      zmanim: null,
     };
   } else if (recurring && admin) {
     const { data: r } = await supabase.from("recurring_sends").select("id, payload, rule, next_run_at").eq("org_id", orgId).eq("id", recurring).maybeSingle();
     const rec = r as { id: string; payload: MessageInput; rule: unknown; next_run_at: string | null } | null;
-    if (!rec || !validClockRule(rec.rule)) redirect("/messages");
+    if (!rec || !(validClockRule(rec.rule) || validZmanimRule(rec.rule))) redirect("/messages");
     const next = rec.next_run_at ? new Date(rec.next_run_at) : null;
+    const isZ = validZmanimRule(rec.rule);
     initial = {
       messageId: null,
       recurringId: rec.id,
       status: null,
       rejectionReason: null,
       input: rec.payload,
-      when: next ? { date: localDateString(next, timezone), time: localTimeString(next, timezone) } : null,
+      when: !isZ && next ? { date: localDateString(next, timezone), time: localTimeString(next, timezone) } : null,
       repeatWeeks: rec.rule.everyWeeks,
+      zmanim: validZmanimRule(rec.rule) ? { anchor: rec.rule.anchor, offsetMinutes: rec.rule.offsetMinutes } : null,
     };
   }
+
+  const shabbos = await getShabbosSettings(supabase, orgId);
+  const zmanimWindows = shabbos?.enabled ? await getUpcomingWindows(supabase, orgId, new Date(), 10) : [];
 
   const [counts, groupsRes, templates, audienceTemplates, fieldDefs] = await Promise.all([
     getCategoryCounts(supabase, orgId),
@@ -118,6 +126,7 @@ export default async function NewMessagePage({ searchParams }: { searchParams: P
           canEmergency={admin}
           schoolTimezone={timezone}
           confirmLinksReady={linksConfigured()}
+          zmanimWindows={zmanimWindows}
           schedulerHealthy={health.healthy}
           isAdmin={admin}
           requireApproval={requireApproval}

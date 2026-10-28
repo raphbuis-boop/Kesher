@@ -20,6 +20,8 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nextClockOccurrence, validClockRule, DEFAULT_TIMEZONE, type ClockRule } from "@/lib/schoolTime";
+import { nextZmanimOccurrence, validZmanimRule, type ZmanimRule } from "@/lib/zmanim";
+import { getUpcomingWindows } from "@/lib/shabbos";
 import { executeMessage, type EngineCtx } from "./engine";
 import { messageColumns } from "./record";
 import { sendWindowStatus } from "./window";
@@ -31,7 +33,7 @@ export const RESUME_AFTER_MS = 3 * 60_000;
 export const MISSED_GRACE_MS = 12 * 3_600_000;
 export const HEARTBEAT = "dispatch";
 
-export type RecurringRule = ClockRule;
+export type RecurringRule = ClockRule | ZmanimRule;
 
 export type RecurringRow = {
   id: string;
@@ -53,9 +55,19 @@ export type DispatchSummary = {
   errors: string[];
 };
 
-/** Next time a recurring rule fires after `after`; null if the rule is unusable. */
-export async function nextRunFor(rule: unknown, timezone: string, after: Date): Promise<Date | null> {
-  if (validClockRule(rule)) return nextClockOccurrence(rule, timezone || DEFAULT_TIMEZONE, after);
+/**
+ * Next time a recurring rule fires after `after`. Clock rules are pure; zmanim
+ * rules (candle lighting / Havdalah) read the school's cached Hebcal windows,
+ * so they need `ctx`. Null if the rule is unusable or, for zmanim, the cached
+ * times don't reach that far yet.
+ */
+export async function nextRunFor(rule: unknown, timezone: string, after: Date, ctx?: { supabase: SupabaseClient; orgId: string }): Promise<Date | null> {
+  const tz = timezone || DEFAULT_TIMEZONE;
+  if (validClockRule(rule)) return nextClockOccurrence(rule, tz, after);
+  if (validZmanimRule(rule) && ctx) {
+    const windows = await getUpcomingWindows(ctx.supabase, ctx.orgId, new Date(after.getTime() - 3 * 86_400_000), 60);
+    return nextZmanimOccurrence(rule, windows, tz, after);
+  }
   return null;
 }
 
@@ -90,14 +102,33 @@ async function createOccurrences(supabase: SupabaseClient, now: Date, summary: D
         } else {
           summary.recurringSkipped++;
         }
-        at = await nextRunFor(rec.rule, rec.timezone, at);
+        at = await nextRunFor(rec.rule, rec.timezone, at, { supabase, orgId: rec.org_id });
       }
+      // A zmanim rule whose times haven't been loaded yet waits (and is retried below); a broken clock rule is switched off
+      const waiting = !at && validZmanimRule(rec.rule);
       await supabase
         .from("recurring_sends")
-        .update({ next_run_at: at ? at.toISOString() : null, last_run_at: now.toISOString(), ...(at ? {} : { active: false }) })
+        .update({ next_run_at: at ? at.toISOString() : null, last_run_at: now.toISOString(), ...(at || waiting ? {} : { active: false }) })
         .eq("org_id", rec.org_id)
         .eq("id", rec.id)
         .eq("next_run_at", rec.next_run_at);
+    } catch (err) {
+      summary.errors.push(`recurring ${rec.id}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  // Zmanim rules that were waiting for Hebcal times pick up again as soon as they exist
+  const { data: waitingRows } = await supabase
+    .from("recurring_sends")
+    .select("id, org_id, timezone, rule")
+    .eq("active", true)
+    .is("next_run_at", null)
+    .limit(50);
+  for (const rec of (waitingRows ?? []) as Pick<RecurringRow, "id" | "org_id" | "timezone" | "rule">[]) {
+    if (!validZmanimRule(rec.rule)) continue;
+    try {
+      const next = await nextRunFor(rec.rule, rec.timezone, now, { supabase, orgId: rec.org_id });
+      if (next) await supabase.from("recurring_sends").update({ next_run_at: next.toISOString() }).eq("org_id", rec.org_id).eq("id", rec.id).is("next_run_at", null);
     } catch (err) {
       summary.errors.push(`recurring ${rec.id}: ${err instanceof Error ? err.message : String(err)}`);
     }

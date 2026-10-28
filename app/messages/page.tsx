@@ -4,6 +4,7 @@ import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getMembership, isAdminRole } from "@/lib/org";
 import { describeClockRule, formatInZone, getSchoolTimezone, validClockRule } from "@/lib/schoolTime";
+import { describeZmanimRule, validZmanimRule } from "@/lib/zmanim";
 import { getDispatcherHealth } from "@/lib/send/health";
 import { MessageRowActions, RecurringRowActions } from "./RowActions";
 import { isDemoWorkspaceLoaded } from "@/lib/demoWorkspace";
@@ -183,7 +184,7 @@ export default async function MessagesPage({
                     <div className="min-w-0">
                       <p dir="auto" className="truncate text-[13px] font-medium text-ink">{r.name}</p>
                       <p className="text-[11px] text-ink-3">
-                        {validClockRule(r.rule) ? describeClockRule(r.rule) : "Custom schedule"} · {r.audience_label}
+                        {validClockRule(r.rule) ? describeClockRule(r.rule) : validZmanimRule(r.rule) ? describeZmanimRule(r.rule) : "Custom schedule"} · {r.audience_label}
                         {" · "}
                         {r.active ? (r.next_run_at ? `next ${formatInZone(r.next_run_at, r.timezone)}` : "no upcoming date") : "paused"}
                       </p>
