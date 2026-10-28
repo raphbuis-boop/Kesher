@@ -15,6 +15,7 @@ import { validZmanimRule } from "@/lib/zmanim";
 import { getShabbosSettings, getUpcomingWindows } from "@/lib/shabbos";
 import { getDispatcherHealth } from "@/lib/send/health";
 import { linksConfigured } from "@/lib/links";
+import { getHebrewDateStyle } from "@/lib/hebrewDate";
 import type { MessageInput } from "@/lib/send/types";
 
 const SYSTEM_AUDIENCES: { slug: string; label: string; category: string }[] = [
@@ -75,6 +76,7 @@ export default async function NewMessagePage({ searchParams }: { searchParams: P
     };
   }
 
+  const hebrewStyle = await getHebrewDateStyle(supabase, orgId);
   const shabbos = await getShabbosSettings(supabase, orgId);
   const zmanimWindows = shabbos?.enabled ? await getUpcomingWindows(supabase, orgId, new Date(), 10) : [];
 
@@ -127,6 +129,7 @@ export default async function NewMessagePage({ searchParams }: { searchParams: P
           schoolTimezone={timezone}
           confirmLinksReady={linksConfigured()}
           zmanimWindows={zmanimWindows}
+          hebrewStyle={hebrewStyle}
           schedulerHealthy={health.healthy}
           isAdmin={admin}
           requireApproval={requireApproval}

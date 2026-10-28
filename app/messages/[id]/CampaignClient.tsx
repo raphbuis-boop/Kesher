@@ -1098,7 +1098,7 @@ export function CampaignClient({
         <div className="flex items-center gap-3 px-6 pb-3 text-[11px] text-ink-3">
           <span>{message.audience_label}</span>
           <span className="text-line">·</span>
-          <span>{fmtDate(sentAt)}</span>
+          <span>{fmtDate(sentAt)}{links.sentHebrew && <span dir="auto"> · {links.sentHebrew}</span>}</span>
           {links.reminderFor && (
             <>
               <span className="text-line">·</span>

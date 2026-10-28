@@ -6,6 +6,7 @@ import { getMembership, isAdminRole } from "@/lib/org";
 import { describeClockRule, formatInZone, getSchoolTimezone, validClockRule } from "@/lib/schoolTime";
 import { describeZmanimRule, validZmanimRule } from "@/lib/zmanim";
 import { getDispatcherHealth } from "@/lib/send/health";
+import { getHebrewDateStyle, hebrewDateString } from "@/lib/hebrewDate";
 import { MessageRowActions, RecurringRowActions } from "./RowActions";
 import { isDemoWorkspaceLoaded } from "@/lib/demoWorkspace";
 import { DemoWorkspaceControl } from "@/app/components/DemoWorkspaceControl";
@@ -94,11 +95,12 @@ export default async function MessagesPage({
   const countFor = async (key: string) => (await forTab(key).limit(1)).count ?? 0;
   const tabKey = ["sent", "drafts", "scheduled", "approval"].includes(activeTab) ? activeTab : "sent";
 
-  const [{ data, count }, demoLoaded, timezone, health, draftsN, scheduledN, approvalN, recurringRes] = await Promise.all([
+  const [{ data, count }, demoLoaded, timezone, health, hebrewStyle, draftsN, scheduledN, approvalN, recurringRes] = await Promise.all([
     forTab(tabKey).range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1),
     isDemoWorkspaceLoaded(supabase, orgId),
     getSchoolTimezone(supabase, orgId),
     getDispatcherHealth(supabase),
+    getHebrewDateStyle(supabase, orgId),
     countFor("drafts"),
     countFor("scheduled"),
     countFor("approval"),
@@ -186,7 +188,7 @@ export default async function MessagesPage({
                       <p className="text-[11px] text-ink-3">
                         {validClockRule(r.rule) ? describeClockRule(r.rule) : validZmanimRule(r.rule) ? describeZmanimRule(r.rule) : "Custom schedule"} · {r.audience_label}
                         {" · "}
-                        {r.active ? (r.next_run_at ? `next ${formatInZone(r.next_run_at, r.timezone)}` : "no upcoming date") : "paused"}
+                        {r.active ? (r.next_run_at ? `next ${formatInZone(r.next_run_at, r.timezone)}${hebrewStyle !== "off" ? ` · ${hebrewDateString(r.next_run_at, r.timezone, hebrewStyle)}` : ""}` : "no upcoming date") : "paused"}
                       </p>
                     </div>
                     {admin && <RecurringRowActions id={r.id} active={r.active} />}
@@ -230,7 +232,7 @@ export default async function MessagesPage({
                             {meta.label}
                           </span>
                           <span>{msg.audience_label}</span>
-                          {msg.status === "scheduled" && msg.scheduled_for && <span className="font-medium text-ink-2">{formatInZone(msg.scheduled_for, timezone)}{msg.recurring_id ? " · repeating" : ""}</span>}
+                          {msg.status === "scheduled" && msg.scheduled_for && <span className="font-medium text-ink-2">{formatInZone(msg.scheduled_for, timezone)}{hebrewStyle !== "off" && <span dir="auto"> · {hebrewDateString(msg.scheduled_for, timezone, hebrewStyle)}</span>}{msg.recurring_id ? " · repeating" : ""}</span>}
                           {msg.status === "pending_approval" && <span className="font-medium text-amber-700">Waiting for approval{msg.scheduled_for ? ` · wanted ${formatInZone(msg.scheduled_for, timezone)}` : ""}</span>}
                           {msg.status === "rejected" && <span className="font-medium text-red-600">Sent back{msg.rejection_reason ? `: ${msg.rejection_reason}` : ""}</span>}
                           {msg.status === "cancelled" && <span>Cancelled</span>}

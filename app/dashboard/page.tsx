@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getMembership, isAdminRole } from "@/lib/org";
 import { currentAndNext, getShabbosSettings, getUpcomingWindows } from "@/lib/shabbos";
 import { formatInZone, getSchoolTimezone } from "@/lib/schoolTime";
+import { getHebrewDateStyle, hebrewDateString } from "@/lib/hebrewDate";
 import { getBrandingSettings } from "@/lib/settings";
 import { isDemoWorkspaceLoaded } from "@/lib/demoWorkspace";
 import { getCategoryCounts } from "@/lib/categoryCounts";
@@ -151,6 +152,7 @@ export default async function OverviewPage() {
     pendingApproval,
     shabbosSettings,
     shabbosTimezone,
+    hebrewStyle,
   ] = await Promise.all([
     getBrandingSettings(),
     isDemoWorkspaceLoaded(supabase, orgId),
@@ -173,6 +175,7 @@ export default async function OverviewPage() {
       : Promise.resolve({ count: 0 }),
     getShabbosSettings(supabase, orgId),
     getSchoolTimezone(supabase, orgId),
+    getHebrewDateStyle(supabase, orgId),
   ]);
   const shabbosWindows = shabbosSettings?.enabled ? await getUpcomingWindows(supabase, orgId, new Date(), 2) : [];
   const { current: nowWindow, next: nextWindow } = currentAndNext(shabbosWindows, shabbosSettings?.bufferMinutes ?? 0);
@@ -280,7 +283,10 @@ export default async function OverviewPage() {
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
             <h1 className="text-[13px] font-semibold text-ink">Overview</h1>
-            <p className="text-[11px] text-ink-3 mt-px">{branding.schoolName || "Your Organization"}</p>
+            <p className="text-[11px] text-ink-3 mt-px">
+              {branding.schoolName || "Your Organization"}
+              {hebrewStyle !== "off" && <span dir="auto"> · {hebrewDateString(new Date(), shabbosTimezone, hebrewStyle)}</span>}
+            </p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
             {demoLoaded && <AdminOnly><DemoWorkspaceControl mode="remove" /></AdminOnly>}

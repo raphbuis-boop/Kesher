@@ -30,6 +30,7 @@ import { renderTemplate } from "@/lib/template";
 import { childrenLabel } from "@/lib/family";
 import { buildUnsubscribeUrls } from "@/lib/unsubscribe";
 import { chunk } from "@/lib/supabase-paging";
+import { gsmFriendly, SMS_STOP_FOOTER } from "@/lib/sms";
 import { addressFor, resolveRecipients } from "./recipients";
 import { realSenders, simulatedSenders, type EmailItem, type Senders } from "./senders";
 import type { Channel, Child, MessageInput, Person } from "./types";
@@ -76,7 +77,6 @@ type MessageRow = {
 const EMAIL_BATCH = 100;
 const POOL = 8;
 const STALE_CLAIM_MS = 10 * 60_000;
-const SMS_STOP_FOOTER = "\nReply STOP to opt out.";
 const MEDIA_RE = /\.(jpg|jpeg|png|gif|webp|pdf)$/i;
 
 async function mapPool<T>(items: T[], size: number, fn: (item: T) => Promise<void>): Promise<void> {
@@ -219,7 +219,7 @@ function textBody(ctx: RenderCtx, row: Row, person: Person, children: Child[], c
   const confirmUrl = ctx.input.confirmButton ? buildConfirmUrl(row.id) : null;
   if (confirmUrl) body += `\n\nTap to say you've read this: ${confirmUrl}`;
   // CTIA requires an opt-out instruction in every SMS. WhatsApp's template carries its own.
-  return channel === "sms" ? body + SMS_STOP_FOOTER : body;
+  return channel === "sms" ? gsmFriendly(body) + SMS_STOP_FOOTER : body;
 }
 
 // ─── Fallbacks ────────────────────────────────────────────────────────────────

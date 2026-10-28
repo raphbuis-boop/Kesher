@@ -9,21 +9,24 @@ import { Panel, Pill, FieldLabel, inputCls, useAction } from "./ui";
 export function MessagingSettings({
   timezone,
   requireApproval,
+  hebrewDates,
   schedulerLastRun,
   schedulerHealthy,
   siteUrl,
 }: {
   timezone: string;
   requireApproval: boolean;
+  hebrewDates: string;
   schedulerLastRun: string | null;
   schedulerHealthy: boolean;
   siteUrl: string;
 }) {
   const [tz, setTz] = useState(timezone);
   const [approval, setApproval] = useState(requireApproval);
+  const [hebrew, setHebrew] = useState(hebrewDates);
   const { pending, run } = useAction();
   const known = TIMEZONE_OPTIONS.some((o) => o.value === tz);
-  const dirty = tz !== timezone || approval !== requireApproval;
+  const dirty = tz !== timezone || approval !== requireApproval || hebrew !== hebrewDates;
 
   return (
     <div className="space-y-5">
@@ -31,7 +34,7 @@ export function MessagingSettings({
         title="Scheduling and approvals"
         description="Scheduled and repeating messages are entered and shown in your school's time zone, whatever time zone the person scheduling them is in."
         footer={
-          <button type="button" disabled={pending || !dirty} onClick={() => run(() => saveMessagingSettings({ timezone: tz, requireApproval: approval }), "Saved")} className="btn btn-primary">
+          <button type="button" disabled={pending || !dirty} onClick={() => run(() => saveMessagingSettings({ timezone: tz, requireApproval: approval, hebrewDates: hebrew }), "Saved")} className="btn btn-primary">
             Save
           </button>
         }
@@ -41,6 +44,14 @@ export function MessagingSettings({
             <select value={tz} onChange={(e) => setTz(e.target.value)} className={inputCls}>
               {!known && <option value={tz}>{tz}</option>}
               {TIMEZONE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </FieldLabel>
+
+          <FieldLabel label="Hebrew dates" hint="Shown next to dates on the dashboard, in your messages list and when you schedule. The Hebrew day really starts at sunset; this follows the regular calendar day.">
+            <select value={hebrew} onChange={(e) => setHebrew(e.target.value)} className={inputCls}>
+              <option value="latin">Show, in English letters (26 Cheshvan 5787)</option>
+              <option value="hebrew">Show, in Hebrew letters (כ״ו בחשוון תשפ״ז)</option>
+              <option value="off">Don&apos;t show</option>
             </select>
           </FieldLabel>
 

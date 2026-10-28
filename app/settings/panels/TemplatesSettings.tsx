@@ -137,7 +137,7 @@ function Editor({
       <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
         <div className="space-y-4">
           <FieldLabel label="Template name">
-            <input value={t.name} onChange={(e) => set({ name: e.target.value })} placeholder="Basketball team" className={inputCls} maxLength={80} autoFocus />
+            <input dir="auto" value={t.name} onChange={(e) => set({ name: e.target.value })} placeholder="Basketball team" className={inputCls} maxLength={80} autoFocus />
           </FieldLabel>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -172,15 +172,15 @@ function Editor({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <FieldLabel label="Sender name" hint={`Shown as the From name. Blank = ${brand.senderName || brand.schoolName || "your school name"}.`}>
-              <input value={t.sender_name} onChange={(e) => set({ sender_name: e.target.value })} placeholder="Yeshiva Basketball" className={inputCls} maxLength={100} />
+              <input dir="auto" value={t.sender_name} onChange={(e) => set({ sender_name: e.target.value })} placeholder="Yeshiva Basketball" className={inputCls} maxLength={100} />
             </FieldLabel>
             <FieldLabel label="Default subject" hint="Pre-fills the subject line when this template is used.">
-              <input value={t.default_subject} onChange={(e) => set({ default_subject: e.target.value })} placeholder="Practice update" className={inputCls} maxLength={200} />
+              <input dir="auto" value={t.default_subject} onChange={(e) => set({ default_subject: e.target.value })} placeholder="Practice update" className={inputCls} maxLength={200} />
             </FieldLabel>
           </div>
 
           <FieldLabel label="Footer" hint="Replaces your school's footer text (address, etc.) for this template. The unsubscribe link is always included.">
-            <textarea value={t.footer_text} onChange={(e) => set({ footer_text: e.target.value })} rows={3} className={`${inputCls} resize-none`} maxLength={1000} />
+            <textarea dir="auto" value={t.footer_text} onChange={(e) => set({ footer_text: e.target.value })} rows={3} className={`${inputCls} resize-none`} maxLength={1000} />
           </FieldLabel>
 
           <div>

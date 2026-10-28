@@ -4,6 +4,8 @@ import { notFound, redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getMembership, isAdminRole } from "@/lib/org";
 import { CampaignClient } from "./CampaignClient";
+import { getHebrewDateStyle, hebrewDateString } from "@/lib/hebrewDate";
+import { getSchoolTimezone } from "@/lib/schoolTime";
 
 export type CampaignMessage = {
   id: string;
@@ -29,6 +31,8 @@ export type CampaignLinks = {
   reminders: number;
   /** Unsent-roster problems (people with no usable contact) are listed on the delivery problems page */
   isAdmin: boolean;
+  /** Hebrew date of the send date, when the school shows them */
+  sentHebrew: string | null;
 };
 
 export type CampaignRecipient = {
@@ -161,6 +165,7 @@ export default async function CampaignPage({
     message.sent_at ?? message.created_at
   );
 
+  const [hebrewStyle, timezone] = await Promise.all([getHebrewDateStyle(supabase, orgId), getSchoolTimezone(supabase, orgId)]);
   const [reminderRes, remindersRes] = await Promise.all([
     message.resend_of
       ? supabase.from("messages").select("id, subject, body").eq("org_id", orgId).eq("id", message.resend_of).maybeSingle()
@@ -172,6 +177,7 @@ export default async function CampaignPage({
     reminderFor: original ? { id: original.id, title: original.subject?.trim() || original.body.slice(0, 50) } : null,
     reminders: remindersRes.count ?? 0,
     isAdmin: isAdminRole(role),
+    sentHebrew: hebrewStyle === "off" ? null : hebrewDateString(message.sent_at ?? message.created_at, timezone, hebrewStyle),
   };
 
   return (

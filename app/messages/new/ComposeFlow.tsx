@@ -8,6 +8,8 @@ import { submitMessage, previewSend, checkSendWindow, type Channel, type Preview
 import type { MessageInput } from "@/lib/send/types";
 import { WEEKDAY_NAMES, addDays, formatInZone, formatTimeOnly, localDateString, weekdayOf } from "@/lib/schoolTime";
 import { describeOffset, zmanimTime, type ZmanimAnchor } from "@/lib/zmanim";
+import { smsEstimate } from "@/lib/sms";
+import { hebrewDateString, type HebrewDateStyle } from "@/lib/hebrewDate";
 import { TEMPLATE_TOKENS, renderTemplate } from "@/lib/template";
 import { FUNDRAISING_WHATSAPP_NOTE, looksLikeFundraising } from "@/lib/fundraising";
 
@@ -296,16 +298,16 @@ function EmailPreview({
       </p>
       <div className="mx-auto max-w-[560px] rounded-xl border border-line bg-card px-8 py-6 shadow-sm">
         {subject && (
-          <p className="mb-4 border-b border-muted pb-4 text-sm font-semibold text-ink">
+          <p dir="auto" className="mb-4 border-b border-muted pb-4 text-sm font-semibold text-ink">
             {renderTemplate(subject, PREVIEW_PERSON)}
           </p>
         )}
         {previewGreeting && (
-          <p className="mb-4 text-sm font-semibold text-ink">{previewGreeting}</p>
+          <p dir="auto" className="mb-4 text-sm font-semibold text-ink">{previewGreeting}</p>
         )}
         {paragraphs.length > 0 ? (
           paragraphs.map((para, i) => (
-            <p key={i} className="mb-4 text-sm leading-relaxed text-ink-hover last:mb-0">
+            <p key={i} dir="auto" className="mb-4 text-sm leading-relaxed text-ink-hover last:mb-0">
               {para.split("\n").map((line, j, arr) => (
                 <span key={j}>{line}{j < arr.length - 1 && <br />}</span>
               ))}
@@ -336,6 +338,17 @@ function EmailPreview({
   );
 }
 
+/** Each paragraph picks its own direction, so Hebrew and English can sit in one message. */
+function Lines({ text }: { text: string }) {
+  return (
+    <>
+      {text.split("\n").map((line, i) => (
+        <div key={i} dir="auto" className="min-h-[1.2em]">{line}</div>
+      ))}
+    </>
+  );
+}
+
 function SmsPreview({ body }: { body: string }) {
   const rendered = renderTemplate(body, PREVIEW_PERSON);
   return (
@@ -346,7 +359,7 @@ function SmsPreview({ body }: { body: string }) {
       <div className="mx-auto max-w-[280px]">
         {rendered ? (
           <div className="inline-block max-w-full rounded-2xl rounded-tl-sm bg-line-strong px-4 py-2.5 text-sm leading-relaxed text-ink">
-            {rendered}
+            <Lines text={rendered} />
           </div>
         ) : (
           <p className="text-xs italic text-ink-3">Your message will appear here…</p>
@@ -380,7 +393,7 @@ function WhatsAppPreview({ body, attachments }: { body: string; attachments: Att
               ))}
             </div>
           )}
-          {rendered || <span className="italic text-ink-3">Your message will appear here…</span>}
+          {rendered ? <Lines text={rendered} /> : <span className="italic text-ink-3">Your message will appear here…</span>}
           <span className="ml-2 text-[10px] text-ink-3">✓✓</span>
         </div>
       </div>
@@ -444,6 +457,7 @@ export function ComposeFlow({
   canEmergency = false,
   schoolTimezone,
   confirmLinksReady = true,
+  hebrewStyle = "latin",
   zmanimWindows = [],
   schedulerHealthy = true,
   isAdmin = true,
@@ -461,6 +475,8 @@ export function ComposeFlow({
   customTokens?: { token: string; label: string }[];
   canEmergency?: boolean;
   schoolTimezone: string;
+  /** Show the Hebrew date next to dates */
+  hebrewStyle?: HebrewDateStyle;
   /** Upcoming Shabbosim / Yom Tov (empty unless Shabbos mode is on and times are loaded) */
   zmanimWindows?: ZmanimWindowOption[];
   /** False when the site URL or signing key is missing, so "I've read this" links can't be made */
@@ -711,7 +727,10 @@ export function ComposeFlow({
     run(primaryAction);
   }
 
-  const SMS_LIMIT = 160;
+  // What the carrier will count: real merge fields filled in, plus the STOP line every text carries
+  const smsSamples = (preview?.samples ?? []).filter((x) => x.channel === "sms").map((x) => x.text);
+  const smsCounter = activeChannels.includes("sms") && body.trim() ? smsEstimate(smsSamples, renderTemplate(body, PREVIEW_PERSON)) : null;
+  const smsTotal = smsCounter ? smsCounter.segments * (preview?.perChannel.sms ?? 0) : 0;
   const hasEmail = activeChannels.includes("email");
   const hasWhatsApp = activeChannels.includes("whatsapp");
   const showAttachments = attachmentsEnabled && (hasEmail || hasWhatsApp);
@@ -880,6 +899,7 @@ export function ComposeFlow({
                 placeholder={hasEmail ? "Write your message here…\n\nSeparate paragraphs with a blank line." : "Write your message…"}
                 rows={hasEmail ? 12 : 6}
                 dir="auto"
+                style={{ unicodeBidi: "plaintext" }}
                 className="w-full resize-none border-0 text-sm leading-relaxed text-ink placeholder-line-strong outline-none"
                 autoFocus={!hasEmail}
               />
@@ -903,9 +923,18 @@ export function ComposeFlow({
                   </div>
                   {hasEmail && <Toggle checked={greetingOn} onChange={setGreetingOn}>Start with &ldquo;Hi {"{{first_name}}"},&rdquo;</Toggle>}
                 </div>
-                {activeChannels.includes("sms") && (
-                  <span className={"text-xs tabular-nums " + (body.length > SMS_LIMIT ? "font-medium text-amber-600" : "text-ink-3")}>
-                    {body.length > SMS_LIMIT ? `${body.length} chars · splits into ${Math.ceil(body.length / SMS_LIMIT)} texts` : `${body.length} / ${SMS_LIMIT}`}
+                {activeChannels.includes("sms") && smsCounter && (
+                  <span
+                    className={"text-xs tabular-nums " + (smsCounter.segments > 1 || smsCounter.encoding === "UCS-2" ? "font-medium text-amber-700" : "text-ink-3")}
+                    title={
+                      smsCounter.encoding === "UCS-2"
+                        ? `This text is sent as Unicode because of ${smsCounter.unicodeReasons.join(" ")}. Unicode texts hold 70 characters (67 per part when split) instead of 160.`
+                        : "Plain English texts hold 160 characters (153 per part when split)."
+                    }
+                  >
+                    {smsCounter.length} / {smsCounter.perSegment} · {smsCounter.segments} {smsCounter.segments === 1 ? "text" : "texts"} each
+                    {smsCounter.encoding === "UCS-2" ? " · Unicode (Hebrew, emoji or curly quotes)" : ""}
+                    {smsTotal > 0 && smsCounter.segments > 0 ? ` · about ${smsTotal.toLocaleString()} texts in all` : ""}
                   </span>
                 )}
               </div>
@@ -1102,6 +1131,9 @@ export function ComposeFlow({
                     <input type="date" value={date} min={today} onChange={(e) => setDate(e.target.value)} aria-label="Date" className={SELECT_CLS} />
                     <input type="time" value={time} onChange={(e) => setTime(e.target.value)} aria-label="Time" className={SELECT_CLS} />
                     <span className="text-xs text-ink-3">{tzShort} (your school&apos;s time zone)</span>
+                    {hebrewStyle !== "off" && /^\d{4}-\d{2}-\d{2}$/.test(date) && (
+                      <span dir="auto" className="text-xs text-ink-3">· {hebrewDateString(`${date}T12:00:00Z`, "UTC", hebrewStyle)}</span>
+                    )}
                   </div>
                   {isAdmin && (
                     <div className="flex flex-wrap items-center gap-2">
