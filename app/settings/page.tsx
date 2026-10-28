@@ -11,6 +11,9 @@ import { SettingsShell, type SectionId, type TeamInvite, type TeamMember } from 
 import { getCustomFieldDefs } from "@/lib/customFields";
 import { CustomFieldsSettings } from "./panels/CustomFieldsSettings";
 import { NewContactsSetting } from "./panels/NewContactsSetting";
+import { GoogleSheetsSettings, type SheetSourceView } from "./panels/GoogleSheetsSettings";
+import { getGoogleConnection, googleConfigError } from "@/lib/google";
+import type { SyncStats } from "@/lib/sync/engine";
 import { getNewContactsMode } from "@/lib/sync/engine";
 
 export default async function SettingsPage() {
@@ -46,10 +49,41 @@ export default async function SettingsPage() {
         getCustomFieldDefs(supabase, orgId),
         getNewContactsMode(supabase, orgId),
         supabase.from("people").select("id", { count: "exact", head: true }).eq("org_id", orgId).eq("status", "pending"),
+        getGoogleConnection(orgId).catch(() => null),
+        supabase
+          .from("sync_sources")
+          .select("id, name, config, auto_sync, last_run_at, last_run_id, last_error")
+          .eq("org_id", orgId)
+          .eq("kind", "google_sheets")
+          .order("created_at"),
       ])
     : null;
 
-  const [demoLoaded, simulated, importsRes, channels, membersRes, invitesRes, fieldDefs, newContactsMode, pendingRes] = admin ?? [];
+  const [demoLoaded, simulated, importsRes, channels, membersRes, invitesRes, fieldDefs, newContactsMode, pendingRes, googleConnection, sheetsRes] = admin ?? [];
+
+  // Last run result for each connected sheet
+  type SheetRow = { id: string; name: string; config: Record<string, string>; auto_sync: boolean; last_run_at: string | null; last_run_id: string | null; last_error: string | null };
+  const sheetRows = (sheetsRes?.data ?? []) as SheetRow[];
+  const lastRunIds = sheetRows.map((r) => r.last_run_id).filter((x): x is string => !!x);
+  const lastRuns = lastRunIds.length
+    ? ((await supabase.from("sync_runs").select("id, status, stats").eq("org_id", orgId).in("id", lastRunIds)).data ?? []) as { id: string; status: string; stats: Partial<SyncStats> }[]
+    : [];
+  const sheetViews: SheetSourceView[] = sheetRows.map((r) => {
+    const run = lastRuns.find((x) => x.id === r.last_run_id);
+    return {
+      id: r.id,
+      name: r.name,
+      tab: r.config.tabTitle ?? "",
+      spreadsheetId: r.config.spreadsheetId ?? "",
+      spreadsheetTitle: r.config.spreadsheetTitle ?? "Spreadsheet",
+      autoSync: r.auto_sync,
+      lastRunAt: r.last_run_at,
+      lastRunId: r.last_run_id,
+      lastRunStatus: run?.status ?? null,
+      lastStats: run?.stats ?? null,
+      lastError: r.last_error,
+    };
+  });
 
   // Server-loaded panels shown inside the matching Settings section (admins only)
   const panels: Partial<Record<SectionId, React.ReactNode>> = admin
@@ -57,6 +91,12 @@ export default async function SettingsPage() {
         data: (
           <div className="space-y-5">
             <NewContactsSetting mode={newContactsMode ?? "review"} pending={pendingRes?.count ?? 0} />
+            <GoogleSheetsSettings
+              configError={googleConfigError()}
+              connection={googleConnection ?? null}
+              sources={sheetViews}
+              customFields={(fieldDefs ?? []).map((d) => ({ key: d.key, label: d.label }))}
+            />
             <CustomFieldsSettings defs={fieldDefs ?? []} />
           </div>
         ),

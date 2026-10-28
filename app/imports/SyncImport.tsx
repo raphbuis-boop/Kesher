@@ -40,7 +40,7 @@ async function readFile(file: File): Promise<TableData> {
 
 // ─── Mapping step ─────────────────────────────────────────────────────────────
 
-function MappingStep({
+export function MappingStep({
   table,
   mapping,
   setMapping,
