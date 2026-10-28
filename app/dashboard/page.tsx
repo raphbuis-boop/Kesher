@@ -84,6 +84,7 @@ const CHANNEL_META: Record<
   email:    { label: "Email",    Icon: Mail,          color: "text-ink-2",    bg: "bg-muted"  },
   sms:      { label: "SMS",      Icon: Smartphone,    color: "text-blue-500",    bg: "bg-blue-50"     },
   whatsapp: { label: "WhatsApp", Icon: MessageSquare, color: "text-emerald-500", bg: "bg-emerald-50"  },
+  multi:    { label: "Multi",    Icon: Send,          color: "text-ink-2",       bg: "bg-muted"       },
 };
 
 const AUDIENCE_LABELS: Record<string, string> = {

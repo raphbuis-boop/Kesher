@@ -37,6 +37,7 @@
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { fallbackForFailedRow } from "@/lib/send/engine";
 
 // ─── CTIA-required keyword constants ──────────────────────────────────────────
 
@@ -308,6 +309,15 @@ export async function POST(req: NextRequest) {
         console.warn(
           `[sinch-webhook] FAILED matched no recipient for messageId=${messageId} — provider_id mismatch`
         );
+      } else {
+        // Best-channel messages try the next channel (email) for this parent
+        for (const row of updated) {
+          try {
+            await fallbackForFailedRow(supabase, row.id as string, report.reason?.description ?? "Text message failed");
+          } catch (fbErr) {
+            console.error(`[sinch-webhook] fallback failed for row ${row.id}:`, fbErr instanceof Error ? fbErr.message : fbErr);
+          }
+        }
       }
       return NextResponse.json({ ok: true });
     }

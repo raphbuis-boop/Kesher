@@ -29,11 +29,12 @@ export type AudienceMember = {
   categories: string[] | null;
   grade: string | null;
   graduation_year: number | null;
+  custom_fields: Record<string, unknown> | null;
   person_tags: Array<{ tag_id: string; tags: { id: string; name: string } }>;
 };
 
 const MEMBER_COLUMNS =
-  "id, first_name, last_name, preferred_name, salutation, email, phone, whatsapp, categories, grade, graduation_year, person_tags ( tag_id, tags ( id, name ) )";
+  "id, first_name, last_name, preferred_name, salutation, email, phone, whatsapp, categories, grade, graduation_year, custom_fields, person_tags ( tag_id, tags ( id, name ) )";
 
 export type GroupRow = {
   id: string;

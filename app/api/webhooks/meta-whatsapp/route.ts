@@ -31,6 +31,7 @@
 
 import { NextRequest, NextResponse, after } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { fallbackForFailedRow } from "@/lib/send/engine";
 
 // ─── GET — Meta's webhook verification challenge ──────────────────────────────
 
@@ -196,6 +197,15 @@ async function processPayload(payload: MetaWebhookPayload) {
               console.error(`[meta-status] DB update failed (failed) wamid=${status.id}:`, error.message);
             } else if (!updated || updated.length === 0) {
               console.warn(`[meta-status] FAILED matched no recipient for wamid=${status.id} — provider_id mismatch`);
+            } else {
+              // Best-channel messages try the next channel (text, then email) for this parent
+              for (const row of updated) {
+                try {
+                  await fallbackForFailedRow(supabase, row.id as string, formatErrorDetail(err));
+                } catch (fbErr) {
+                  console.error(`[meta-status] fallback failed for row ${row.id}:`, fbErr instanceof Error ? fbErr.message : fbErr);
+                }
+              }
             }
             continue;
           }

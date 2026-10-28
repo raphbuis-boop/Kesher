@@ -43,6 +43,7 @@ const CHANNEL_META: Record<
   email:    { icon: Mail,          label: "Email",    color: "text-ink-2",    bg: "bg-muted"  },
   sms:      { icon: Smartphone,    label: "SMS",      color: "text-blue-500",    bg: "bg-blue-50"     },
   whatsapp: { icon: MessageSquare, label: "WhatsApp", color: "text-emerald-500", bg: "bg-emerald-50"  },
+  multi:    { icon: Send,          label: "Multi",    color: "text-ink-2",    bg: "bg-muted"       },
 };
 
 function CampaignStatusDot({ status }: { status: string }) {

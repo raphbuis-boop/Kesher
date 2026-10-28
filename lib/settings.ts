@@ -36,6 +36,23 @@ const KEY_MAP: Record<string, keyof BrandingSettings> = {
   sender_email: "senderEmail",
 };
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+/**
+ * Branding for an org, read with whatever client the caller has (user session
+ * or service role) — used by scheduled sends, which have no session.
+ */
+export async function loadBrandingSettings(supabase: SupabaseClient, orgId: string): Promise<BrandingSettings> {
+  const { data, error } = await supabase.from("settings").select("key, value").eq("org_id", orgId);
+  if (error || !data) return ENV_DEFAULTS;
+  const result = { ...ENV_DEFAULTS };
+  for (const row of data as { key: string; value: string }[]) {
+    const field = KEY_MAP[row.key];
+    if (field && row.value?.trim()) (result as Record<string, string>)[field] = row.value.trim();
+  }
+  return result;
+}
+
 /**
  * Fetch branding settings from Supabase, falling back to environment variables
  * if the settings table doesn't exist yet or a field is blank. Memoised per

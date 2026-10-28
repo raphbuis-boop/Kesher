@@ -1,6 +1,11 @@
 /**
  * Merge-token template engine for personalized messages.
  *
+ * Parents are the recipients, their children the subject: {{student_first_name}}
+ * is the child (or children) the message is about, {{grade}} the child's grade,
+ * and any custom field key ({{division}}, {{team}}…) is read from the parent,
+ * then from the child. With no children linked they fall back to the person.
+ *
  * Supported tokens:
  *   {{first_name}}          preferred_name ?? first_name ?? "Friend"
  *   {{last_name}}           last_name
@@ -19,6 +24,13 @@
 
 import { gradeLabel } from "@/lib/gradYear";
 
+export type ChildContext = {
+  first_name: string;
+  last_name?: string | null;
+  grade?: string | null;
+  custom_fields?: Record<string, unknown> | null;
+};
+
 export type PersonContext = {
   first_name?: string | null;
   last_name?: string | null;
@@ -26,7 +38,21 @@ export type PersonContext = {
   salutation?: string | null;
   email?: string | null;
   graduation_year?: number | null;
+  grade?: string | null;
+  custom_fields?: Record<string, unknown> | null;
+  /** The students this message is about (a parent's children in the audience). */
+  children?: ChildContext[];
 };
+
+/** "Moshe", "Moshe and Rivka", "Moshe, Rivka and Yossi" */
+export function joinNames(names: string[]): string {
+  if (names.length <= 1) return names[0] ?? "";
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
+
+function gradeText(grade: string): string {
+  return /^\d+$/.test(grade.trim()) ? `Grade ${grade.trim()}` : grade.trim();
+}
 
 const TOKEN_RE = /\{\{(\w+)\}\}/g;
 
@@ -36,12 +62,17 @@ export function renderTemplate(body: string, person: PersonContext): string {
       case "first_name":
       case "preferred_name":
       case "parent_first_name":
-      case "student_first_name":
         return person.preferred_name?.trim() || person.first_name?.trim() || "Friend";
+      case "student_first_name": {
+        const kids = person.children?.filter((c) => c.first_name?.trim()) ?? [];
+        if (kids.length > 0) return joinNames(kids.map((c) => c.first_name.trim()));
+        return person.preferred_name?.trim() || person.first_name?.trim() || "Friend";
+      }
       case "last_name":
       case "parent_last_name":
-      case "student_last_name":
         return person.last_name?.trim() || "";
+      case "student_last_name":
+        return person.children?.[0]?.last_name?.trim() || person.last_name?.trim() || "";
       case "full_name": {
         const full = [person.first_name, person.last_name]
           .map((s) => s?.trim())
@@ -54,11 +85,20 @@ export function renderTemplate(body: string, person: PersonContext): string {
       case "email":
         return person.email?.trim() || "";
       case "grade": {
+        const kidGrade = person.children?.find((c) => c.grade?.trim())?.grade;
+        if (kidGrade) return gradeText(kidGrade);
+        if (person.grade?.trim()) return gradeText(person.grade);
         if (!person.graduation_year) return "";
         return gradeLabel(person.graduation_year);
       }
-      default:
+      default: {
+        // Custom fields: the parent's own value first, then their child's
+        const own = person.custom_fields?.[token];
+        if (own !== undefined && own !== null && String(own).trim()) return String(own).trim();
+        const kid = person.children?.map((c) => c.custom_fields?.[token]).find((v) => v !== undefined && v !== null && String(v).trim());
+        if (kid !== undefined && kid !== null) return String(kid).trim();
         return match; // leave unknown tokens visible
+      }
     }
   });
 }

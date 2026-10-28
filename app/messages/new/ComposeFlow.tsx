@@ -2,9 +2,9 @@
 
 import { toast } from "@/app/components/ui/toast";
 import { GlassDropzone, postWithProgress } from "@/app/components/ui/GlassDropzone";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { sendMessage, previewRecipients, resolveAllRecipients, type Channel, type RecipientPreview, type ResolvedRecipient } from "../actions";
+import { submitMessage, previewSend, type Channel, type PreviewResult } from "../actions";
 import { TEMPLATE_TOKENS, renderTemplate } from "@/lib/template";
 import { FUNDRAISING_WHATSAPP_NOTE, looksLikeFundraising } from "@/lib/fundraising";
 
@@ -13,10 +13,8 @@ export type TemplateOption = { id: string; name: string; defaultSubject: string 
 export type AudienceOption = {
   slug: string;
   label: string;
+  /** People in the audience right now (students are reached through their parents). */
   totalCount: number;
-  emailCount: number;
-  phoneCount: number;
-  whatsappCount: number;
 };
 
 type Attachment = {
@@ -35,18 +33,8 @@ const PREVIEW_PERSON = {
   graduation_year: new Date().getFullYear() + 4, // ~Grade 8
 };
 
-function recipientCount(audiences: AudienceOption[], channel: Channel): number {
-  if (channel === "email") return audiences.reduce((s, a) => s + a.emailCount, 0);
-  if (channel === "whatsapp") return audiences.reduce((s, a) => s + a.whatsappCount, 0);
-  return audiences.reduce((s, a) => s + a.phoneCount, 0);
-}
-
 function channelLabel(channel: Channel): string {
   return channel === "email" ? "Email" : channel === "sms" ? "SMS" : "WhatsApp";
-}
-
-function channelField(channel: Channel): string {
-  return channel === "email" ? "email address" : "phone number";
 }
 
 function audienceSummary(audiences: AudienceOption[]): string {
@@ -382,58 +370,132 @@ function WhatsAppPreview({ body, attachments }: { body: string; attachments: Att
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
+const SELECT_CLS = "rounded-md border border-line bg-card py-1.5 pl-2.5 pr-7 text-xs font-medium text-ink-soft outline-none hover:border-line-strong focus:border-line-strong";
+
+function Toggle({ checked, onChange, children, hint, disabled }: { checked: boolean; onChange: (v: boolean) => void; children: React.ReactNode; hint?: React.ReactNode; disabled?: boolean }) {
+  return (
+    <label className={`flex items-start gap-2 text-xs text-ink-2 ${disabled ? "opacity-50" : "cursor-pointer"}`}>
+      <input type="checkbox" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} className="mt-0.5 h-3.5 w-3.5 accent-[var(--app-ink)]" />
+      <span>
+        {children}
+        {hint && <span className="mt-0.5 block text-ink-3">{hint}</span>}
+      </span>
+    </label>
+  );
+}
+
+function usePreview(input: Parameters<typeof previewSend>[0], enabled: boolean) {
+  const [data, setData] = useState<PreviewResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const seq = useRef(0);
+  const key = JSON.stringify(input);
+
+  useEffect(() => {
+    if (!enabled) return;
+    const mine = ++seq.current;
+    const t = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const res = await previewSend(JSON.parse(key));
+        if (mine === seq.current) {
+          setData(res);
+          setError(null);
+        }
+      } catch (err) {
+        if (mine === seq.current) setError(err instanceof Error ? err.message : "Couldn't work out who this reaches.");
+      } finally {
+        if (mine === seq.current) setLoading(false);
+      }
+    }, 450);
+    return () => clearTimeout(t);
+  }, [key, enabled]);
+
+  return { data: enabled ? data : null, loading, error };
+}
+
 export function ComposeFlow({
   audiences,
-  fromEmail,
   initialAudienceSlugs,
   attachmentsEnabled = false,
   templates = [],
   audienceTemplates = {},
+  customTokens = [],
+  canEmergency = false,
 }: {
   audiences: AudienceOption[];
-  fromEmail: string;
+  fromEmail?: string;
   initialAudienceSlugs?: string[];
   attachmentsEnabled?: boolean;
   templates?: TemplateOption[];
   /** audience slug → default template id */
   audienceTemplates?: Record<string, string>;
+  /** Custom fields offered as merge tokens, e.g. { token: "{{division}}", label: "Division" } */
+  customTokens?: { token: string; label: string }[];
+  canEmergency?: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const bodyRef = useRef<HTMLTextAreaElement>(null);
 
-  const initialSelected = initialAudienceSlugs
-    ? audiences.filter((a) => initialAudienceSlugs.includes(a.slug))
-    : [];
-
+  const initialSelected = initialAudienceSlugs ? audiences.filter((a) => initialAudienceSlugs.includes(a.slug)) : [];
   const [selectedAudiences, setSelectedAudiences] = useState<AudienceOption[]>(initialSelected);
-  // Template: picked from the audience's default until the sender chooses one themselves
   const defaultTemplateFor = (list: AudienceOption[]) => list.map((a) => audienceTemplates[a.slug]).find(Boolean) ?? null;
   const [templateId, setTemplateId] = useState<string | null>(defaultTemplateFor(initialSelected));
   const [templateTouched, setTemplateTouched] = useState(false);
-  const [isFundraising, setIsFundraising] = useState(false);
-  const [channel, setChannel] = useState<Channel>("email");
+
+  const [channels, setChannels] = useState<Channel[]>(["email"]);
+  const [channelMode, setChannelMode] = useState<"all" | "best">("all");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
-  const [greetingEnabled, setGreetingEnabled] = useState(false);
-  const [greetingTemplate, setGreetingTemplate] = useState("Hi {{first_name}},");
+  const [greetingOn, setGreetingOn] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [isFundraising, setIsFundraising] = useState(false);
+  const [isEmergency, setIsEmergency] = useState(false);
+  const [familyPrefix, setFamilyPrefix] = useState(false);
+  const [confirmButton, setConfirmButton] = useState(false);
+  const [studentsDirect, setStudentsDirect] = useState(false);
+  const [excluded, setExcluded] = useState<Set<string>>(new Set());
+  const [previewTab, setPreviewTab] = useState<Channel>("email");
   const [showPreview, setShowPreview] = useState(true);
+  const [showMore, setShowMore] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
-  const [recipientPreviews, setRecipientPreviews] = useState<RecipientPreview[] | null>(null);
-  const [recipientTotal, setRecipientTotal] = useState(0);
-  const [showRecipientPreviews, setShowRecipientPreviews] = useState(false);
-  const [isLoadingPreviews, startPreviewTransition] = useTransition();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [showSkipped, setShowSkipped] = useState(false);
 
-  // Confirmation step — populated when user clicks "Send Email"
-  const [confirmRecipients, setConfirmRecipients] = useState<ResolvedRecipient[] | null>(null);
-  const [removedPersonIds, setRemovedPersonIds] = useState<Set<string>>(new Set());
-  const [isResolvingRecipients, startResolveTransition] = useTransition();
+  const whatsappBlocked = isFundraising || looksLikeFundraising(body, subject);
+  const activeChannels = channels.filter((c) => !(c === "whatsapp" && whatsappBlocked));
+  const greeting = greetingOn && activeChannels.includes("email") ? "Hi {{first_name}}," : null;
+
+  const input = useMemo(
+    () => ({
+      audienceSlugs: selectedAudiences.map((a) => a.slug),
+      audienceLabel: audienceSummary(selectedAudiences),
+      channels,
+      channelMode,
+      subject,
+      body,
+      greeting,
+      attachmentUrls: attachments.map((a) => a.url),
+      templateId: channels.includes("sms") && channels.length === 1 ? null : templateId,
+      isFundraising,
+      isEmergency,
+      familyPrefix,
+      confirmButton,
+      studentsDirect,
+      excludePersonIds: [...excluded],
+      onlyPersonIds: null as string[] | null,
+    }),
+    [selectedAudiences, channels, channelMode, subject, body, greeting, attachments, templateId, isFundraising, isEmergency, familyPrefix, confirmButton, studentsDirect, excluded]
+  );
+
+  const ready = selectedAudiences.length > 0 && channels.length > 0 && body.trim().length > 0;
+  const { data: preview, loading: previewLoading, error: previewError } = usePreview(input, ready);
 
   function toggleAudience(a: AudienceOption) {
-    setRecipientPreviews(null);
     const next = selectedAudiences.some((x) => x.slug === a.slug) ? selectedAudiences.filter((x) => x.slug !== a.slug) : [...selectedAudiences, a];
     setSelectedAudiences(next);
+    setExcluded(new Set());
     if (!templateTouched) {
       const tid = defaultTemplateFor(next);
       setTemplateId(tid);
@@ -449,45 +511,22 @@ export function ComposeFlow({
     if (tpl?.defaultSubject && !subject.trim()) setSubject(tpl.defaultSubject);
   }
 
-  function handleChannelChange(c: Channel) {
-    setChannel(c);
-    if (c !== "email") setSubject("");
-    if (c === "sms") setAttachments([]);
-    setRecipientPreviews(null);
-    setRecipientTotal(0);
-    setShowRecipientPreviews(false);
-  }
-
-  function handleToggleRecipientPreviews() {
-    if (showRecipientPreviews) {
-      setShowRecipientPreviews(false);
-      return;
-    }
-    setShowRecipientPreviews(true);
-    if (recipientPreviews === null) {
-      startPreviewTransition(async () => {
-        const result = await previewRecipients(
-          selectedAudiences.map((a) => a.slug),
-          channel,
-          body,
-          8
-        );
-        setRecipientPreviews(result.previews);
-        setRecipientTotal(result.totalCount);
-      });
-    }
+  function toggleChannel(c: Channel) {
+    setChannels((prev) => {
+      const next = prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c];
+      if (next.length === 0) return prev; // always keep one
+      if (c === "sms" && !prev.includes("sms")) setAttachments((a) => a); // attachments only apply to email/WhatsApp
+      return next;
+    });
+    setPreviewTab(c);
   }
 
   function insertToken(token: string) {
     const el = bodyRef.current;
-    if (!el) {
-      setBody((b) => b + token);
-      return;
-    }
+    if (!el) return setBody((b) => b + token);
     const start = el.selectionStart ?? body.length;
     const end = el.selectionEnd ?? body.length;
-    const newBody = body.slice(0, start) + token + body.slice(end);
-    setBody(newBody);
+    setBody(body.slice(0, start) + token + body.slice(end));
     requestAnimationFrame(() => {
       el.focus();
       const pos = start + token.length;
@@ -498,569 +537,425 @@ export function ComposeFlow({
   async function uploadAttachment(file: File, onProgress: (pct: number) => void) {
     const form = new FormData();
     form.append("file", file);
-    form.append("channel", channel);
+    form.append("channel", channels.includes("email") ? "email" : "whatsapp");
     const data = await postWithProgress<Attachment>("/api/upload", form, onProgress);
     setAttachments((prev) => [...prev, data]);
   }
 
-  const totalCount = selectedAudiences.reduce((s, a) => s + a.totalCount, 0);
-  const emailCount = selectedAudiences.reduce((s, a) => s + a.emailCount, 0);
-  const phoneCount = selectedAudiences.reduce((s, a) => s + a.phoneCount, 0);
-  const whatsappCount = selectedAudiences.reduce((s, a) => s + a.whatsappCount, 0);
-  const eligible = recipientCount(selectedAudiences, channel);
-  const missing = totalCount - eligible;
+  const total = preview?.messages ?? 0;
+  const channelProblemFor = (c: Channel) => preview?.problems.find((p) => p.channel === c)?.problem ?? null;
+  const subjectOk = !activeChannels.includes("email") || subject.trim().length > 0;
+  const blockingProblem = preview?.problems && preview.problems.length > 0;
+  const canSend = ready && subjectOk && !!preview && total > 0 && !blockingProblem && activeChannels.length > 0;
 
-  const whatsappBlocked = isFundraising || looksLikeFundraising(body, subject);
-  const canSend =
-    !(channel === "whatsapp" && whatsappBlocked) &&
-    selectedAudiences.length > 0 &&
-    body.trim().length > 0 &&
-    (channel !== "email" || subject.trim().length > 0) &&
-    eligible > 0;
-
-  // Step 1: user clicks "Send Email" → resolve recipients → show confirmation
-  function handleSend() {
-    if (!canSend) return;
-    setSendError(null);
-    setRemovedPersonIds(new Set());
-    startResolveTransition(async () => {
-      const resolved = await resolveAllRecipients(
-        selectedAudiences.map((a) => a.slug),
-        channel
-      );
-      setConfirmRecipients(resolved);
-    });
-  }
-
-  // Step 2: user reviews recipient list and confirms → actually send
   function handleConfirmedSend() {
-    if (!canSend || !confirmRecipients) return;
-    setConfirmRecipients(null);
+    setConfirmOpen(false);
     setSendError(null);
     startTransition(async () => {
-      const label = audienceSummary(selectedAudiences);
-      const result = await sendMessage(
-        selectedAudiences.map((a) => a.slug),
-        label,
-        channel,
-        subject,
-        body,
-        attachments.map((a) => a.url),
-        channel === "email" && greetingEnabled ? greetingTemplate : null,
-        removedPersonIds.size > 0 ? Array.from(removedPersonIds) : undefined,
-        { templateId: channel === "sms" ? null : templateId, isFundraising }
-      );
+      const result = await submitMessage({ ...input, channels: activeChannels });
       if (result.success) {
-        toast.success("Message sent");
-        router.push("/messages");
+        toast.success(result.state === "sent" ? "Message sent" : `Sending… ${result.remaining.toLocaleString()} still to go — it continues automatically`);
+        router.push(`/messages/${result.messageId}`);
         router.refresh();
       } else {
-        setSendError(result.error ?? "Something went wrong. Please try again.");
-        toast.error(result.error ?? "Message could not be sent.");
+        setSendError(result.error);
+        toast.error(result.error);
       }
     });
   }
 
   const SMS_LIMIT = 160;
-  const channelSupportsAttachments = channel !== "sms";
-  const showAttachments = attachmentsEnabled && channelSupportsAttachments;
-  const acceptTypes =
-    channel === "whatsapp"
-      ? "image/jpeg,image/png,image/gif,image/webp,application/pdf"
-      : "image/jpeg,image/png,image/gif,image/webp,application/pdf,.docx,.xlsx";
+  const hasEmail = activeChannels.includes("email");
+  const hasWhatsApp = activeChannels.includes("whatsapp");
+  const showAttachments = attachmentsEnabled && (hasEmail || hasWhatsApp);
+  const acceptTypes = hasEmail
+    ? "image/jpeg,image/png,image/gif,image/webp,application/pdf,.docx,.xlsx"
+    : "image/jpeg,image/png,image/gif,image/webp,application/pdf";
+  const tokens = [...TEMPLATE_TOKENS.map((t) => ({ token: t.token as string, label: t.label as string })), ...customTokens];
+  const tabChannel = activeChannels.includes(previewTab) ? previewTab : activeChannels[0];
 
   return (
     <>
-    <div className="rounded-xl border border-line bg-card shadow-sm overflow-hidden">
-
-      {/* ── TO ────────────────────────────────────────────────────────────── */}
-      <div className="px-6 py-5">
-        <div className="flex items-start gap-4">
-          <span className="mt-2.5 w-16 flex-shrink-0 text-xs font-semibold uppercase tracking-wider text-ink-3">To</span>
-          <div className="flex-1">
-            <AudienceDropdown
-              allAudiences={audiences}
-              selected={selectedAudiences}
-              onToggle={toggleAudience}
-            />
-
-            {/* Selected audience chips */}
-            {selectedAudiences.length > 0 && (
-              <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                {selectedAudiences.map((a) => (
-                  <span key={a.slug} className="inline-flex items-center gap-1.5 rounded-full bg-muted py-1 pl-3 pr-2 text-xs font-medium text-ink-soft">
-                    {a.label}
-                    <span className="tabular-nums text-ink-3">{a.totalCount}</span>
-                    <button
-                      type="button"
-                      onClick={() => toggleAudience(a)}
-                      className="flex h-3.5 w-3.5 items-center justify-center rounded-full text-ink-3 transition-colors hover:bg-line hover:text-ink-soft"
-                      aria-label={`Remove ${a.label}`}
-                    >
-                      <svg className="h-2 w-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="mx-6 border-t border-muted" />
-
-      {/* ── CHANNEL ───────────────────────────────────────────────────────── */}
-      <div className="px-6 py-5">
-        <div className="flex items-start gap-4">
-          <span className="mt-2.5 w-16 flex-shrink-0 text-xs font-semibold uppercase tracking-wider text-ink-3">Via</span>
-          <div className="flex-1">
-            <div className="flex gap-2">
-              {(["email", "sms", "whatsapp"] as Channel[]).map((c) => {
-                const count = c === "email" ? emailCount : c === "whatsapp" ? whatsappCount : phoneCount;
-                const isSelected = channel === c;
-                const disabledByFundraising = c === "whatsapp" && isFundraising;
-                return (
-                  <button
-                    key={c}
-                    type="button"
-                    disabled={disabledByFundraising}
-                    title={disabledByFundraising ? FUNDRAISING_WHATSAPP_NOTE : undefined}
-                    onClick={() => handleChannelChange(c)}
-                    className={
-                      "flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 " +
-                      (isSelected
-                        ? "border-ink bg-ink text-on-ink"
-                        : "border-line bg-card text-ink-soft hover:border-line-strong hover:text-ink")
-                    }
-                  >
-                    <ChannelIcon channel={c} className="h-4 w-4" />
-                    {channelLabel(c)}
-                    {selectedAudiences.length > 0 && (
-                      <span className={
-                        "text-xs tabular-nums " +
-                        (isSelected ? "text-line-strong" : "text-ink-3")
-                      }>
-                        {count.toLocaleString()}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            <label className="mt-3 flex cursor-pointer items-start gap-2 text-xs text-ink-2">
-              <input
-                type="checkbox"
-                checked={isFundraising}
-                onChange={(e) => {
-                  setIsFundraising(e.target.checked);
-                  if (e.target.checked && channel === "whatsapp") handleChannelChange("email");
-                }}
-                className="mt-0.5 h-3.5 w-3.5 accent-[var(--app-ink)]"
-              />
-              <span>
-                This is a fundraising message
-                {isFundraising && <span className="mt-0.5 block text-ink-3">{FUNDRAISING_WHATSAPP_NOTE}</span>}
-              </span>
-            </label>
-            {channel === "whatsapp" && !isFundraising && whatsappBlocked && (
-              <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                This reads like a fundraising message. WhatsApp doesn&apos;t allow those — send it by email or text instead, or remove the donation wording.
-              </p>
-            )}
-
-            {/* Human-language channel notes */}
-            {channel === "sms" && (
-              <p className="mt-3 text-xs text-ink-3">
-                Messages are sent as text. Keep messages under {SMS_LIMIT} characters to avoid splitting.
-              </p>
-            )}
-            {channel === "whatsapp" && (
-              <p className="mt-3 text-xs text-ink-3">
-                Messages are sent via WhatsApp. Recipients must have WhatsApp installed on their phone.
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="mx-6 border-t border-muted" />
-
-      {/* ── COMPOSE ───────────────────────────────────────────────────────── */}
-      <div className="px-6 py-5">
-        <div className="flex items-start gap-4">
-          <span className="mt-1 w-16 flex-shrink-0 text-xs font-semibold uppercase tracking-wider text-ink-3">Message</span>
-          <div className="flex-1 space-y-3">
-            {channel !== "sms" && templates.length > 0 && (
-              <div className="flex items-center gap-2 border-b border-muted pb-3">
-                <label htmlFor="compose-template" className="text-xs font-semibold uppercase tracking-wider text-ink-3">{channel === "email" ? "Template" : "Sender label"}</label>
-                <select
-                  id="compose-template"
-                  value={templateId ?? ""}
-                  onChange={(e) => chooseTemplate(e.target.value)}
-                  className="rounded-md border border-line bg-card py-1.5 pl-2.5 pr-7 text-xs font-medium text-ink-soft outline-none hover:border-line-strong focus:border-line-strong"
-                >
-                  <option value="">School default</option>
-                  {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-                </select>
-              </div>
-            )}
-            {channel === "email" && (
-              <input
-                type="text"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder="Subject line…"
-                className="w-full border-0 border-b border-muted pb-3 text-sm font-semibold text-ink placeholder-line-strong outline-none transition-colors focus:border-line-strong"
-                autoFocus
-              />
-            )}
-
-            <textarea
-              ref={bodyRef}
-              value={body}
-              onChange={(e) => { setBody(e.target.value); setRecipientPreviews(null); }}
-              placeholder={
-                channel === "email"
-                  ? "Write your message here…\n\nSeparate paragraphs with a blank line."
-                  : channel === "sms"
-                  ? "Write your text message…"
-                  : "Write your WhatsApp message…"
-              }
-              rows={channel === "email" ? 12 : 6}
-              className="w-full resize-none border-0 text-sm leading-relaxed text-ink placeholder-line-strong outline-none"
-              autoFocus={channel !== "email"}
-            />
-
-            {/* Toolbar: personalization tokens + greeting toggle + char count */}
-            <div className="flex items-center justify-between border-t border-muted pt-2.5">
-              <div className="flex flex-wrap items-center gap-3">
-                {/* Insert token dropdown */}
-                <div className="relative">
-                  <select
-                    defaultValue=""
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        insertToken(e.target.value);
-                        e.target.value = "";
-                      }
-                    }}
-                    className="appearance-none cursor-pointer rounded-md border border-line bg-card py-1.5 pl-3 pr-7 text-xs font-medium text-ink-soft outline-none transition-colors hover:border-line-strong hover:text-ink focus:border-line-strong"
-                  >
-                    <option value="" disabled>Insert field…</option>
-                    {TEMPLATE_TOKENS.map(({ token, label }) => (
-                      <option key={token} value={token}>{label}</option>
-                    ))}
-                  </select>
-                  <svg
-                    className="pointer-events-none absolute right-2 top-1/2 h-3 w-3 -translate-y-1/2 text-ink-3"
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                  </svg>
-                </div>
-
-              </div>
-
-              {/* SMS character count */}
-              {channel === "sms" && (
-                <span className={"text-xs tabular-nums " + (body.length > SMS_LIMIT ? "font-medium text-amber-600" : "text-ink-3")}>
-                  {body.length > SMS_LIMIT
-                    ? `${body.length} chars · splits into ${Math.ceil(body.length / SMS_LIMIT)} messages`
-                    : `${body.length} / ${SMS_LIMIT}`}
-                </span>
-              )}
-            </div>
-
-            {/* Attachment zone — only shown when storage is configured */}
-            {showAttachments && (
-              <div className="border-t border-muted pt-3">
-                {attachments.length > 0 && (
-                  <div className="mb-3 flex flex-wrap gap-2">
-                    {attachments.map((a, i) => {
-                      const sizeKb = Math.round(a.size / 1024);
-                      const sizeLabel = sizeKb >= 1024
-                        ? `${(sizeKb / 1024).toFixed(1)} MB`
-                        : `${sizeKb} KB`;
-                      return (
-                        <div
-                          key={a.url}
-                          className="flex items-center gap-2 rounded-lg border border-line bg-canvas px-3 py-2"
-                        >
-                          {IMAGE_RE.test(a.url) ? (
-                            <img src={a.url} alt={a.fileName} className="h-6 w-6 rounded object-cover" />
-                          ) : (
-                            fileIcon(a.url)
-                          )}
-                          <div className="min-w-0">
-                            <p className="max-w-[140px] truncate text-xs font-medium text-ink-soft">
-                              {a.fileName}
-                            </p>
-                            <p className="text-[10px] tabular-nums text-ink-3">{sizeLabel}</p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setAttachments((prev) => prev.filter((_, j) => j !== i))}
-                            className="ml-1 text-line-strong transition-colors hover:text-ink-2"
-                            aria-label="Remove attachment"
-                          >
-                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                <GlassDropzone
-                  key={channel}
-                  compact
-                  accept={acceptTypes}
-                  acceptLabel={channel === "email" ? "a PDF, Word, Excel or image file" : "a PDF or image"}
-                  isAccepted={(f) => acceptTypes.split(",").some((t) => f.type === t.trim() || f.name.toLowerCase().endsWith(t.trim()))}
-                  maxBytes={10 * 1024 * 1024}
-                  title="Attach a file — drop it here or browse"
-                  hint={channel === "email" ? "PDF, Word, Excel, or image · 10 MB max" : "PDF or image · 10 MB max"}
-                  onUpload={uploadAttachment}
-                  resetAfterSuccess={1400}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="mx-6 border-t border-muted" />
-
-      {/* ── PREVIEW ───────────────────────────────────────────────────────── */}
-      <div className="px-6 py-4">
-        <button
-          type="button"
-          onClick={() => setShowPreview((v) => !v)}
-          className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-ink-2 transition-colors hover:text-ink-hover"
-        >
-          <svg
-            className={"h-3.5 w-3.5 transition-transform " + (showPreview ? "rotate-180" : "")}
-            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-          </svg>
-          Message Preview
-        </button>
-        {showPreview && (
-          <div className="mt-4">
-            {channel === "email" && <EmailPreview subject={subject} body={body} attachments={attachments} greetingTemplate={greetingEnabled ? greetingTemplate : null} />}
-            {channel === "sms" && <SmsPreview body={body} />}
-            {channel === "whatsapp" && <WhatsAppPreview body={body} attachments={attachments} />}
-          </div>
-        )}
-      </div>
-
-      {/* ── RECIPIENT PREVIEWS ────────────────────────────────────────────── */}
-      {selectedAudiences.length > 0 && body.trim() && (
-        <div className="border-t border-muted px-6 py-4">
-          <button
-            type="button"
-            onClick={handleToggleRecipientPreviews}
-            className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-ink-2 transition-colors hover:text-ink-hover"
-          >
-            <svg
-              className={"h-3.5 w-3.5 transition-transform " + (showRecipientPreviews ? "rotate-180" : "")}
-              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-            </svg>
-            Preview personalization
-            {recipientTotal > 0 && (
-              <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium normal-case tracking-normal text-ink-2">
-                {Math.min(8, recipientTotal)} of {recipientTotal} recipients
-              </span>
-            )}
-          </button>
-
-          {showRecipientPreviews && (
-            <div className="mt-3">
-              {isLoadingPreviews ? (
-                <div className="flex items-center gap-2 py-4 text-xs text-ink-3">
-                  <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                  </svg>
-                  Personalizing messages…
-                </div>
-              ) : recipientPreviews && recipientPreviews.length > 0 ? (
-                <div className="overflow-hidden rounded-lg border border-line divide-y divide-muted">
-                  {recipientPreviews.map((p, i) => (
-                    <div key={i} className="bg-card px-4 py-3 transition-colors hover:bg-canvas">
-                      <div className="mb-1 flex items-baseline justify-between">
-                        <span className="text-xs font-semibold text-ink">{p.name}</span>
-                        <span className="text-[10px] text-ink-3">{p.contactValue}</span>
-                      </div>
-                      <p className="text-xs leading-relaxed text-ink-soft whitespace-pre-wrap">{p.rendered}</p>
-                    </div>
+      <div className="overflow-hidden rounded-xl border border-line bg-card shadow-sm">
+        {/* ── TO ── */}
+        <div className="px-6 py-5">
+          <div className="flex items-start gap-4">
+            <span className="mt-2.5 w-16 flex-shrink-0 text-xs font-semibold uppercase tracking-wider text-ink-3">To</span>
+            <div className="flex-1">
+              <AudienceDropdown allAudiences={audiences} selected={selectedAudiences} onToggle={toggleAudience} />
+              {selectedAudiences.length > 0 && (
+                <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                  {selectedAudiences.map((a) => (
+                    <span key={a.slug} className="inline-flex items-center gap-1.5 rounded-full bg-muted py-1 pl-3 pr-2 text-xs font-medium text-ink-soft">
+                      {a.label}
+                      <span className="tabular-nums text-ink-3">{a.totalCount}</span>
+                      <button type="button" onClick={() => toggleAudience(a)} className="flex h-3.5 w-3.5 items-center justify-center rounded-full text-ink-3 transition-colors hover:bg-line hover:text-ink-soft" aria-label={`Remove ${a.label}`}>
+                        <svg className="h-2 w-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                      </button>
+                    </span>
                   ))}
-                  {recipientTotal > 8 && (
-                    <div className="bg-canvas px-4 py-2.5 text-xs text-ink-3">
-                      + {(recipientTotal - 8).toLocaleString()} more recipients
-                    </div>
-                  )}
                 </div>
-              ) : (
-                <p className="py-2 text-xs text-ink-3">
-                  No contacts with a {channelField(channel)} found in the selected audiences.
+              )}
+              <p className="mt-2 text-[11px] text-ink-3">Students in an audience are reached through their parents — each parent gets one message, even with several kids.</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mx-6 border-t border-muted" />
+
+        {/* ── CHANNELS ── */}
+        <div className="px-6 py-5">
+          <div className="flex items-start gap-4">
+            <span className="mt-2.5 w-16 flex-shrink-0 text-xs font-semibold uppercase tracking-wider text-ink-3">Via</span>
+            <div className="flex-1">
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Channels">
+                {(["email", "sms", "whatsapp"] as Channel[]).map((c) => {
+                  const isOn = channels.includes(c);
+                  const blocked = c === "whatsapp" && whatsappBlocked;
+                  const count = preview?.perChannel[c];
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      aria-pressed={isOn && !blocked}
+                      disabled={blocked}
+                      title={blocked ? FUNDRAISING_WHATSAPP_NOTE : undefined}
+                      onClick={() => toggleChannel(c)}
+                      className={
+                        "flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 " +
+                        (isOn && !blocked ? "border-ink bg-ink text-on-ink" : "border-line bg-card text-ink-soft hover:border-line-strong hover:text-ink")
+                      }
+                    >
+                      <ChannelIcon channel={c} className="h-4 w-4" />
+                      {channelLabel(c)}
+                      {isOn && !blocked && count !== undefined && <span className="text-xs tabular-nums text-line-strong">{count.toLocaleString()}</span>}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {channels.length > 1 && (
+                <div className="mt-3 inline-flex rounded-lg border border-line bg-canvas p-1 text-xs" role="radiogroup" aria-label="How to use the channels">
+                  {([["all", "Every selected channel"], ["best", "Best channel for each parent"]] as const).map(([v, label]) => (
+                    <button
+                      key={v}
+                      type="button"
+                      role="radio"
+                      aria-checked={channelMode === v}
+                      onClick={() => setChannelMode(v)}
+                      className={`rounded-md px-3 py-1.5 font-medium transition-colors ${channelMode === v ? "bg-card text-ink shadow-sm" : "text-ink-2 hover:text-ink"}`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {channels.length > 1 && (
+                <p className="mt-1.5 text-[11px] text-ink-3">
+                  {channelMode === "all"
+                    ? "Each parent gets the message on every selected channel they have."
+                    : "WhatsApp first; if it fails or they have no WhatsApp, text; if there's no phone, email. Each parent gets it once."}
                 </p>
               )}
+              {channels.map((c) => channelProblemFor(c) && (
+                <p key={c} className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  {channelProblemFor(c)}{" "}
+                  <a href="/settings#channels" className="font-medium underline">Open Channels</a>
+                </p>
+              ))}
+
+              <div className="mt-3 space-y-2">
+                <Toggle
+                  checked={isFundraising}
+                  onChange={(v) => {
+                    setIsFundraising(v);
+                    if (v) setChannels((p) => (p.filter((c) => c !== "whatsapp").length ? p.filter((c) => c !== "whatsapp") : ["email"]));
+                  }}
+                  hint={isFundraising ? FUNDRAISING_WHATSAPP_NOTE : undefined}
+                >
+                  This is a fundraising message
+                </Toggle>
+                {channels.includes("whatsapp") && !isFundraising && whatsappBlocked && (
+                  <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                    This reads like a fundraising message. WhatsApp doesn&apos;t allow those, so it won&apos;t go out on WhatsApp. Remove the donation wording to send it there.
+                  </p>
+                )}
+              </div>
+
+              <button type="button" onClick={() => setShowMore((v) => !v)} className="mt-3 text-xs font-medium text-ink-2 hover:text-ink">
+                {showMore ? "Hide options" : "More options"}
+              </button>
+              {showMore && (
+                <div className="mt-2 space-y-2.5 rounded-lg border border-line bg-canvas p-3">
+                  <Toggle checked={familyPrefix} onChange={setFamilyPrefix} hint="e.g. “For Moshe (3rd) and Rivka (6th):” — helpful when a family has several children.">Start each message with the child&apos;s name</Toggle>
+                  <Toggle checked={confirmButton} onChange={setConfirmButton} hint="Parents tap a link (no login) to tell you they've read it. Confirmed is the most reliable read signal.">Add an &ldquo;I&apos;ve read this&rdquo; button</Toggle>
+                  <Toggle checked={studentsDirect} onChange={setStudentsDirect} hint="Otherwise students are reached through their parents.">Also message students directly (if they have a phone or email on file)</Toggle>
+                  {canEmergency && (
+                    <Toggle checked={isEmergency} onChange={setIsEmergency} hint="Reaches parents who chose “emergency messages only”. Doesn't override anyone who unsubscribed or replied STOP.">Emergency message</Toggle>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="mx-6 border-t border-muted" />
+
+        {/* ── COMPOSE ── */}
+        <div className="px-6 py-5">
+          <div className="flex items-start gap-4">
+            <span className="mt-1 w-16 flex-shrink-0 text-xs font-semibold uppercase tracking-wider text-ink-3">Message</span>
+            <div className="flex-1 space-y-3">
+              {templates.length > 0 && !(activeChannels.length === 1 && activeChannels[0] === "sms") && (
+                <div className="flex items-center gap-2 border-b border-muted pb-3">
+                  <label htmlFor="compose-template" className="text-xs font-semibold uppercase tracking-wider text-ink-3">{hasEmail ? "Template" : "Sender label"}</label>
+                  <select id="compose-template" value={templateId ?? ""} onChange={(e) => chooseTemplate(e.target.value)} className={SELECT_CLS}>
+                    <option value="">School default</option>
+                    {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  </select>
+                </div>
+              )}
+              {hasEmail && (
+                <input
+                  type="text"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="Subject line…"
+                  dir="auto"
+                  className="w-full border-0 border-b border-muted pb-3 text-sm font-semibold text-ink placeholder-line-strong outline-none transition-colors focus:border-line-strong"
+                  autoFocus
+                />
+              )}
+              <textarea
+                ref={bodyRef}
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                placeholder={hasEmail ? "Write your message here…\n\nSeparate paragraphs with a blank line." : "Write your message…"}
+                rows={hasEmail ? 12 : 6}
+                dir="auto"
+                className="w-full resize-none border-0 text-sm leading-relaxed text-ink placeholder-line-strong outline-none"
+                autoFocus={!hasEmail}
+              />
+
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-muted pt-2.5">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="relative">
+                    <select
+                      defaultValue=""
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          insertToken(e.target.value);
+                          e.target.value = "";
+                        }
+                      }}
+                      className={`appearance-none cursor-pointer ${SELECT_CLS}`}
+                    >
+                      <option value="" disabled>Insert field…</option>
+                      {tokens.map(({ token, label }) => <option key={token} value={token}>{label}</option>)}
+                    </select>
+                  </div>
+                  {hasEmail && <Toggle checked={greetingOn} onChange={setGreetingOn}>Start with &ldquo;Hi {"{{first_name}}"},&rdquo;</Toggle>}
+                </div>
+                {activeChannels.includes("sms") && (
+                  <span className={"text-xs tabular-nums " + (body.length > SMS_LIMIT ? "font-medium text-amber-600" : "text-ink-3")}>
+                    {body.length > SMS_LIMIT ? `${body.length} chars · splits into ${Math.ceil(body.length / SMS_LIMIT)} texts` : `${body.length} / ${SMS_LIMIT}`}
+                  </span>
+                )}
+              </div>
+
+              {showAttachments && (
+                <div className="border-t border-muted pt-3">
+                  {attachments.length > 0 && (
+                    <div className="mb-3 flex flex-wrap gap-2">
+                      {attachments.map((a, i) => {
+                        const sizeKb = Math.round(a.size / 1024);
+                        const sizeLabel = sizeKb >= 1024 ? `${(sizeKb / 1024).toFixed(1)} MB` : `${sizeKb} KB`;
+                        return (
+                          <div key={a.url} className="flex items-center gap-2 rounded-lg border border-line bg-canvas px-3 py-2">
+                            {IMAGE_RE.test(a.url) ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={a.url} alt={a.fileName} className="h-6 w-6 rounded object-cover" />
+                            ) : (
+                              fileIcon(a.url)
+                            )}
+                            <div className="min-w-0">
+                              <p className="max-w-[140px] truncate text-xs font-medium text-ink-soft">{a.fileName}</p>
+                              <p className="text-[10px] tabular-nums text-ink-3">{sizeLabel}</p>
+                            </div>
+                            <button type="button" onClick={() => setAttachments((prev) => prev.filter((_, j) => j !== i))} className="ml-1 text-line-strong transition-colors hover:text-ink-2" aria-label="Remove attachment">
+                              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <GlassDropzone
+                    key={hasEmail ? "email" : "wa"}
+                    compact
+                    accept={acceptTypes}
+                    acceptLabel={hasEmail ? "a PDF, Word, Excel or image file" : "a PDF or image"}
+                    isAccepted={(f) => acceptTypes.split(",").some((t) => f.type === t.trim() || f.name.toLowerCase().endsWith(t.trim()))}
+                    maxBytes={10 * 1024 * 1024}
+                    title="Attach a file — drop it here or browse"
+                    hint={hasEmail ? "PDF, Word, Excel, or image · 10 MB max" : "PDF or image · 10 MB max"}
+                    onUpload={uploadAttachment}
+                    resetAfterSuccess={1400}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="mx-6 border-t border-muted" />
+
+        {/* ── PREVIEW ── */}
+        <div className="px-6 py-4">
+          <button type="button" onClick={() => setShowPreview((v) => !v)} className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-ink-2 transition-colors hover:text-ink-hover">
+            <svg className={"h-3.5 w-3.5 transition-transform " + (showPreview ? "rotate-180" : "")} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+            Message Preview
+          </button>
+          {showPreview && (
+            <div className="mt-4 space-y-3">
+              {activeChannels.length > 1 && (
+                <div className="flex gap-1">
+                  {activeChannels.map((c) => (
+                    <button key={c} type="button" onClick={() => setPreviewTab(c)} className={`rounded-md px-2.5 py-1 text-xs font-medium ${tabChannel === c ? "bg-muted text-ink" : "text-ink-3 hover:text-ink-2"}`}>{channelLabel(c)}</button>
+                  ))}
+                </div>
+              )}
+              {tabChannel === "email" && <EmailPreview subject={subject} body={body} attachments={attachments} greetingTemplate={greeting} />}
+              {tabChannel === "sms" && <SmsPreview body={body} />}
+              {tabChannel === "whatsapp" && <WhatsAppPreview body={body} attachments={attachments} />}
             </div>
           )}
         </div>
-      )}
 
-      {/* ── SEND ──────────────────────────────────────────────────────────── */}
-      <div className="rounded-b-xl border-t border-muted bg-canvas px-6 py-5">
-        {sendError && (
-          <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
-            {sendError}
-          </div>
+        {/* ── Personalization (real recipients) ── */}
+        {preview && preview.samples.length > 0 && (
+          <details className="border-t border-muted px-6 py-4">
+            <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-ink-2">
+              Preview personalization <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium normal-case tracking-normal text-ink-2">{preview.samples.length} of {preview.messages.toLocaleString()}</span>
+            </summary>
+            <div className="mt-3 divide-y divide-muted overflow-hidden rounded-lg border border-line">
+              {preview.samples.map((p, i) => (
+                <div key={i} className="bg-card px-4 py-3">
+                  <div className="mb-1 flex items-baseline justify-between gap-3">
+                    <span className="text-xs font-semibold text-ink">{p.name} <span className="font-normal text-ink-3">· {channelLabel(p.channel)}</span></span>
+                    <span className="truncate text-[10px] text-ink-3">{p.address}</span>
+                  </div>
+                  {p.subject && <p className="text-xs font-semibold text-ink-soft">{p.subject}</p>}
+                  <p dir="auto" className="whitespace-pre-wrap text-xs leading-relaxed text-ink-soft">{p.text}</p>
+                </div>
+              ))}
+            </div>
+          </details>
         )}
 
-        {eligible === 0 && selectedAudiences.length > 0 && (
-          <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-700">
-            None of the selected contacts have a {channelField(channel)}. Try switching to a different channel.
-          </div>
-        )}
+        {/* ── SEND ── */}
+        <div className="rounded-b-xl border-t border-muted bg-canvas px-6 py-5">
+          {sendError && <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">{sendError}</div>}
+          {previewError && <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">{previewError}</div>}
+          {preview?.notes.map((n) => <p key={n} className="mb-2 text-xs text-ink-2">{n}</p>)}
 
-        {missing > 0 && eligible > 0 && (
-          <p className="mb-3 text-xs text-ink-3">
-            {missing.toLocaleString()} contact{missing !== 1 ? "s" : ""}{" "}
-            {missing === 1 ? "doesn't" : "don't"} have a {channelField(channel)} and won't receive this message.
-          </p>
-        )}
-
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-ink-2">
-            {selectedAudiences.length === 0
-              ? "Choose an audience to continue."
-              : eligible === 0
-              ? "No eligible contacts for this channel."
-              : (
-                <>
-                  <span className="font-medium text-ink-soft">{eligible.toLocaleString()} contacts</span>
-                  {" "}will receive this {channelLabel(channel).toLowerCase()}.
-                </>
+          {preview && preview.unreachableCount > 0 && (
+            <div className="mb-3 text-xs text-ink-2">
+              <button type="button" onClick={() => setShowSkipped((v) => !v)} className="underline decoration-dotted underline-offset-2">
+                {preview.unreachableCount.toLocaleString()} {preview.unreachableCount === 1 ? "person" : "people"} won&apos;t get this
+              </button>
+              {Object.entries({ opted_out: "opted out", no_address: "no contact info", preference: "turned it off", emergency_only: "emergency messages only" }).map(([k, label]) =>
+                preview.excluded[k as keyof typeof preview.excluded] > 0 ? <span key={k} className="text-ink-3"> · {preview.excluded[k as keyof typeof preview.excluded]} {label}</span> : null
               )}
-          </p>
+              {preview.studentsWithoutParent > 0 && <span className="text-amber-700"> · {preview.studentsWithoutParent} student{preview.studentsWithoutParent === 1 ? " has" : "s have"} no parent linked</span>}
+              {showSkipped && (
+                <ul className="mt-2 max-h-40 space-y-0.5 overflow-y-auto rounded-md border border-line bg-card px-3 py-2">
+                  {preview.unreachable.map((u, i) => <li key={i}><span className="font-medium text-ink">{u.name}</span> <span className="text-ink-3">— {u.reason}</span></li>)}
+                  {preview.unreachableCount > preview.unreachable.length && <li className="text-ink-3">…and {preview.unreachableCount - preview.unreachable.length} more</li>}
+                </ul>
+              )}
+            </div>
+          )}
 
-          <button
-            type="button"
-            onClick={handleSend}
-            disabled={!canSend || isPending || isResolvingRecipients}
-            className="inline-flex items-center gap-2 rounded-lg bg-ink px-5 py-2.5 text-sm font-medium text-on-ink transition-colors hover:bg-ink-hover disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {(isPending || isResolvingRecipients) ? (
-              <>
-                <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                </svg>
-                {isPending ? "Sending…" : "Resolving…"}
-              </>
-            ) : (
-              <>
-                Send {channelLabel(channel)}
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                </svg>
-              </>
-            )}
-          </button>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-ink-2">
+              {selectedAudiences.length === 0 ? (
+                "Choose an audience to continue."
+              ) : !body.trim() ? (
+                "Write your message to see who it reaches."
+              ) : previewLoading && !preview ? (
+                "Working out who this reaches…"
+              ) : preview ? (
+                preview.messages === 0 ? (
+                  "Nobody can be reached with these settings."
+                ) : (
+                  <span className={previewLoading ? "opacity-60" : ""}>
+                    <span className="font-medium text-ink-soft">{preview.people.toLocaleString()} {preview.people === 1 ? "person" : "people"}</span> will get this
+                    {" — "}
+                    {(["email", "whatsapp", "sms"] as Channel[]).filter((c) => preview.perChannel[c] > 0).map((c) => `${preview.perChannel[c].toLocaleString()} ${c === "sms" ? "text" : channelLabel(c)}`).join(" · ")}
+                  </span>
+                )
+              ) : null}
+            </p>
+            <button
+              type="button"
+              onClick={() => setConfirmOpen(true)}
+              disabled={!canSend || isPending}
+              className="inline-flex items-center gap-2 rounded-lg bg-ink px-5 py-2.5 text-sm font-medium text-on-ink transition-colors hover:bg-ink-hover disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {isPending ? "Sending…" : "Review & send"}
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
+            </button>
+          </div>
         </div>
       </div>
-    </div>
 
-    {/* ── PRE-SEND CONFIRMATION MODAL ─────────────────────────────────────── */}
-    {confirmRecipients && (
-      <div className="animate-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setConfirmRecipients(null)}>
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="confirm-send-title"
-          className="animate-pop-in w-full max-w-md rounded-xl border border-line bg-card shadow-pop"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="border-b border-muted px-5 py-4">
-            <h2 id="confirm-send-title" className="text-sm font-semibold text-ink">
-              Confirm send to {confirmRecipients.length.toLocaleString()} {confirmRecipients.length === 1 ? "recipient" : "recipients"}
-            </h2>
-            <p className="mt-0.5 text-xs text-ink-2">
-              Review the list and remove anyone who should not receive this message.
-            </p>
-          </div>
-
-          {/* Recipient list — scrollable, shows every address */}
-          <div className="max-h-72 overflow-y-auto divide-y divide-canvas">
-            {confirmRecipients.length === 0 ? (
-              <p className="px-5 py-4 text-sm text-ink-3">No recipients remaining.</p>
-            ) : (
-              confirmRecipients.map((r) => (
-                <div key={r.personId} className="group flex items-center justify-between px-5 py-2.5 hover:bg-canvas">
-                  <span className="text-sm font-medium text-ink-hover truncate mr-3">{r.name}</span>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-xs text-ink-3 tabular-nums">{r.contactValue}</span>
-                    <button
-                      type="button"
-                      aria-label={`Remove ${r.name}`}
-                      onClick={() => {
-                        setRemovedPersonIds((prev) => new Set([...prev, r.personId]));
-                        setConfirmRecipients((prev) => prev ? prev.filter((x) => x.personId !== r.personId) : prev);
-                      }}
-                      className="flex h-5 w-5 items-center justify-center rounded text-line-strong opacity-0 transition-opacity hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
-                    >
-                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          {/* Footer */}
-          <div className="border-t border-muted px-5 py-4">
-            {confirmRecipients.length === 0 && (
-              <p className="mb-3 text-xs text-amber-600">
-                Add at least one recipient to send.
+      {/* ── CONFIRM ── */}
+      {confirmOpen && preview && (
+        <div className="animate-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setConfirmOpen(false)}>
+          <div role="dialog" aria-modal="true" aria-labelledby="confirm-send-title" className="animate-pop-in w-full max-w-md rounded-xl border border-line bg-card shadow-pop" onClick={(e) => e.stopPropagation()}>
+            <div className="border-b border-muted px-5 py-4">
+              <h2 id="confirm-send-title" className="text-sm font-semibold text-ink">Send to {preview.people.toLocaleString()} {preview.people === 1 ? "person" : "people"}?</h2>
+              <p className="mt-0.5 text-xs text-ink-2">
+                {preview.messages.toLocaleString()} message{preview.messages === 1 ? "" : "s"}: {(["email", "whatsapp", "sms"] as Channel[]).filter((c) => preview.perChannel[c] > 0).map((c) => `${preview.perChannel[c].toLocaleString()} ${c === "sms" ? "text" : channelLabel(c)}`).join(" · ")}. Remove anyone who shouldn&apos;t get it.
               </p>
-            )}
-            <div className="flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setConfirmRecipients(null)}
-                className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-ink-soft transition-colors hover:bg-canvas"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmedSend}
-                disabled={confirmRecipients.length === 0}
-                className="inline-flex items-center gap-2 rounded-lg bg-ink px-4 py-2 text-sm font-medium text-on-ink transition-colors hover:bg-ink-hover disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                Confirm &amp; Send {channelLabel(channel)}
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                </svg>
-              </button>
+            </div>
+            <div className="max-h-72 divide-y divide-canvas overflow-y-auto">
+              {preview.people_list.length === 0 ? (
+                <p className="px-5 py-4 text-sm text-ink-3">No recipients remaining.</p>
+              ) : (
+                preview.people_list.map((r) => (
+                  <div key={r.id} className="group flex items-center justify-between px-5 py-2.5 hover:bg-canvas">
+                    <div className="mr-3 min-w-0">
+                      <span className="block truncate text-sm font-medium text-ink-hover">{r.name}</span>
+                      {r.childrenLabel && <span className="block truncate text-[11px] text-ink-3">For {r.childrenLabel}</span>}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="flex gap-1">{r.channels.map((c) => <span key={c.channel + c.address} title={c.address} className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-ink-2">{c.channel === "sms" ? "Text" : channelLabel(c.channel)}</span>)}</span>
+                      <button
+                        type="button"
+                        aria-label={`Remove ${r.name}`}
+                        onClick={() => setExcluded((prev) => new Set([...prev, r.id]))}
+                        className="flex h-5 w-5 items-center justify-center rounded text-line-strong opacity-0 transition-opacity hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 focus:opacity-100"
+                      >
+                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="border-t border-muted px-5 py-4">
+              <div className="flex items-center justify-end gap-3">
+                <button type="button" onClick={() => setConfirmOpen(false)} className="rounded-lg border border-line px-4 py-2 text-sm font-medium text-ink-soft transition-colors hover:bg-canvas">Cancel</button>
+                <button type="button" onClick={handleConfirmedSend} disabled={preview.people_list.length === 0 || previewLoading} className="inline-flex items-center gap-2 rounded-lg bg-ink px-4 py-2 text-sm font-medium text-on-ink transition-colors hover:bg-ink-hover disabled:cursor-not-allowed disabled:opacity-40">
+                  Confirm &amp; send
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
     </>
   );
 }
