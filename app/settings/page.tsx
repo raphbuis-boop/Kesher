@@ -83,7 +83,7 @@ export default async function SettingsPage() {
         getRequireApproval(supabase, orgId),
         getDispatcherHealth(supabase),
         getHebrewDateStyle(supabase, orgId),
-        supabase.from("settings").select("value").eq("org_id", orgId).eq("key", "sms_pref_link").maybeSingle(),
+        supabase.from("settings").select("key, value").eq("org_id", orgId).in("key", ["sms_pref_link", "family_archive"]),
         getShabbosSettings(supabase, orgId),
         getUpcomingWindows(supabase, orgId, new Date(), 6),
         supabase.from("window_overrides").select("reason, created_at").eq("org_id", orgId).order("created_at", { ascending: false }).limit(5),
@@ -174,7 +174,8 @@ export default async function SettingsPage() {
             timezone={schoolTimezone ?? "America/New_York"}
             requireApproval={requireApproval ?? false}
             hebrewDates={hebrewStyle ?? "latin"}
-            smsPrefLink={prefLinkRes?.data?.value !== "false"}
+            smsPrefLink={!((prefLinkRes?.data ?? []) as { key: string; value: string }[]).some((r) => r.key === "sms_pref_link" && r.value === "false")}
+            familyArchive={!((prefLinkRes?.data ?? []) as { key: string; value: string }[]).some((r) => r.key === "family_archive" && r.value === "false")}
             schedulerLastRun={dispatcherHealth?.lastRunAt ?? null}
             schedulerHealthy={dispatcherHealth?.healthy ?? false}
             siteUrl={getAbsoluteBaseUrl() ?? ""}

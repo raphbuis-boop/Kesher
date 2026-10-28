@@ -4,6 +4,7 @@ import { verifyId } from "@/lib/crypto";
 import { getPreferenceContext, maskedEmail, maskedPhone } from "@/lib/preferenceCenter";
 import { LANGUAGES } from "@/lib/preferences";
 import { PreferenceForm } from "./PreferenceForm";
+import { buildArchiveUrl } from "@/lib/links";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Message preferences", robots: { index: false } };
@@ -47,6 +48,11 @@ export default async function PreferencesPage({ params }: { params: Promise<{ to
         whatsappConsent={ctx.whatsappConsent}
         schoolName={ctx.schoolName}
       />
+      {buildArchiveUrl(ctx.personId) && (
+        <p className="mt-8 border-t border-line pt-4 text-[13px] text-ink-3">
+          Looking for an old message? <a href={buildArchiveUrl(ctx.personId)!} className="underline">See past messages</a>.
+        </p>
+      )}
     </FamilyShell>
   );
 }

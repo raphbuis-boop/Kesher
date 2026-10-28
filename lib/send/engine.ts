@@ -23,7 +23,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getChannelConfig, type ChannelConfig } from "@/lib/channels";
 import { buildEmailHtml, buildEmailText, formatFrom, resolveGreeting, type EmailBranding } from "@/lib/email/render";
 import { looksLikeFundraising } from "@/lib/fundraising";
-import { buildConfirmUrl, buildPreferencesUrl } from "@/lib/links";
+import { buildArchiveUrl, buildConfirmUrl, buildPreferencesUrl } from "@/lib/links";
 import { loadBrandingSettings } from "@/lib/settings";
 import { applyTemplate, getTemplate, type MessageTemplate } from "@/lib/templates";
 import { renderTemplate } from "@/lib/template";
@@ -174,6 +174,8 @@ type RenderCtx = {
   senderLabel: string;
   /** Put the parent's preferences link at the end of texts (Settings → Messaging) */
   smsPrefLink: boolean;
+  /** Add a "Past messages" link to email footers */
+  archiveLink: boolean;
 };
 
 function personContext(person: Person, children: Child[]) {
@@ -197,6 +199,7 @@ function emailItem(ctx: RenderCtx, row: Row, person: Person, children: Child[]):
     unsubscribeUrl: unsubscribe.page,
     confirmUrl,
     preferencesUrl: buildPreferencesUrl(person.id),
+    archiveUrl: ctx.archiveLink ? buildArchiveUrl(person.id) : null,
   };
   return {
     to: row.contact_value,
@@ -317,12 +320,12 @@ export async function executeMessage(ctx: EngineCtx, messageId: string, opts: { 
   };
 
   try {
-    const [cfg, simulated, template, baseBranding, prefLinkSetting] = await Promise.all([
+    const [cfg, simulated, template, baseBranding, extraSettings] = await Promise.all([
       ctx.cfg ? Promise.resolve(ctx.cfg) : getChannelConfig(orgId),
       isSimulated(supabase, orgId),
       getTemplate(supabase, orgId, msg.template_id),
       loadBrandingSettings(supabase, orgId),
-      supabase.from("settings").select("value").eq("org_id", orgId).eq("key", "sms_pref_link").maybeSingle().then((r) => (r.data?.value as string | undefined) ?? null),
+      supabase.from("settings").select("key, value").eq("org_id", orgId).in("key", ["sms_pref_link", "family_archive"]).then((r) => new Map(((r.data ?? []) as { key: string; value: string }[]).map((x) => [x.key, x.value]))),
     ]);
 
     // ── Phase A ──
@@ -348,7 +351,8 @@ export async function executeMessage(ctx: EngineCtx, messageId: string, opts: { 
       fromHeader: formatFrom(fromName, fromEmail),
       replyTo: branding.replyToEmail || (branding.senderEmail && !senderOnVerifiedDomain ? branding.senderEmail : "") || undefined,
       senderLabel: template?.sender_name?.trim() || baseBranding.schoolName || "Your school",
-      smsPrefLink: prefLinkSetting !== "false",
+      smsPrefLink: extraSettings.get("sms_pref_link") !== "false",
+      archiveLink: extraSettings.get("family_archive") !== "false",
     };
     const senders = ctx.senders ?? (simulated ? simulatedSenders() : realSenders(cfg));
 

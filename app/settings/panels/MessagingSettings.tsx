@@ -11,6 +11,7 @@ export function MessagingSettings({
   requireApproval,
   hebrewDates,
   smsPrefLink,
+  familyArchive,
   schedulerLastRun,
   schedulerHealthy,
   siteUrl,
@@ -19,6 +20,7 @@ export function MessagingSettings({
   requireApproval: boolean;
   hebrewDates: string;
   smsPrefLink: boolean;
+  familyArchive: boolean;
   schedulerLastRun: string | null;
   schedulerHealthy: boolean;
   siteUrl: string;
@@ -27,9 +29,10 @@ export function MessagingSettings({
   const [approval, setApproval] = useState(requireApproval);
   const [hebrew, setHebrew] = useState(hebrewDates);
   const [prefLink, setPrefLink] = useState(smsPrefLink);
+  const [archive, setArchive] = useState(familyArchive);
   const { pending, run } = useAction();
   const known = TIMEZONE_OPTIONS.some((o) => o.value === tz);
-  const dirty = tz !== timezone || approval !== requireApproval || hebrew !== hebrewDates || prefLink !== smsPrefLink;
+  const dirty = tz !== timezone || approval !== requireApproval || hebrew !== hebrewDates || prefLink !== smsPrefLink || archive !== familyArchive;
 
   return (
     <div className="space-y-5">
@@ -37,7 +40,7 @@ export function MessagingSettings({
         title="Scheduling and approvals"
         description="Scheduled and repeating messages are entered and shown in your school's time zone, whatever time zone the person scheduling them is in."
         footer={
-          <button type="button" disabled={pending || !dirty} onClick={() => run(() => saveMessagingSettings({ timezone: tz, requireApproval: approval, hebrewDates: hebrew, smsPrefLink: prefLink }), "Saved")} className="btn btn-primary">
+          <button type="button" disabled={pending || !dirty} onClick={() => run(() => saveMessagingSettings({ timezone: tz, requireApproval: approval, hebrewDates: hebrew, smsPrefLink: prefLink, familyArchive: archive }), "Saved")} className="btn btn-primary">
             Save
           </button>
         }
@@ -57,6 +60,14 @@ export function MessagingSettings({
               <option value="off">Don&apos;t show</option>
             </select>
           </FieldLabel>
+
+          <label className="flex cursor-pointer items-start gap-3">
+            <input type="checkbox" checked={archive} onChange={(e) => setArchive(e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-line accent-[var(--ink)]" />
+            <span>
+              <span className="block text-[13px] font-medium text-ink">Let families see past messages</span>
+              <span className="mt-0.5 block text-[11px] leading-relaxed text-ink-3">Adds a &ldquo;Past messages&rdquo; link to the footer of emails. It opens a private page, with no login, listing everything sent to that family, so parents can find the permission slip or the snow-day notice themselves.</span>
+            </span>
+          </label>
 
           <label className="flex cursor-pointer items-start gap-3">
             <input type="checkbox" checked={prefLink} onChange={(e) => setPrefLink(e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-line accent-[var(--ink)]" />
