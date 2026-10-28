@@ -3,7 +3,6 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { getOrgId } from "@/lib/org";
 import { EditPersonButton, type Tag } from "./EditPersonButton";
 import { AddRelationshipButton, type PersonOption } from "./AddRelationshipButton";
 import { gradYearLabel } from "@/lib/gradYear";
@@ -11,6 +10,9 @@ import { getFamily, SOURCE_LABELS, type PersonStatus } from "@/lib/family";
 import { getCustomFieldDefs } from "@/lib/customFields";
 import { getPreferences } from "@/lib/preferences";
 import { FamilyPanel, CustomFieldsPanel, PreferencesPanel } from "./FamilyPanels";
+import { OptOutPanel, type OptOutRow } from "./OptOutPanel";
+import { listSuppressionsFor, normalizeAddress, type SuppressionChannel } from "@/lib/suppressions";
+import { getMembership, isAdminRole } from "@/lib/org";
 import { Mail, Smartphone, MessageSquare, ArrowLeft, Hash } from "lucide-react";
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -139,7 +141,7 @@ export default async function PersonPage({
   params: Promise<{ id: string }>;
 }) {
   const supabase = await createSupabaseServerClient();
-  const orgId = await getOrgId();
+  const { orgId, role } = await getMembership();
 
   const { id } = await params;
 
@@ -190,7 +192,17 @@ export default async function PersonPage({
   const allPeople = (allPeopleResult.data ?? []) as PersonOption[];
   const messageHistory = (messageHistoryResult.data ?? []) as any[];
 
-  const isOptedOut = messageHistory.some((item: any) => item.status === "opted_out");
+  const channelAddresses: { channel: SuppressionChannel; address: string }[] = [
+    ...(person.email ? [{ channel: "email" as const, address: person.email }] : []),
+    ...(person.phone ? [{ channel: "sms" as const, address: person.phone }] : []),
+    ...((person.whatsapp || person.phone) ? [{ channel: "whatsapp" as const, address: (person.whatsapp || person.phone) as string }] : []),
+  ];
+  const suppressions = await listSuppressionsFor(supabase, orgId, person.id, channelAddresses);
+  const activeSuppressions = suppressions.filter((x) => !x.released_at);
+  const isOptedOut = activeSuppressions.length > 0;
+  const optedOutLabel = activeSuppressions.map((x) => ({ email: "email", sms: "texts", whatsapp: "WhatsApp" }[x.channel])).join(", ");
+  const suppressedChannels = new Set(activeSuppressions.map((x) => x.channel));
+  const addableChannels = channelAddresses.filter((a) => normalizeAddress(a.channel, a.address) && !suppressedChannels.has(a.channel)).map((a) => a.channel);
   const peopleById = new Map(allPeople.map((p) => [p.id, p]));
   const currentTagIds = person.person_tags.map((pt) => pt.tag_id);
   const currentCategories = Array.isArray(person.categories) ? person.categories : [];
@@ -269,7 +281,7 @@ export default async function PersonPage({
                   {isOptedOut && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-0.5 text-[11px] font-medium text-rose-700">
                       <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
-                      SMS opted out
+                      Opted out: {optedOutLabel}
                     </span>
                   )}
                 </div>
@@ -313,6 +325,16 @@ export default async function PersonPage({
         <SectionCard title="Messaging preferences">
           <p className="-mt-1 mb-4 text-[11px] text-ink-3">Kept in Kesher only — a sync from your school system never changes these.</p>
           <PreferencesPanel personId={person.id} prefs={prefs} />
+        </SectionCard>
+
+        {/* Opt-outs: one list per school; STOP, unsubscribe, complaint, bounce */}
+        <SectionCard title="Opt-outs" count={activeSuppressions.length || undefined}>
+          <OptOutPanel
+            personId={person.id}
+            canManage={isAdminRole(role)}
+            addable={addableChannels}
+            rows={suppressions.map((x): OptOutRow => ({ id: x.id, channel: x.channel, address: x.address, reason: x.reason, source: x.source, createdAt: x.created_at, releasedAt: x.released_at, releaseReason: x.release_reason }))}
+          />
         </SectionCard>
 
         {/* Communication History */}

@@ -32,6 +32,7 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { fallbackForFailedRow } from "@/lib/send/engine";
+import { processInbound } from "@/lib/inbound";
 
 // ─── GET — Meta's webhook verification challenge ──────────────────────────────
 
@@ -75,6 +76,20 @@ type MetaStatus = {
   errors?: MetaStatusError[];
 };
 
+type MetaInboundMessage = {
+  id?: string;
+  from?: string;
+  timestamp?: string;
+  type?: string;
+  text?: { body?: string };
+  button?: { text?: string };
+  interactive?: { button_reply?: { title?: string }; list_reply?: { title?: string } };
+};
+
+function inboundText(m: MetaInboundMessage): string {
+  return m.text?.body ?? m.button?.text ?? m.interactive?.button_reply?.title ?? m.interactive?.list_reply?.title ?? `[${m.type ?? "message"}]`;
+}
+
 type MetaWebhookPayload = {
   object?: string;
   entry?: {
@@ -82,8 +97,10 @@ type MetaWebhookPayload = {
     changes?: {
       field?: string;
       value?: {
+        metadata?: { phone_number_id?: string; display_phone_number?: string };
+        contacts?: { profile?: { name?: string }; wa_id?: string }[];
         statuses?: MetaStatus[];
-        messages?: unknown[];
+        messages?: MetaInboundMessage[];
       };
     }[];
   }[];
@@ -213,8 +230,24 @@ async function processPayload(payload: MetaWebhookPayload) {
           // "sent" (and any other/future status values) — no DB change needed.
         }
 
-        if (change.value.messages) {
-          console.log(`[meta-status] inbound message(s) received: ${JSON.stringify(change.value.messages)}`);
+        // Messages parents send us: STOP and friends are handled per school, everything else is stored for the inbox
+        for (const m of change.value.messages ?? []) {
+          if (!m.id || !m.from) continue;
+          try {
+            await processInbound(supabase, {
+              channel: "whatsapp",
+              from: m.from,
+              to: change.value.metadata?.display_phone_number ?? null,
+              phoneNumberId: change.value.metadata?.phone_number_id ?? null,
+              body: inboundText(m),
+              providerMessageId: m.id,
+              receivedAt: metaTimestampToIso(m.timestamp),
+              raw: m,
+              profileName: change.value.contacts?.find((c) => c.wa_id === m.from)?.profile?.name ?? null,
+            });
+          } catch (err) {
+            console.error(`[meta-status] inbound processing failed id=${m.id}:`, err instanceof Error ? err.message : err);
+          }
         }
       }
     }

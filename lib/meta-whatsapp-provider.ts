@@ -72,6 +72,35 @@ export class MetaWhatsAppProvider implements SmsProvider {
     this.templateVars  = templateVars;
   }
 
+  /**
+   * A free-form (non-template) reply. WhatsApp only allows these within 24 hours
+   * of the person's last message to the school — outside that, Meta rejects it
+   * (error 131047) and only a template can start the conversation again.
+   */
+  async sendText(toNumber: string, body: string): Promise<SmsResult> {
+    const to = toNumber.replace(/\D/g, "");
+    try {
+      const res = await fetch(`${META_GRAPH_BASE}/${this.phoneNumberId}/messages`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${this.accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ messaging_product: "whatsapp", to, type: "text", text: { body, preview_url: false } }),
+      });
+      const raw = await res.text();
+      let json: { messages?: { id?: string }[]; error?: { message?: string; code?: number } };
+      try {
+        json = JSON.parse(raw);
+      } catch {
+        return { providerId: null, success: false, error: `HTTP ${res.status} — non-JSON response` };
+      }
+      const providerId = json.messages?.[0]?.id ?? null;
+      console.log(`[meta-send-text] to=${to} http=${res.status} wamid=${providerId ?? "none"} error=${json.error ? JSON.stringify(json.error) : "none"}`);
+      if (!res.ok || !providerId) return { providerId: null, success: false, error: json.error?.message ?? `HTTP ${res.status}` };
+      return { providerId, success: true };
+    } catch (err) {
+      return { providerId: null, success: false, error: err instanceof Error ? err.message : "Network error" };
+    }
+  }
+
   async send(_channel: SmsChannel, msg: OutboundSms): Promise<SmsResult> {
     const url = `${META_GRAPH_BASE}/${this.phoneNumberId}/messages`;
 

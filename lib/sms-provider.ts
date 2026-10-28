@@ -83,6 +83,6 @@ export function getSmsProvider(): SmsProvider | null {
 // ─── WhatsApp factory (Meta Cloud API) ─────────────────────────────────────────
 
 /** A provider bound to one school's WhatsApp number, token and template. */
-export function getWhatsAppProvider(cfg: WhatsAppConfig): SmsProvider {
+export function getWhatsAppProvider(cfg: WhatsAppConfig): MetaWhatsAppProvider {
   return new MetaWhatsAppProvider(cfg.phoneNumberId, cfg.accessToken, cfg.templateName, cfg.templateLang, cfg.templateVars);
 }

@@ -20,6 +20,7 @@ import { chunk } from "@/lib/supabase-paging";
 import { toE164 } from "@/lib/phone";
 import { isValidEmail } from "@/lib/validation";
 import { DEFAULT_PREFERENCES, getPreferencesMap, type ContactPreferences } from "@/lib/preferences";
+import { loadSuppressedKeys, suppressionKey } from "@/lib/suppressions";
 import { getPeopleForAudience } from "./audiences";
 import { CHANNELS, type Channel, type Child, type ExcludedReason, type MessageInput, type Person, type Resolution, type ResolvedRecipient } from "./types";
 
@@ -50,23 +51,6 @@ function prefAllows(prefs: ContactPreferences, channel: Channel): boolean {
   if (channel === "email") return prefs.email_enabled;
   if (channel === "sms") return prefs.sms_enabled;
   return prefs.whatsapp_enabled && prefs.whatsapp_opt_in !== false;
-}
-
-/** Addresses this school has unsubscribed / STOPped (the existing opt-out store). */
-export async function loadSuppressed(supabase: SupabaseClient, orgId: string, values: string[]): Promise<Set<string>> {
-  const out = new Set<string>();
-  const unique = [...new Set(values.flatMap((v) => (v === v.toLowerCase() ? [v] : [v, v.toLowerCase()])))];
-  for (const part of chunk(unique, 120)) {
-    const { data, error } = await supabase
-      .from("message_recipients")
-      .select("contact_value, messages!inner(org_id)")
-      .eq("messages.org_id", orgId)
-      .eq("status", "opted_out")
-      .in("contact_value", part);
-    if (error) throw new Error(`Opt-out lookup failed: ${error.message}`);
-    for (const row of (data ?? []) as { contact_value: string }[]) out.add(row.contact_value.toLowerCase());
-  }
-  return out;
 }
 
 async function loadPeople(supabase: SupabaseClient, orgId: string, ids: string[]): Promise<Person[]> {
@@ -185,10 +169,10 @@ export async function resolveRecipients(supabase: SupabaseClient, orgId: string,
     }
     addresses.set(p.id, a);
   }
-  const suppressed = await loadSuppressed(
+  const suppressed = await loadSuppressedKeys(
     supabase,
     orgId,
-    [...addresses.values()].flatMap((a) => Object.values(a).filter((x): x is string => !!x))
+    [...addresses.values()].flatMap((a) => (Object.entries(a) as [Channel, string][]).map(([channel, address]) => ({ channel, address })))
   );
 
   const ordered: ResolvedRecipient[] = [];
@@ -230,7 +214,7 @@ export async function resolveRecipients(supabase: SupabaseClient, orgId: string,
         continue;
       }
       // Hard opt-outs (STOP / unsubscribe) always win, even for emergencies
-      if (suppressed.has(a.toLowerCase())) {
+      if (suppressed.has(suppressionKey(c, a))) {
         excluded.opted_out++;
         reasons.push(`${c} opted out`);
         continue;

@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { getSiteUrl } from "@/lib/site-url";
+import { addSuppression } from "@/lib/suppressions";
 
 /**
  * Email unsubscribe — reuses the SMS opt-out system.
@@ -113,6 +114,9 @@ export async function optOutEmailRecipient(recipientId: string): Promise<Recipie
   if (!ctx) return null;
 
   const supabase = createSupabaseAdminClient();
+  // The school's suppression list is what sending checks; the per-row status below keeps message results accurate
+  const { data: source } = await supabase.from("message_recipients").select("person_id").eq("id", recipientId).maybeSingle();
+  await addSuppression(supabase, { orgId: ctx.orgId, channel: "email", address: ctx.contactValue, personId: (source?.person_id as string | undefined) ?? null, reason: "unsubscribe", source: "email_link" });
   const { data: rows, error: findError } = await supabase
     .from("message_recipients")
     .select("id, messages!inner(org_id)")

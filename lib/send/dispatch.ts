@@ -26,6 +26,7 @@ import { executeMessage, type EngineCtx } from "./engine";
 import { messageColumns } from "./record";
 import { sendWindowStatus } from "./window";
 import { refreshStaleSchools } from "@/lib/shabbos";
+import { retryPendingConfirmations } from "@/lib/inbound";
 import type { MessageInput } from "./types";
 
 export const RESUME_AFTER_MS = 3 * 60_000;
@@ -152,6 +153,13 @@ export async function dispatchDue(
     await refreshStaleSchools(supabase, now);
   } catch (err) {
     summary.errors.push(`shabbos refresh: ${err instanceof Error ? err.message : String(err)}`);
+  }
+
+  // The one confirmation text after a STOP: try again if the first send failed (for five minutes, three tries)
+  try {
+    await retryPendingConfirmations(supabase, now);
+  } catch (err) {
+    summary.errors.push(`opt-out confirmations: ${err instanceof Error ? err.message : String(err)}`);
   }
 
   await createOccurrences(supabase, now, summary);
