@@ -164,6 +164,21 @@ npx vercel --prod
 | `RESEND_FROM_EMAIL` | ✅ For email | Verified sender address (e.g. `hello@kesherhq.co`) |
 | `ANTHROPIC_API_KEY` | For AI compose | API key from console.anthropic.com |
 | `BLOB_READ_WRITE_TOKEN` | For attachments | From Vercel Dashboard → Storage → Blob store |
+| `SUPABASE_SERVICE_ROLE_KEY` | ✅ Yes | Server-side Supabase key (webhooks, scheduled sends, signup links) |
+| `NEXT_PUBLIC_SITE_URL` | ✅ Yes | Your production URL, e.g. `https://www.kesherhq.co`. Used in every link sent to parents (confirm, preferences, archive, signup) |
+| `KESHER_ENCRYPTION_KEY` | ✅ For Google Sheets and per-school WhatsApp | Any long random string (32+ characters). Encrypts stored credentials. Changing it makes stored tokens unreadable, so schools must reconnect |
+| `CRON_SECRET` | ✅ For scheduled sends and the nightly sync | Any long random string. Vercel Cron sends it as `Authorization: Bearer …`; `/api/cron/*` rejects anything else |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | For Google Sheets sync | OAuth client from Google Cloud (see below) |
+| `KESHER_LINK_SECRET` | Optional | Signs the no-login links. Defaults to `SUPABASE_SERVICE_ROLE_KEY`; set it if you ever need to rotate link signing separately |
+
+**Background jobs.** `vercel.json` runs the nightly sync (`/api/cron/sync`, once a day). Scheduled messages, repeating messages, Shabbos-held messages, interrupted sends and STOP confirmations are handled by `/api/cron/dispatch`, which must run every ~5 minutes:
+
+- **Vercel Pro:** add `{ "path": "/api/cron/dispatch", "schedule": "*/5 * * * *" }` to `crons` in `vercel.json`.
+- **Vercel Hobby / any other host:** Hobby only allows daily cron jobs (a more frequent one makes the deploy fail), so run `scripts/optional_pg_cron.sql` in the Supabase SQL editor instead. Settings → Messaging shows "Running" once it checks in.
+
+**Google Sheets (optional).** Google Cloud Console → create a project → enable the **Google Sheets API** → OAuth consent screen (External; add `spreadsheets.readonly`, `openid`, `email`) → Credentials → **OAuth client ID** (Web application) → Authorized redirect URI: `https://<your site>/api/google/oauth/callback`. Put the client ID and secret in the environment variables above.
+
+**Webhooks to point at the app:** Resend → `/api/webhooks/resend` (events: delivered, bounced, complained, opened, clicked), Sinch → `/api/webhooks/sinch` (delivery reports **and inbound messages**), Meta WhatsApp → `/api/webhooks/meta-whatsapp` (subscribe to `messages` so replies and STOP arrive).
 
 **To get a Resend API key:**
 1. Sign up at [resend.com](https://resend.com)
