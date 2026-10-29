@@ -169,6 +169,9 @@ npx vercel --prod
 | `KESHER_ENCRYPTION_KEY` | ✅ For Google Sheets and per-school WhatsApp | Any long random string (32+ characters). Encrypts stored credentials. Changing it makes stored tokens unreadable, so schools must reconnect |
 | `CRON_SECRET` | ✅ For scheduled sends and the nightly sync | Any long random string. Vercel Cron sends it as `Authorization: Bearer …`; `/api/cron/*` rejects anything else |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | For Google Sheets sync | OAuth client from Google Cloud (see below) |
+| `META_APP_SECRET` | ✅ For WhatsApp | Meta App Dashboard → your app → **App settings → Basic** → App secret → **Show**. Every WhatsApp webhook POST is checked against it (`X-Hub-Signature-256`); while it is unset, WhatsApp delivery updates and replies are **rejected**. If schools use different Meta apps, list each secret separated by commas |
+| `RESEND_WEBHOOK_SECRET` | ✅ For email tracking | Resend Dashboard → **Webhooks** → your endpoint → **Signing secret** (starts with `whsec_`). While unset, events are accepted without a signature check and Settings → Channels shows a warning |
+| `SINCH_WEBHOOK_SECRET` | ✅ For SMS | Sinch Dashboard → **Conversation API → Apps** → your app → **Show credentials** → App secret. While unset, delivery reports and replies are accepted without a signature check and Settings → Channels shows a warning |
 | `KESHER_LINK_SECRET` | Optional | Signs the no-login links. Defaults to `SUPABASE_SERVICE_ROLE_KEY`; set it if you ever need to rotate link signing separately |
 
 **Background jobs.** `vercel.json` runs the nightly sync (`/api/cron/sync`, once a day). Scheduled messages, repeating messages, Shabbos-held messages, interrupted sends and STOP confirmations are handled by `/api/cron/dispatch`, which must run every ~5 minutes:
