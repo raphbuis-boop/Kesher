@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionToast } from "@/app/components/ui/toast";
+import { ConsentCertification } from "@/app/components/ConsentCertification";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Plus, X, Loader2 } from "lucide-react";
@@ -58,6 +59,8 @@ function AddPersonForm({
   onCancel: () => void;
 }) {
   const [state, formAction, isPending] = useActionState(addPerson, initialState);
+  const [hasPhone, setHasPhone] = useState(false);
+  const [certified, setCertified] = useState(false);
   useActionToast(state, (s) => ({ success: s.success ? "Contact added" : null }));
   const [selectedCategories, setSelectedCategories] = useState<string[]>(defaultCategories);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
@@ -137,12 +140,19 @@ function AddPersonForm({
             name="phone"
             type="tel"
             autoComplete="tel"
+            onChange={(e) => setHasPhone(e.target.value.trim().length > 0)}
             disabled={isPending}
             className={inputCls}
             placeholder="+1 555 000 0000"
           />
         </div>
       </div>
+      {hasPhone && (
+        <div className="mt-3">
+          <input type="hidden" name="sms_certified" value={certified ? "on" : ""} />
+          <ConsentCertification checked={certified} onChange={setCertified} compact />
+        </div>
+      )}
 
       <Divider />
 

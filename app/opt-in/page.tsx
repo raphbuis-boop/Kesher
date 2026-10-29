@@ -78,9 +78,11 @@ export default function OptInDocumentation() {
                   <p className="font-semibold text-zinc-800 mb-1">School Imports Contacts to Kesher</p>
                   <p>
                     The school administrator imports consented phone numbers into the Kesher
-                    platform via CSV upload or manual entry. At the time of import, the
-                    administrator is required to affirmatively certify that all imported contacts
-                    have provided explicit consent to receive SMS messages from the school.
+                    platform via spreadsheet upload, a connected Google Sheet, or manual entry.
+                    Before an import is applied, a sheet is connected or synced, or a contact
+                    with a phone number is added by hand, the staff member must tick a
+                    certification box confirming that the contacts have provided explicit
+                    consent to receive SMS messages from the school.
                   </p>
                 </div>
               </div>
@@ -90,9 +92,9 @@ export default function OptInDocumentation() {
                 <div>
                   <p className="font-semibold text-zinc-800 mb-1">Kesher Records and Processes Consent</p>
                   <p>
-                    Upon import, Kesher records the timestamp, importing administrator, and
-                    the certification acknowledgment in its database. This creates an auditable
-                    record that consent was certified at the time of import.
+                    Kesher records who certified, when, and the exact certification text in
+                    its database. This creates an auditable record that consent was certified
+                    at the time of import.
                   </p>
                 </div>
               </div>
@@ -134,9 +136,10 @@ export default function OptInDocumentation() {
             </p>
             <ul className="list-disc list-outside ml-4 space-y-2.5 mt-4">
               <li>
-                <strong>Import certification gate:</strong> School administrators cannot
-                complete a contact import without affirmatively clicking a certification
-                checkbox confirming that all imported contacts have consented.
+                <strong>Import certification gate:</strong> Staff cannot apply a spreadsheet
+                import, connect or sync a Google Sheet, turn on nightly sync, or add a contact
+                with a phone number by hand without ticking a certification checkbox confirming
+                that the contacts have consented.
               </li>
               <li>
                 <strong>Opted-out suppression:</strong> Kesher automatically checks every
@@ -149,8 +152,9 @@ export default function OptInDocumentation() {
                 with no manual intervention required.
               </li>
               <li>
-                <strong>Audit trail:</strong> All import events, certification acknowledgments,
-                and opt-out records are stored with timestamps and administrator identity.
+                <strong>Audit trail:</strong> Every certification is stored with the staff
+                member&apos;s identity, a timestamp and the exact text; opt-out records are
+                stored with timestamps.
               </li>
             </ul>
           </section>
@@ -210,9 +214,9 @@ export default function OptInDocumentation() {
                 etc.) and must provide these records upon request.
               </li>
               <li>
-                <strong>Kesher import records:</strong> Kesher records the import timestamp,
-                administrator identity, and certification acknowledgment for every contact
-                import event.
+                <strong>Kesher import records:</strong> Kesher records who certified, when, and
+                the exact certification text for every import, sheet connection, manual sync
+                and hand-entered phone number.
               </li>
               <li>
                 <strong>Opt-out records:</strong> Kesher retains a permanent suppression list

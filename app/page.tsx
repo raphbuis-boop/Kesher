@@ -79,7 +79,7 @@ const COMPLIANCE_ITEMS = [
   {
     Icon: FileText,
     title: "School-Facilitated Opt-In",
-    body: "Schools certify at import that every contact has provided explicit written or digital consent. Kesher enforces this certification before any phone number can be imported.",
+    body: "Schools certify at import that every contact has provided explicit written or digital consent. Kesher requires this certification before every import and records who certified and when.",
   },
   {
     Icon: ShieldCheck,
@@ -451,7 +451,7 @@ function ContactSection() {
                 },
                 {
                   q: "How does consent work for SMS?",
-                  a: "Every school must certify at import that each contact has provided explicit written or digital consent to receive SMS messages. Kesher enforces this before any number can be imported.",
+                  a: "Every school must certify at import that each contact has provided explicit written or digital consent to receive SMS messages. Kesher requires this before every import, sheet sync, and hand-entered number, and records who certified and when.",
                 },
                 {
                   q: "What happens when someone replies STOP?",

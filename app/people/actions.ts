@@ -4,6 +4,8 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getOrgId } from "@/lib/org";
 import { isValidEmail } from "@/lib/validation";
 import { revalidatePath } from "next/cache";
+import { getMembership } from "@/lib/org";
+import { NOT_CERTIFIED_ERROR, recordCertification } from "@/lib/consent";
 
 export type AddPersonState = {
   success: boolean;
@@ -47,6 +49,11 @@ export async function addPerson(
   if (email && !isValidEmail(email)) {
     return { success: false, error: "Enter a valid email address." };
   }
+  // A phone number can be texted: the person adding it certifies consent, same as an import
+  const certified = formData.get("sms_certified") === "on";
+  if (phone && !certified) {
+    return { success: false, error: NOT_CERTIFIED_ERROR };
+  }
 
   // Guard against silent duplicates: the CSV import path already dedupes by
   // email within an org, but this manual form previously didn't — two adds
@@ -73,6 +80,11 @@ export async function addPerson(
     .insert({ org_id: orgId, first_name: firstName, last_name: lastName, email, phone, grade, categories })
     .select("id")
     .single();
+
+  if (!error && newPerson && phone) {
+    const { userId } = await getMembership();
+    await recordCertification(supabase, { orgId, userId, context: "contact_create", personId: newPerson.id as string });
+  }
 
   if (error) {
     return { success: false, error: error.message };

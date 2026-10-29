@@ -27,6 +27,8 @@ export async function GET(req: NextRequest) {
     .select("id, org_id, kind, name, mapping, config, auto_sync")
     .eq("auto_sync", true)
     .neq("status", "paused")
+    // Only sheets an admin certified SMS consent for (when connecting or turning nightly sync on)
+    .not("consent_certified_at", "is", null)
     .order("last_run_at", { ascending: true, nullsFirst: true })
     .limit(200);
   if (error) {

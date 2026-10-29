@@ -70,7 +70,7 @@ const COMPLIANCE_ITEMS = [
   {
     Icon: FileText,
     title: "School-Facilitated Opt-In",
-    body: "Schools certify at import that every contact has provided explicit written or digital consent. Kesher enforces this certification before any phone number can be imported.",
+    body: "Schools certify at import that every contact has provided explicit written or digital consent. Kesher requires this certification before every import and records who certified and when.",
   },
   {
     Icon: ShieldCheck,
@@ -83,7 +83,7 @@ const HOW_IT_WORKS = [
   {
     step: "01",
     title: "Import your contact list",
-    body: "Upload a CSV of your school community. Before any number is saved, you certify that every person has opted in to receive messages from your school. Kesher enforces this at every import.",
+    body: "Upload a CSV of your school community. Before any number is saved, you certify that every person has opted in to receive messages from your school. Kesher requires it at every import and records who certified and when.",
   },
   {
     step: "02",
@@ -550,7 +550,7 @@ function HowItWorksSection() {
             <p className="text-[13px] font-semibold text-amber-900 mb-1">Consent certification is required before any import</p>
             <p className="text-[13px] text-amber-700 leading-relaxed">
               Before any phone numbers enter Kesher, the school administrator must certify that every person on the list
-              has provided explicit written or digital consent to receive SMS messages. This is enforced at every import — not optional.
+              has provided explicit written or digital consent to receive SMS messages. Kesher requires it on every import, sheet sync and hand-entered number, and records who certified and when.
             </p>
           </div>
         </div>
@@ -857,7 +857,7 @@ function ContactSection() {
               },
               {
                 q: "How does consent work for SMS?",
-                a: "Every school must certify at import that each contact has provided explicit written or digital consent to receive SMS messages. Kesher enforces this before any number can be imported.",
+                a: "Every school must certify at import that each contact has provided explicit written or digital consent to receive SMS messages. Kesher requires this before every import, sheet sync, and hand-entered number, and records who certified and when.",
               },
               {
                 q: "What happens when someone replies STOP?",

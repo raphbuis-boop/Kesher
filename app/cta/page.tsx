@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SMS_CONSENT_CERTIFICATION } from "@/lib/consent";
 import { PublicHeader } from "@/app/components/PublicHeader";
 import { PublicFooter } from "@/app/components/PublicFooter";
 import { LegalPageHeader } from "@/app/components/LegalPageHeader";
@@ -164,17 +165,17 @@ export default function CtaDocumentation() {
             </p>
             <div className="border border-zinc-200 rounded-xl p-5 bg-zinc-50 mt-4">
               <p className="text-[14px] text-zinc-700 leading-relaxed italic">
-                "By importing these contacts, I certify that all individuals on this list have
-                provided explicit, written or digital consent to receive SMS text messages from
-                our school via the Kesher platform. I acknowledge that it is the school's
-                responsibility to maintain accurate consent records and to honor all opt-out
-                requests in accordance with TCPA and CTIA guidelines."
+                &ldquo;{SMS_CONSENT_CERTIFICATION}&rdquo;
               </p>
             </div>
             <p className="mt-4">
-              Kesher enforces this certification requirement at the time of every contact
-              import. Schools that cannot provide this certification may not import
-              those contacts for SMS messaging.
+              Kesher requires this certification, with this exact text, before every
+              spreadsheet import is applied, before a Google Sheet is connected or synced
+              by hand, before nightly sync is turned on for a sheet, and whenever a staff
+              member adds a contact with a phone number by hand. Kesher stores who
+              certified, when, and the text they agreed to. Nightly sync only runs for
+              sheets an administrator has certified. Schools that cannot provide this
+              certification may not import those contacts for SMS messaging.
             </p>
           </section>
 

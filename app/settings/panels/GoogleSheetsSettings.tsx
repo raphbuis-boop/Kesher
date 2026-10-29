@@ -20,6 +20,7 @@ import {
   syncSheetNow,
 } from "../googleActions";
 import { FieldLabel, Panel, Pill, inputCls, useAction } from "./ui";
+import { ConsentCertification } from "@/app/components/ConsentCertification";
 
 export type SheetSourceView = {
   id: string;
@@ -76,6 +77,7 @@ function AddSheet({
   const [url, setUrl] = useState("");
   const { pending, run } = useAction();
   const [busy, setBusy] = useState(false);
+  const [certified, setCertified] = useState(false);
 
   // Editing the mapping of a saved sheet jumps straight to the mapping step
   useEffect(() => {
@@ -190,14 +192,16 @@ function AddSheet({
           <input value={w.name} onChange={(e) => setWizard({ ...w, name: e.target.value })} className={inputCls} />
         </FieldLabel>
         <MappingStep table={w.table} mapping={w.mapping} setMapping={(m) => setWizard({ ...w, mapping: m })} customFields={customFields} />
+        <ConsentCertification checked={certified} onChange={setCertified} />
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} className="btn btn-ghost">Cancel</button>
           <button
             type="button"
-            disabled={busy}
+            disabled={busy || !certified}
             onClick={async () => {
               setBusy(true);
               const res = await saveSheetAndPreview({
+                certified,
                 sourceId: w.sourceId,
                 name: w.name,
                 spreadsheetId: w.spreadsheetId,
@@ -239,7 +243,7 @@ function AddSheet({
           onClick={() =>
             run(
               async () => {
-                const res = await applySyncRun(wizard.run.id);
+                const res = await applySyncRun(wizard.run.id, certified);
                 return res.ok ? { ok: true as const } : res;
               },
               "Sheet connected — it will sync nightly",
@@ -262,6 +266,7 @@ function SheetRow({ s, onEditMapping }: { s: SheetSourceView; onEditMapping: () 
   const router = useRouter();
   const { pending, run } = useAction();
   const [auto, setAuto] = useState(s.autoSync);
+  const [certified, setCertified] = useState(false);
   const stats = s.lastStats;
   return (
     <li className="space-y-2 py-4 first:pt-0 last:pb-0">
@@ -286,11 +291,15 @@ function SheetRow({ s, onEditMapping }: { s: SheetSourceView; onEditMapping: () 
           )}
         </p>
       )}
+      <div className="pl-7">
+        <ConsentCertification checked={certified} onChange={setCertified} compact />
+      </div>
       <div className="flex flex-wrap items-center gap-2 pl-7">
         <button
           type="button"
-          disabled={pending}
-          onClick={() => run(async () => { const r = await syncSheetNow(s.id); return r.ok ? { ok: true as const, message: "Sync finished" } : r; }, "Sync finished", () => router.refresh())}
+          disabled={pending || !certified}
+          title={certified ? undefined : "Tick the consent certification first"}
+          onClick={() => run(async () => { const r = await syncSheetNow(s.id, certified); return r.ok ? { ok: true as const, message: "Sync finished" } : r; }, "Sync finished", () => router.refresh())}
           className="btn btn-secondary btn-sm"
         >
           {pending ? <Spinner size={10} /> : <RefreshCw size={11} />} Sync now
@@ -300,10 +309,10 @@ function SheetRow({ s, onEditMapping }: { s: SheetSourceView; onEditMapping: () 
           <input
             type="checkbox"
             checked={auto}
-            disabled={pending}
+            disabled={pending || (!auto && !certified)}
             onChange={(e) => {
               setAuto(e.target.checked);
-              run(async () => { const r = await setSheetAutoSync(s.id, e.target.checked); return r.ok ? { ok: true as const } : r; }, e.target.checked ? "Nightly sync on" : "Nightly sync off");
+              run(async () => { const r = await setSheetAutoSync(s.id, e.target.checked, certified); return r.ok ? { ok: true as const } : r; }, e.target.checked ? "Nightly sync on" : "Nightly sync off");
             }}
             className="h-3.5 w-3.5 accent-[var(--app-ink)]"
           />
