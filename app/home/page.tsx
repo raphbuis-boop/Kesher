@@ -20,6 +20,7 @@ import {
   PenLine,
   UserPlus,
 } from "lucide-react";
+import { LANDING_FEATURES } from "@/app/components/landing/features";
 
 export const metadata: Metadata = {
   title: "Kesher — School Communications Platform",
@@ -38,23 +39,7 @@ const CHANNELS = [
   { Icon: MessageSquare, label: "WhatsApp", color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200" },
 ];
 
-const FEATURES = [
-  {
-    Icon: Users,
-    title: "One contact directory",
-    body: "Import your school's contact list and organize it by role — parents, students, staff, alumni, board members, and donors. Every contact in one place, always up to date.",
-  },
-  {
-    Icon: Send,
-    title: "Simple message campaigns",
-    body: "Write a message, choose your audience, pick a channel, and send. Track delivery, opens, and failures in real time. Every campaign is saved with its full history.",
-  },
-  {
-    Icon: Layers,
-    title: "Audiences and groups",
-    body: "Create custom audience segments — grade level, homeroom, specific families. Message exactly who needs to hear from you, without copy-pasting lists.",
-  },
-];
+const FEATURES = LANDING_FEATURES;
 
 const COMPLIANCE_ITEMS = [
   {
@@ -751,14 +736,14 @@ function ForReviewersSection() {
             </h2>
             <p className="text-[14px] text-zinc-500 leading-relaxed mb-5">
               Kesher operates as an A2P messaging platform exclusively for educational institutions. Schools use Kesher
-              to send transactional and informational communications — announcements, emergency alerts, attendance
-              notices, event reminders — to community members who have provided explicit opt-in consent.
+              to send transactional and informational communications — announcements, emergency alerts,
+              event reminders, schedule changes — to community members who have provided explicit opt-in consent.
             </p>
             <div className="grid gap-2 mb-5">
               {[
                 { label: "Program type",    value: "School communications — informational and transactional only. No marketing." },
                 { label: "Opt-in method",   value: "School-facilitated explicit opt-in via enrollment forms, parent portals, and staff onboarding" },
-                { label: "Message content", value: "Announcements, emergency alerts, event reminders, attendance, schedule changes" },
+                { label: "Message content", value: "Announcements, emergency alerts, event reminders, schedule changes" },
                 { label: "Opt-out",         value: "STOP keyword — processed in real time, suppressed permanently" },
                 { label: "Help response",   value: "HELP keyword triggers automated message with support contact" },
                 { label: "Contact",         value: CONTACT_EMAIL },
