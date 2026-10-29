@@ -56,7 +56,9 @@ export async function addPerson(
       .from("people")
       .select("id, first_name, last_name")
       .eq("org_id", orgId)
+      .in("status", ["active", "pending"])
       .eq("email", email)
+      .limit(1)
       .maybeSingle();
     if (existing) {
       return {

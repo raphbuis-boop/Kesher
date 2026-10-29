@@ -1,1024 +1,595 @@
 "use server";
 
-import { Resend } from "resend";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { getOrgId, sendsAreSimulated } from "@/lib/org";
-import { getGroup, getGroupMembers, getSystemAudienceMembers } from "@/lib/audienceMembers";
 import { revalidatePath } from "next/cache";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getMembership, isAdminRole } from "@/lib/org";
+import { getChannelConfig } from "@/lib/channels";
+import { loadBrandingSettings } from "@/lib/settings";
+import { getTemplate } from "@/lib/templates";
 import { renderTemplate } from "@/lib/template";
-import { getBrandingSettings, type BrandingSettings } from "@/lib/settings";
-import { getSmsProvider, getWhatsAppProvider, validateSmsEnv, validateMetaWhatsAppEnv } from "@/lib/sms-provider";
-import { buildUnsubscribeUrls, validateUnsubscribeEnv } from "@/lib/unsubscribe";
+import { childrenLabel } from "@/lib/family";
+import { FUNDRAISING_WHATSAPP_NOTE } from "@/lib/fundraising";
+import { validateUnsubscribeEnv } from "@/lib/unsubscribe";
+import { availableChannels, executeMessage, whatsappAllowedFor } from "@/lib/send/engine";
+import { resolveRecipients } from "@/lib/send/recipients";
+import { sendWindowStatus, type SendWindowStatus } from "@/lib/send/window";
+import { describeZmanimRule, MAX_OFFSET_MINUTES, zmanimTime, type ZmanimAnchor, type ZmanimRule } from "@/lib/zmanim";
+import { getUpcomingWindows } from "@/lib/shabbos";
+import { localDateString } from "@/lib/schoolTime";
+import { messageColumns } from "@/lib/send/record";
+import { nextRunFor } from "@/lib/send/dispatch";
+import {
+  describeClockRule,
+  formatInZone,
+  getRequireApproval,
+  getSchoolTimezone,
+  isDateString,
+  isTimeString,
+  weekdayOf,
+  zonedToUtc,
+  type ClockRule,
+} from "@/lib/schoolTime";
+import { CHANNELS, type Channel, type ExcludedReason, type MessageInput } from "@/lib/send/types";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+export type { Channel, MessageInput } from "@/lib/send/types";
 
-export type Channel = "email" | "sms" | "whatsapp";
+// ─── Shared helpers ───────────────────────────────────────────────────────────
 
-type Person = {
-  id: string;
-  first_name: string;
-  last_name: string;
-  preferred_name: string | null;
-  salutation: string | null;
-  email: string | null;
-  phone: string | null;
-  whatsapp: string | null;
-  graduation_year: number | null;
-};
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const BATCH_SIZE = 100;
-
-const SYSTEM_CATEGORY_MAP: Record<string, string> = {
-  parents: "parent",
-  students: "student",
-  grandparents: "grandparent",
-  alumni: "alumni",
-  faculty: "faculty",
-  staff: "staff",
-  board: "board",
-  donors: "donor",
-  prospects: "prospect",
-};
-
-// ─── Email HTML builder ───────────────────────────────────────────────────────
-
-const EMAIL_IMAGE_RE = /\.(jpg|jpeg|png|gif|webp)$/i;
-
-/** Escapes user/school-provided text before it goes into the HTML template. */
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-/**
- * RFC 5322 From header: quotes the display name when it contains characters
- * like "," or "." that would otherwise break parsing ("Heichal HaTorah, Inc.").
- */
-function formatFrom(name: string, email: string): string {
-  if (!name) return email;
-  const safe = /^[\p{L}\p{N} '!#$%&*+\-/=?^_`{|}~]+$/u.test(name)
-    ? name
-    : `"${name.replace(/["\\]/g, "\\$&")}"`;
-  return `${safe} <${email}>`;
-}
-
-/**
- * Resolves a greeting template string (e.g. "Hi {{first_name}},") into a
- * final greeting line, applying the fallback when the name is absent.
- *
- * @param template  - e.g. "Hi {{first_name}}," | "Dear {{first_name}}," | null
- * @param firstName - recipient's first/preferred name, or null
- * @param fallback  - used when firstName is absent, e.g. "Hi,"
- * @returns resolved string like "Hi Sarah," or null when template is null
- */
-function resolveGreeting(
-  template: string | null,
-  firstName: string | null,
-  fallback = "Hi,"
-): string | null {
-  if (!template) return null;
-  if (firstName) return template.replace("{{first_name}}", firstName);
-  // Strip the name placeholder and use fallback
-  return template.replace(/\{\{first_name\}\},?/, "").trim() || fallback;
-}
-
-/**
- * Build a plain-text fallback for multipart/alternative.
- * Strips basic formatting cues and returns clean readable text.
- */
-function buildEmailText(
-  body: string,
-  branding: BrandingSettings,
-  greetingTemplate: string | null,
-  firstName: string | null,
-  unsubscribeUrl: string
-): string {
-  const lines: string[] = [];
-
-  const bodyTrimmed = body.trim();
-  const greeting = resolveGreeting(greetingTemplate, firstName);
-  if (greeting) lines.push(greeting, "");
-  lines.push(bodyTrimmed, "");
-
-  lines.push("---");
-  if (branding.schoolName) lines.push(branding.schoolName);
-  if (branding.footerText) lines.push(branding.footerText);
-  if (branding.websiteUrl) lines.push(branding.websiteUrl);
-  if (branding.replyToEmail) lines.push(branding.replyToEmail);
-  lines.push(
-    "",
-    `You're receiving this because you're on ${branding.schoolName || "this school"}'s contact list.`,
-    `Unsubscribe: ${unsubscribeUrl}`,
-    "",
-    "Sent with Kesher"
-  );
-
-  return lines.join("\n");
-}
-
-function buildEmailHtml(
-  body: string,
-  branding: BrandingSettings,
-  greetingTemplate: string | null,
-  firstName: string | null,
-  unsubscribeUrl: string,
-  attachmentUrls?: string[]
-): string {
-  const primaryColor = branding.primaryColor || "#1e3a6e";
-  const schoolName   = escapeHtml(branding.schoolName || "");
-  const footerText   = escapeHtml(branding.footerText || "");
-  const websiteUrl   = branding.websiteUrl   || "";
-  const logoUrl      = branding.logoUrl      || "";
-  const replyEmail   = branding.replyToEmail || "";
-
-  // ── Header: logo > initials circle + name > color bar only ──────────────
-  // Initials are derived from the real school name only — never a placeholder.
-  const initials = escapeHtml(
-    (branding.schoolName || "")
-      .split(/\s+/)
-      .map((w) => w[0])
-      .filter(Boolean)
-      .slice(0, 2)
-      .join("")
-      .toUpperCase()
-  );
-
-  let headerContentHtml: string;
-  if (logoUrl) {
-    // Priority 1: school logo — white pill so it reads on any header color
-    headerContentHtml = `<div style="display:inline-block;background:#ffffff;border-radius:12px;padding:14px 28px;">
-        <img src="${logoUrl}" alt="${schoolName}" style="display:block;margin:0 auto;max-height:120px;max-width:300px;height:auto;width:auto;border:0;">
-      </div>`;
-  } else if (schoolName) {
-    // Priority 2: initials circle + school name (original design fallback)
-    headerContentHtml = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
-        <tr><td style="width:68px;height:68px;background:rgba(255,255,255,0.18);border-radius:50%;text-align:center;vertical-align:middle;font-size:24px;font-weight:700;color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;letter-spacing:-0.5px;">
-          ${initials}
-        </td></tr>
-      </table>
-      <h1 style="margin:18px 0 0;font-size:24px;font-weight:700;color:#ffffff;letter-spacing:-0.4px;line-height:1.25;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">${schoolName}</h1>`;
-  } else {
-    // Priority 3: nothing configured yet — slim color bar, no phantom text
-    headerContentHtml = "";
-  }
-
-  // ── Greeting line (only injected when composer has it enabled) ───────────
-  const bodyTrimmed = body.trim();
-  const resolvedGreeting = resolveGreeting(greetingTemplate, firstName);
-  const greetingHtml = resolvedGreeting
-    ? `<p style="margin:0 0 22px;font-size:16px;font-weight:600;color:#111827;line-height:1.5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">${escapeHtml(resolvedGreeting)}</p>`
-    : "";
-
-  // ── Body paragraphs ───────────────────────────────────────────────────────
-  const paragraphs = bodyTrimmed.split(/\n\n+/).filter((p) => p.trim());
-  const paragraphsHtml = paragraphs
-    .map((p, i) => {
-      const lines = p.split("\n").map((l) => escapeHtml(l.trim())).filter(Boolean);
-      const isLast = i === paragraphs.length - 1;
-      return `<p style="margin:0${isLast ? "" : " 0 20px"};line-height:1.75;font-size:15px;color:#374151;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">${lines.join("<br>")}</p>`;
-    })
-    .join("\n");
-
-  // ── Attachments ───────────────────────────────────────────────────────────
-  let attachmentsHtml = "";
-  if (attachmentUrls && attachmentUrls.length > 0) {
-    const images = attachmentUrls.filter((u) => EMAIL_IMAGE_RE.test(u));
-    const docs   = attachmentUrls.filter((u) => !EMAIL_IMAGE_RE.test(u));
-
-    if (images.length > 0) {
-      attachmentsHtml += `<div style="margin-top:28px;padding-top:24px;border-top:1px solid #f3f4f6;">
-${images
-  .map(
-    (u) =>
-      `<img src="${u}" alt="" style="display:block;max-width:100%;border-radius:10px;margin-bottom:12px;border:1px solid #e5e7eb;">`
-  )
-  .join("")}
-</div>`;
-    }
-    if (docs.length > 0) {
-      attachmentsHtml += `<div style="margin-top:${images.length ? "12" : "28"}px;">
-${docs
-  .map((u) => {
-    const name = escapeHtml(decodeURIComponent(u.split("/").pop() ?? "Attachment"));
-    return `<a href="${u}" style="display:block;margin-bottom:8px;padding:13px 16px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;font-weight:500;color:#374151;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">&#128206;&nbsp; ${name}</a>`;
-  })
-  .join("")}
-</div>`;
-    }
-  }
-
-  // ── Footer blocks ─────────────────────────────────────────────────────────
-  // School name + address (footer text) + unsubscribe on every email — a
-  // missing sender identity or opt-out link is a strong spam signal.
-  const footerLines: string[] = [];
-  if (schoolName) {
-    footerLines.push(
-      `<p style="margin:0 0 6px;font-size:13px;font-weight:600;color:#374151;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">${schoolName}</p>`
-    );
-  }
-  if (footerText) {
-    footerLines.push(
-      `<p style="margin:0 0 6px;font-size:13px;color:#6b7280;line-height:1.65;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">${footerText.replace(/\n/g, "<br>")}</p>`
-    );
-  }
-  if (websiteUrl) {
-    const display = websiteUrl.replace(/^https?:\/\//, "").replace(/\/$/, "");
-    footerLines.push(
-      `<p style="margin:0 0 4px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;"><a href="${websiteUrl}" style="font-size:13px;color:${primaryColor};text-decoration:none;">${display}</a></p>`
-    );
-  }
-  if (replyEmail) {
-    footerLines.push(
-      `<p style="margin:0 0 4px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;"><a href="mailto:${replyEmail}" style="font-size:13px;color:#6b7280;text-decoration:none;">${replyEmail}</a></p>`
-    );
-  }
-  footerLines.push(
-    `<p style="margin:14px 0 0;font-size:12px;color:#9ca3af;line-height:1.6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">You're receiving this because you're on ${schoolName || "this school"}'s contact list.<br><a href="${escapeHtml(unsubscribeUrl)}" style="color:#6b7280;text-decoration:underline;">Unsubscribe</a></p>`
-  );
-  const footerContentHtml = footerLines.join("\n");
-
-  // Inbox preview line: the start of the message, instead of an empty spacer
-  const preheader = escapeHtml(bodyTrimmed.replace(/\s+/g, " ").slice(0, 110));
-
-  // ── Full template ─────────────────────────────────────────────────────────
-  return `<!DOCTYPE html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<!--[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch><o:AllowPNG/></o:OfficeDocumentSettings></xml><![endif]-->
-<style>
-@media only screen and (max-width:620px){
-  .em-container{width:100%!important}
-  .em-header-td{padding:28px 24px 24px!important}
-  .em-body-td{padding:32px 24px 28px!important}
-  .em-footer-td{padding:24px 24px 20px!important}
-}
-</style>
-</head>
-<body style="margin:0;padding:0;background-color:#eef0f3;">
-
-<!-- Preheader: inbox preview text -->
-<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">
-${preheader}&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
-</div>
-
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#eef0f3;">
-<tr>
-  <td align="center" style="padding:40px 16px 56px;">
-
-    <table role="presentation" class="em-container" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;">
-
-      <!-- ━━ HEADER ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-      <tr>
-        <td class="em-header-td" style="background-color:${primaryColor};border-radius:14px 14px 0 0;padding:${logoUrl ? "36px 56px 32px" : headerContentHtml ? "48px 56px 44px" : "20px 56px"};text-align:center;">
-          ${headerContentHtml}
-        </td>
-      </tr>
-
-      <!-- ━━ BODY ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-      <tr>
-        <td class="em-body-td" style="background-color:#ffffff;padding:44px 56px 40px;border-left:1px solid #dde1e7;border-right:1px solid #dde1e7;">
-          ${greetingHtml}
-          ${paragraphsHtml}
-          ${attachmentsHtml}
-        </td>
-      </tr>
-
-      <!-- ━━ FOOTER ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-      <tr>
-        <td class="em-footer-td" style="background-color:#f8f9fb;border:1px solid #dde1e7;border-top:none;border-radius:0 0 14px 14px;padding:28px 56px 24px;text-align:center;">
-          ${footerContentHtml}
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-            <tr><td style="padding-top:20px;padding-bottom:16px;">
-              <div style="height:1px;background-color:#e5e7eb;"></div>
-            </td></tr>
-          </table>
-          <p style="margin:0;font-size:11px;color:#b0b7c3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
-            Sent with <span style="color:#9ca3af;">Kesher</span>
-          </p>
-        </td>
-      </tr>
-
-    </table>
-
-  </td>
-</tr>
-</table>
-
-</body>
-</html>`;
-}
-
-// ─── Recipient resolution ─────────────────────────────────────────────────────
-
-/**
- * Resolves the real recipient list for an audience — system category or
- * custom group (tag-based OR dynamic/filter_config-based; both resolve
- * identically here and everywhere else via lib/audienceMembers.ts, so a
- * "Dynamic rules" audience actually receives messages instead of silently
- * sending to nobody).
- */
-async function getPeopleForAudience(audienceSlug: string, orgId: string): Promise<Person[]> {
+async function simulated(orgId: string): Promise<boolean> {
   const supabase = await createSupabaseServerClient();
-  const isSystem = audienceSlug in SYSTEM_CATEGORY_MAP;
-
-  if (isSystem) {
-    const members = await getSystemAudienceMembers(supabase, orgId, SYSTEM_CATEGORY_MAP[audienceSlug]);
-    return members;
-  }
-
-  const group = await getGroup(supabase, orgId, audienceSlug);
-  if (!group) {
-    console.warn(`[getPeopleForAudience] group not found — slug=${audienceSlug} org=${orgId}`);
-    return [];
-  }
-
-  return getGroupMembers(supabase, orgId, group);
+  const { data } = await supabase.from("settings").select("value").eq("org_id", orgId).eq("key", "simulate_sends").maybeSingle();
+  return data?.value === "true";
 }
 
-// ─── Channel senders ─────────────────────────────────────────────────────────
-
-type RecipientInsert = {
-  message_id: string;
-  person_id: string;
-  contact_value: string;
-  name: string;
-  status: string;
-  provider_id: string | null;
-  sent_at: string | null;
-  error_detail: string | null;
-};
-
-/** Lowercased domain part of an email address. */
-function emailDomain(email: string): string {
-  return email.slice(email.lastIndexOf("@") + 1).trim().toLowerCase();
-}
-
-async function sendEmailBatch(
-  recipients: Person[],
-  subject: string,
-  bodyTemplate: string,
-  messageId: string,
-  now: string,
-  branding: BrandingSettings,
-  greetingTemplate: string | null,
-  recipientRowIds: Map<string, string>,
-  attachmentUrls?: string[]
-): Promise<{ inserts: RecipientInsert[]; sentCount: number; failedCount: number; batchError: string | null }> {
-  const resend = new Resend(process.env.RESEND_API_KEY!);
-
-  // Only send From an address on the verified Resend domain (RESEND_FROM_EMAIL's
-  // domain) so SPF/DKIM align with DMARC. A school address set as Sender Email
-  // on another domain is used as the reply-to instead.
-  const defaultFrom = process.env.RESEND_FROM_EMAIL!;
-  const senderOnVerifiedDomain =
-    !!branding.senderEmail && emailDomain(branding.senderEmail) === emailDomain(defaultFrom);
-  const fromEmail = senderOnVerifiedDomain ? branding.senderEmail : defaultFrom;
-  const replyTo =
-    branding.replyToEmail ||
-    (branding.senderEmail && !senderOnVerifiedDomain ? branding.senderEmail : "") ||
-    undefined;
-
-  // Display name is the school, never the platform name
-  const configuredName = branding.senderName?.trim().toLowerCase() === "kesher" ? "" : branding.senderName;
-  const senderName = configuredName || branding.schoolName || "";
-  const from = formatFrom(senderName, fromEmail);
-  if (!senderName) {
-    console.warn(`[sendEmailBatch] No School Name / Sender Name set — sending from bare address ${fromEmail}`);
-  }
-
-  const withEmail = recipients.filter((r) => r.email);
-
-  // ── Suppress unsubscribed addresses ──────────────────────────────────────
-  // Same opt-out store as SMS STOP: message_recipients rows with
-  // status='opted_out' (set by /unsubscribe). RLS scopes this to the org.
-  // Checked in chunks to keep the PostgREST query URL short.
-  const supabase = await createSupabaseServerClient();
-  const optedOutEmails = new Set<string>();
-  for (let i = 0; i < withEmail.length; i += BATCH_SIZE) {
-    const chunk = withEmail.slice(i, i + BATCH_SIZE).map((r) => r.email!);
-    const { data: optedOutRows, error: optOutError } = await supabase
-      .from("message_recipients")
-      .select("contact_value")
-      .in("contact_value", chunk)
-      .eq("status", "opted_out");
-    if (optOutError) {
-      console.error(`[sendEmailBatch] Opt-out lookup failed:`, optOutError.message);
-    }
-    for (const row of optedOutRows ?? []) optedOutEmails.add(row.contact_value as string);
-  }
-  const eligible = withEmail.filter((r) => !optedOutEmails.has(r.email!));
-  if (optedOutEmails.size > 0) {
-    console.log(`[sendEmailBatch] Suppressed ${optedOutEmails.size} unsubscribed recipient(s) from message ${messageId}`);
-  }
-
-  let sentCount = 0;
-  let failedCount = 0;
-  let batchError: string | null = null;
-  const inserts: RecipientInsert[] = [];
-
-  console.log(`[sendEmailBatch] from="${from}" replyTo="${replyTo ?? "none"}" recipients=${eligible.length}`);
-
-  for (let i = 0; i < eligible.length; i += BATCH_SIZE) {
-    const batch = eligible.slice(i, i + BATCH_SIZE);
-    const emails = batch.map((r) => {
-      const rendered = renderTemplate(bodyTemplate, r);
-      const firstName = r.preferred_name?.trim() || r.first_name?.trim() || null;
-      const unsubscribe = buildUnsubscribeUrls(recipientRowIds.get(r.id)!);
-      const payload: Record<string, unknown> = {
-        from,
-        to: r.email!,
-        subject,
-        html: buildEmailHtml(rendered, branding, greetingTemplate, firstName, unsubscribe.page, attachmentUrls),
-        text: buildEmailText(rendered, branding, greetingTemplate, firstName, unsubscribe.page),
-        headers: {
-          // Helps Gmail and Outlook route bulk mail correctly
-          "Precedence": "bulk",
-          // Unique per-recipient ID prevents duplicate-detection false positives
-          "X-Entity-Ref-ID": `${messageId}-${r.id}`,
-          // RFC 8058 one-click unsubscribe — required by Gmail/Yahoo bulk sender
-          // rules. Must be an https URL that accepts POST (see /api/unsubscribe).
-          "List-Unsubscribe": `<${unsubscribe.oneClick}>`,
-          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-        },
-      };
-      if (replyTo) payload.replyTo = replyTo;
-      return payload;
-    });
-
-    console.log(`[sendEmailBatch] sending batch of ${batch.length} to: ${batch.map((r) => r.email).join(", ")}`);
-
-    const result = await resend.batch.send(emails as Parameters<typeof resend.batch.send>[0]);
-
-    if (result.error || !result.data) {
-      const errMsg = result.error
-        ? `${result.error.name}: ${result.error.message}`
-        : "No data returned from Resend";
-      console.error(`[sendEmailBatch] Resend error:`, JSON.stringify(result.error, null, 2));
-      batchError = errMsg;
-      for (const r of batch) {
-        inserts.push({
-          message_id: messageId,
-          person_id: r.id,
-          contact_value: r.email!,
-          name: `${r.first_name} ${r.last_name}`.trim(),
-          status: "failed",
-          provider_id: null,
-          sent_at: null,
-          error_detail: errMsg,
-        });
-        failedCount++;
+/** Plain-words problems for each selected channel that can't send right now. */
+async function channelProblems(orgId: string, input: MessageInput, isSimulated: boolean): Promise<{ channel: Channel; problem: string }[]> {
+  if (isSimulated) return [];
+  const cfg = await getChannelConfig(orgId);
+  const out: { channel: Channel; problem: string }[] = [];
+  for (const c of input.channels) {
+    if (c === "email") {
+      if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL) out.push({ channel: c, problem: "Email delivery is not configured for this account. Contact your administrator." });
+      else {
+        const p = validateUnsubscribeEnv();
+        if (p) out.push({ channel: c, problem: p });
       }
-    } else {
-      const ids = result.data.data;
-      console.log(`[sendEmailBatch] Resend accepted batch — ids:`, ids.map((d: { id: string }) => d.id));
-      for (let j = 0; j < batch.length; j++) {
-        const r = batch[j];
-        const providerId = ids[j]?.id ?? null;
-        if (!providerId) {
-          console.error(`[sendEmailBatch] No provider_id for ${r.email} at index ${j}`);
-        }
-        inserts.push({
-          message_id: messageId,
-          person_id: r.id,
-          contact_value: r.email!,
-          name: `${r.first_name} ${r.last_name}`.trim(),
-          status: providerId ? "sent" : "failed",
-          provider_id: providerId,
-          sent_at: providerId ? now : null,
-          error_detail: providerId ? null : "Resend did not return a message ID",
-        });
-        if (providerId) sentCount++; else failedCount++;
-      }
-    }
+    } else if (c === "sms" && cfg.smsProblem) out.push({ channel: c, problem: `${cfg.smsProblem} Set it up in Settings → Channels.` });
+    else if (c === "whatsapp" && cfg.whatsappProblem) out.push({ channel: c, problem: `${cfg.whatsappProblem} Set it up in Settings → Channels.` });
   }
-
-  console.log(`[sendEmailBatch] done — sent=${sentCount} failed=${failedCount} error=${batchError ?? "none"}`);
-  return { inserts, sentCount, failedCount, batchError };
+  return out;
 }
 
-// ─── Phone normalization ──────────────────────────────────────────────────────
-
-/**
- * Normalize a US phone number to E.164 format (+1XXXXXXXXXX).
- * Handles:
- *   "9172468571"    (10 digits)          → "+19172468571"
- *   "19172468571"   (11 digits, starts 1) → "+19172468571"
- *   "+19172468571"  (already E.164)       → "+19172468571"
- *   "+12014095949"  (already E.164)       → "+12014095949"
- * Numbers that don't match a US pattern are returned as-is so international
- * numbers stored correctly are not corrupted.
- */
-function normalizePhone(raw: string): string {
-  // Strip all non-digit characters except a leading +
-  const hasPlus = raw.startsWith("+");
-  const digits = raw.replace(/\D/g, "");
-
-  if (hasPlus) {
-    // Already has a + prefix — trust the stored value
-    return `+${digits}`;
-  }
-  if (digits.length === 10) {
-    // 10-digit US number — prepend +1
-    return `+1${digits}`;
-  }
-  if (digits.length === 11 && digits.startsWith("1")) {
-    // 11-digit with leading 1 — prepend +
-    return `+${digits}`;
-  }
-  // Unrecognized format — return with + prepended so Sinch at least gets
-  // a value with a country code indicator rather than a bare number.
-  return `+${digits}`;
+/** Normalizes what the browser sent. */
+function clean(raw: MessageInput): MessageInput {
+  const channels = [...new Set((raw.channels ?? []).filter((c): c is Channel => CHANNELS.includes(c)))];
+  return {
+    audienceSlugs: [...new Set((raw.audienceSlugs ?? []).filter((s) => typeof s === "string" && s))],
+    audienceLabel: String(raw.audienceLabel ?? "").slice(0, 200),
+    channels,
+    channelMode: raw.channelMode === "best" ? "best" : "all",
+    subject: String(raw.subject ?? "").trim(),
+    body: String(raw.body ?? "").trim(),
+    greeting: raw.greeting ? String(raw.greeting).slice(0, 200) : null,
+    attachmentUrls: (raw.attachmentUrls ?? []).filter((u) => typeof u === "string" && /^https:\/\//.test(u)).slice(0, 10),
+    templateId: raw.templateId || null,
+    isFundraising: !!raw.isFundraising,
+    isEmergency: !!raw.isEmergency,
+    familyPrefix: !!raw.familyPrefix,
+    confirmButton: !!raw.confirmButton,
+    studentsDirect: !!raw.studentsDirect,
+    excludePersonIds: (raw.excludePersonIds ?? []).filter((s) => typeof s === "string"),
+    onlyPersonIds: raw.onlyPersonIds ? raw.onlyPersonIds.filter((s) => typeof s === "string") : null,
+  };
 }
 
-/**
- * Resolves the phone number a message actually goes to for a given channel.
- * WhatsApp sends target person.whatsapp when set (falling back to person.phone
- * for contacts that only have one number on file); SMS always targets
- * person.phone. Returns null when neither field is populated.
- */
-function targetContactValue(r: Person, channel: "sms" | "whatsapp"): string | null {
-  if (channel === "whatsapp") return r.whatsapp?.trim() || r.phone;
-  return r.phone;
+// ─── Preview ──────────────────────────────────────────────────────────────────
+
+export type PreviewResult = {
+  /** Distinct parents/adults who will receive at least one message */
+  people: number;
+  perChannel: Record<Channel, number>;
+  /** Total messages (a parent on two channels counts twice) */
+  messages: number;
+  excluded: Record<ExcludedReason, number>;
+  unreachable: { name: string; reason: string }[];
+  unreachableCount: number;
+  studentsWithoutParent: number;
+  /** Channels that can't send, with why */
+  problems: { channel: Channel; problem: string }[];
+  /** Channels dropped for this message (e.g. WhatsApp for fundraising) */
+  notes: string[];
+  samples: { name: string; channel: Channel; address: string; subject: string | null; text: string; childrenLabel: string | null }[];
+  /** Is sending paused right now (Shabbos / Yom Tov)? Owners may override in an emergency. */
+  window: SendWindowStatus;
+  canOverrideWindow: boolean;
+  /** Who gets it — for the confirm step */
+  people_list: { id: string; name: string; channels: { channel: Channel; address: string }[]; childrenLabel: string | null }[];
+};
+
+/** Adjusts the channel list for rules that apply to this message (fundraising never goes on WhatsApp). */
+function effectiveChannels(input: MessageInput): { channels: Channel[]; notes: string[] } {
+  const notes: string[] = [];
+  let channels = input.channels;
+  if (channels.includes("whatsapp") && !whatsappAllowedFor(input)) {
+    channels = channels.filter((c) => c !== "whatsapp");
+    notes.push(input.isFundraising ? FUNDRAISING_WHATSAPP_NOTE : "This reads like a fundraising message, which WhatsApp doesn't allow, so it won't go out on WhatsApp.");
+  }
+  return { channels, notes };
 }
 
-// ─── SMS / WhatsApp send ───────────────────────────────────────────────────────
-
-// CTIA-required opt-out footer appended to every SMS.
-// Carriers require that recipients always know how to stop messages.
-const SMS_STOP_FOOTER = "\nReply STOP to opt out.";
-
-async function sendViaSmsProvider(
-  channel: "sms" | "whatsapp",
-  recipients: Person[],
-  bodyTemplate: string,
-  messageId: string,
-  now: string,
-  attachmentUrls?: string[]
-): Promise<{ inserts: RecipientInsert[]; sentCount: number; failedCount: number; batchError: string | null }> {
-  // Route by channel: SMS → Sinch, WhatsApp → Meta Cloud API
-  const provider = channel === "whatsapp" ? getWhatsAppProvider() : getSmsProvider();
-  const providerName = channel === "whatsapp" ? "WhatsApp (Meta Cloud API)" : "SMS (Sinch)";
-
-  if (!provider) {
-    const errMsg = `${providerName} provider not configured`;
-    const inserts: RecipientInsert[] = recipients
-      .filter((r) => targetContactValue(r, channel))
-      .map((r) => ({
-        message_id: messageId,
-        person_id: r.id,
-        contact_value: targetContactValue(r, channel)!,
-        name: `${r.first_name} ${r.last_name}`.trim(),
-        status: "failed",
-        provider_id: null,
-        sent_at: null,
-        error_detail: errMsg,
-      }));
-    return { inserts, sentCount: 0, failedCount: inserts.length, batchError: errMsg };
-  }
-
-  // fromNumber is used by Sinch for SMS_SENDER channel property. Meta Cloud API
-  // identifies the sender by META_WHATSAPP_PHONE_NUMBER_ID baked into the request
-  // URL — the OutboundSms.from field is ignored by MetaWhatsAppProvider.
-  const fromNumber = channel === "sms" ? (process.env.SINCH_SMS_SENDER ?? "") : "";
-
-  const MEDIA_RE = /\.(jpg|jpeg|png|gif|webp|pdf)$/i;
-  const firstMediaUrl = attachmentUrls?.find((u) => MEDIA_RE.test(u));
-  const withPhone = recipients.filter((r) => targetContactValue(r, channel));
-
-  // ── Suppress opted-out recipients ────────────────────────────────────────
-  // Check for any prior STOP / opted_out status on these phone numbers.
-  // This guards against re-contacting people who opted out of a previous campaign.
-  // Carriers also block at the network level, but we filter proactively to keep
-  // analytics clean and avoid failed send attempts.
+/** Exactly who a send would reach on each channel, and why anyone is left out. */
+export async function previewSend(raw: MessageInput): Promise<PreviewResult> {
+  const input = clean(raw);
+  const { orgId, role } = await getMembership();
   const supabase = await createSupabaseServerClient();
-  const phones = withPhone.map((r) => normalizePhone(targetContactValue(r, channel)!));
-  const { data: optedOutRows } = await supabase
-    .from("message_recipients")
-    .select("contact_value")
-    .in("contact_value", phones)
-    .eq("status", "opted_out")
-    .limit(phones.length);
+  const isSim = await simulated(orgId);
+  const { channels, notes } = effectiveChannels(input);
+  const window = await sendWindowStatus(supabase, orgId);
+  const [cfg, branding, template] = await Promise.all([getChannelConfig(orgId), loadBrandingSettings(supabase, orgId), getTemplate(supabase, orgId, input.templateId)]);
 
-  const optedOutPhones = new Set((optedOutRows ?? []).map((r) => r.contact_value));
-  const eligible = withPhone.filter((r) => !optedOutPhones.has(normalizePhone(targetContactValue(r, channel)!)));
+  const resolution = await resolveRecipients(supabase, orgId, {
+    audienceSlugs: input.audienceSlugs,
+    channels,
+    channelMode: input.channelMode,
+    isEmergency: input.isEmergency,
+    studentsDirect: input.studentsDirect,
+    excludePersonIds: input.excludePersonIds,
+    onlyPersonIds: input.onlyPersonIds,
+    familyPrefix: input.familyPrefix,
+    available: availableChannels(cfg, isSim, true),
+  });
 
-  if (optedOutPhones.size > 0) {
-    console.log(
-      `[sendViaSmsProvider] Suppressed ${optedOutPhones.size} opted-out recipient(s) from message ${messageId}`
-    );
+  const samples = resolution.recipients.slice(0, 8).map((r) => {
+    let text = renderTemplate(input.body, { ...r.person, children: r.children });
+    const label = r.children.length ? childrenLabel(r.children) : null;
+    if (input.familyPrefix && label) text = `For ${label}${r.channel === "email" ? "\n\n" : ": "}${text}`;
+    return {
+      name: `${r.person.first_name} ${r.person.last_name}`.trim(),
+      channel: r.channel,
+      address: r.address,
+      subject: r.channel === "email" ? renderTemplate(input.subject, { ...r.person, children: r.children }) : null,
+      text,
+      childrenLabel: label,
+    };
+  });
+
+  const byPerson = new Map<string, PreviewResult["people_list"][number]>();
+  for (const r of resolution.recipients) {
+    const entry = byPerson.get(r.person.id) ?? { id: r.person.id, name: `${r.person.first_name} ${r.person.last_name}`.trim(), channels: [], childrenLabel: r.children.length ? childrenLabel(r.children) : null };
+    entry.channels.push({ channel: r.channel, address: r.address });
+    byPerson.set(r.person.id, entry);
   }
 
-  let sentCount = 0;
-  let failedCount = 0;
-  const inserts: RecipientInsert[] = [];
-
-  for (const r of eligible) {
-    const rendered = renderTemplate(bodyTemplate, r);
-    // CTIA requires opt-out instruction in every SMS. WhatsApp is exempt from
-    // carrier 10DLC rules but we include it for consistency.
-    const body = channel === "sms" ? rendered + SMS_STOP_FOOTER : rendered;
-
-    const toNumber = normalizePhone(targetContactValue(r, channel)!);
-    const result = await provider.send(channel, {
-      to: toNumber,
-      from: fromNumber,
-      body,
-      mediaUrl: firstMediaUrl,
-    });
-
-    inserts.push({
-      message_id: messageId,
-      person_id: r.id,
-      contact_value: toNumber,
-      name: `${r.first_name} ${r.last_name}`.trim(),
-      status: result.success ? "sent" : "failed",
-      provider_id: result.providerId,
-      sent_at: result.success ? now : null,
-      error_detail: result.success ? null : (result.error ?? "Unknown send error"),
-    });
-
-    if (result.success) sentCount++; else failedCount++;
-  }
-
-  // Surface the first failure reason as the batch-level error so sendMessage
-  // can return it to the UI (mirrors the batchError pattern in sendEmailBatch).
-  const batchError = sentCount === 0 && inserts.length > 0
-    ? (inserts.find((i) => i.error_detail)?.error_detail ?? "All SMS sends failed")
-    : null;
-
-  return { inserts, sentCount, failedCount, batchError };
+  void branding;
+  void template;
+  return {
+    people: resolution.people,
+    perChannel: resolution.perChannel,
+    messages: resolution.recipients.length,
+    excluded: resolution.excluded,
+    unreachable: resolution.unreachable.slice(0, 50).map((u) => ({ name: `${u.person.first_name} ${u.person.last_name}`.trim(), reason: u.reason })),
+    unreachableCount: resolution.unreachable.length,
+    studentsWithoutParent: resolution.studentsWithoutParent,
+    problems: await channelProblems(orgId, { ...input, channels }, isSim),
+    window,
+    canOverrideWindow: role === "owner",
+    notes,
+    samples,
+    people_list: [...byPerson.values()],
+  };
 }
 
-// ─── Demo-mode simulated send ──────────────────────────────────────────────────
+// ─── Send ─────────────────────────────────────────────────────────────────────
 
-/**
- * Simulates a send for demo-mode orgs: no Resend/Sinch/Meta API call is made,
- * every eligible recipient is recorded as "sent" with a synthetic provider_id,
- * and the normal message/message_recipients rows are written exactly as a real
- * send would write them — so Message History, the dashboard, and the campaign
- * detail page all look and behave identically to a real campaign.
- */
-function simulateSend(
-  recipients: Person[],
-  channel: Channel,
-  messageId: string,
-  now: string
-): { inserts: RecipientInsert[]; sentCount: number; failedCount: number; batchError: string | null } {
-  const eligible =
-    channel === "email"
-      ? recipients.filter((r) => r.email)
-      : recipients.filter((r) => targetContactValue(r, channel as "sms" | "whatsapp"));
+export type SubmitAction = "send_now" | "schedule" | "draft" | "request_approval";
 
-  const inserts: RecipientInsert[] = eligible.map((r) => ({
-    message_id: messageId,
-    person_id: r.id,
-    contact_value:
-      channel === "email"
-        ? r.email!
-        : normalizePhone(targetContactValue(r, channel as "sms" | "whatsapp")!),
-    name: `${r.first_name} ${r.last_name}`.trim(),
-    status: "sent",
-    provider_id: `demo-${crypto.randomUUID()}`,
-    sent_at: now,
-    error_detail: null,
-  }));
+export type SubmitOptions = {
+  action: SubmitAction;
+  /** School-local date and time (school timezone, not the browser's) for "schedule" / a requested time */
+  when?: { date: string; time: string } | null;
+  /** schedule only: repeat every N weeks on that weekday (admins) */
+  repeatWeeks?: number | null;
+  /** Editing an existing draft / scheduled / waiting message */
+  messageId?: string | null;
+  /** Editing a repeating send */
+  recurringId?: string | null;
+  /** This is a reminder for an earlier message */
+  resendOf?: string | null;
+  /**
+   * Tie the send time to the Jewish calendar instead of the clock: "3 hours before candle lighting",
+   * "30 minutes after Havdalah". windowStartsAt picks which Shabbos / Yom Tov (an ISO instant from the
+   * school's cached times); repeatWeeks repeats it on regular Shabbosim. offsetMinutes < 0 is before.
+   */
+  zmanim?: { anchor: ZmanimAnchor; offsetMinutes: number; windowStartsAt: string; repeatWeeks?: number | null } | null;
+  /** Owner only: send during Shabbos / Yom Tov for a real emergency. The reason is logged. */
+  override?: { reason: string } | null;
+};
 
-  return { inserts, sentCount: inserts.length, failedCount: 0, batchError: null };
-}
+export type SubmitResult =
+  | { success: true; kind: "sent" | "sending"; messageId: string; sent: number; failed: number; remaining: number }
+  | { success: true; kind: "scheduled"; messageId: string; whenLabel: string; note: string | null }
+  | { success: true; kind: "draft"; messageId: string }
+  | { success: true; kind: "pending_approval"; messageId: string; whenLabel: string | null }
+  | { success: true; kind: "recurring"; recurringId: string; whenLabel: string; ruleLabel: string }
+  | { success: false; error: string };
 
-// ─── Validation ───────────────────────────────────────────────────────────────
+const fail = (error: string): SubmitResult => ({ success: false, error });
 
-function validateEnv(channel: Channel): string | null {
-  if (channel === "email") {
-    if (!process.env.RESEND_API_KEY || !process.env.RESEND_FROM_EMAIL)
-      return "Email delivery is not configured for this account. Contact your administrator.";
-    return validateUnsubscribeEnv();
-  }
-  if (channel === "sms") return validateSmsEnv("sms");
-  if (channel === "whatsapp") return validateMetaWhatsAppEnv();
+function validate(input: MessageInput): string | null {
+  if (input.audienceSlugs.length === 0) return "At least one audience is required.";
+  if (input.channels.length === 0) return "Choose at least one channel.";
+  if (input.channels.includes("email") && !input.subject) return "Subject is required for email.";
+  if (!input.body) return "Message body is required.";
   return null;
 }
 
-// ─── Main action ──────────────────────────────────────────────────────────────
+/** Statuses a message can still be edited in; members only touch their own unapproved ones. */
+const EDITABLE = ["draft", "pending_approval", "scheduled", "rejected", "cancelled"];
+const MEMBER_EDITABLE = ["draft", "pending_approval", "rejected"];
 
-export async function sendMessage(
-  audienceSlugs: string[],
-  audienceLabel: string,
-  channel: Channel,
-  subject: string,
-  body: string,
-  attachmentUrls?: string[],
-  greetingTemplate?: string | null,
-  excludePersonIds?: string[]
-): Promise<{ success: boolean; error?: string }> {
-  try {
+type Existing = { id: string; status: string; created_by: string | null };
+
+async function loadExisting(orgId: string, id: string): Promise<Existing | null> {
   const supabase = await createSupabaseServerClient();
-  const orgId = await getOrgId();
-  const simulated = await sendsAreSimulated(orgId);
-
-  // Simulated-send tenants never touch a real provider — env credentials aren't required.
-  const envError = simulated ? null : validateEnv(channel);
-  if (envError) return { success: false, error: envError };
-
-  // Fetch branding for email template (no-op for SMS/WhatsApp)
-  const branding = channel === "email" ? await getBrandingSettings() : ({} as BrandingSettings);
-
-  const trimmedSubject = subject.trim();
-  const trimmedBody = body.trim();
-  if (channel === "email" && !trimmedSubject)
-    return { success: false, error: "Subject is required for email." };
-  if (!trimmedBody)
-    return { success: false, error: "Message body is required." };
-  if (audienceSlugs.length === 0)
-    return { success: false, error: "At least one audience is required." };
-
-  // Resolve & deduplicate recipients
-  const peopleArrays = await Promise.all(audienceSlugs.map((slug) => getPeopleForAudience(slug, orgId)));
-  const seenIds = new Set<string>();
-  const allPeople: Person[] = [];
-  for (const batch of peopleArrays) {
-    for (const p of batch) {
-      if (!seenIds.has(p.id)) {
-        seenIds.add(p.id);
-        allPeople.push(p);
-      }
-    }
-  }
-
-  // Apply per-send exclusions (recipients removed from the confirm dialog)
-  const excludeSet = new Set(excludePersonIds ?? []);
-  const filtered = excludeSet.size > 0 ? allPeople.filter((p) => !excludeSet.has(p.id)) : allPeople;
-
-  const eligible =
-    channel === "email"
-      ? filtered.filter((p) => p.email)
-      : filtered.filter((p) => targetContactValue(p, channel));
-
-  if (eligible.length === 0) {
-    const field = channel === "email" ? "email addresses" : "phone numbers";
-    return {
-      success: false,
-      error: `No contacts with ${field} found in the selected audience${audienceSlugs.length > 1 ? "s" : ""}.`,
-    };
-  }
-
-  // Create the message record
-  const { data: messageRow, error: msgError } = await supabase
-    .from("messages")
-    .insert({
-      org_id: orgId,
-      subject: channel === "email" ? trimmedSubject : null,
-      body: trimmedBody,
-      channel,
-      audience_slug: audienceSlugs.join(","),
-      audience_label: audienceLabel,
-      recipient_count: eligible.length,
-      status: "sending",
-    })
-    .select("id")
-    .single();
-
-  if (msgError || !messageRow) {
-    return {
-      success: false,
-      error: msgError?.message ?? "Failed to create message record.",
-    };
-  }
-
-  const messageId = messageRow.id;
-  const now = new Date().toISOString();
-
-  // ── Save the recipient list BEFORE sending ──────────────────────────────
-  // If these rows can't be written, nothing is sent: otherwise the message
-  // would go out and show as "sent" with an empty recipient list on the
-  // detail page. Rows start as "failed" so an interrupted send never reads
-  // as delivered; they're overwritten with real results after the send.
-  const { data: savedRows, error: saveError } = await supabase
-    .from("message_recipients")
-    .insert(
-      eligible.map((r) => ({
-        message_id: messageId,
-        person_id: r.id,
-        contact_value:
-          channel === "email" ? r.email! : normalizePhone(targetContactValue(r, channel)!),
-        name: `${r.first_name} ${r.last_name}`.trim(),
-        status: "failed",
-        provider_id: null,
-        sent_at: null,
-        error_detail: "Send did not complete",
-      }))
-    )
-    .select("id, person_id");
-
-  if (saveError || !savedRows) {
-    console.error(
-      `[sendMessage] Failed to save recipients for message ${messageId} — nothing was sent:`,
-      saveError
-    );
-    const saveErrMsg = "Couldn't save the recipient list, so nothing was sent. Please try again.";
-    const { error: markError } = await supabase
-      .from("messages")
-      .update({ status: "failed", sent_count: 0, failed_count: 0, error_detail: saveErrMsg })
-      .eq("id", messageId);
-    if (markError) console.error(`[sendMessage] Failed to mark message ${messageId} as failed:`, markError);
-    revalidatePath("/messages");
-    return { success: false, error: saveErrMsg };
-  }
-
-  const savedRowIdByPerson = new Map(savedRows.map((row) => [row.person_id as string, row.id as string]));
-
-  let sentCount = 0;
-  let failedCount = 0;
-  let inserts: RecipientInsert[] = [];
-
-  let batchError: string | null = null;
-
-  // ── AUDIT LOG: log every recipient email before sending ──────────────────
-  if (channel === "email") {
-    console.log(`[sendMessage] RECIPIENT AUDIT — message ${messageId} — ${eligible.length} recipients:`);
-    for (const r of eligible) {
-      console.log(`  [sendMessage]   → ${r.email} (${r.first_name} ${r.last_name})`);
-    }
-  } else {
-    console.log(`[sendMessage] RECIPIENT AUDIT — message ${messageId} — ${eligible.length} recipients:`);
-    for (const r of eligible) {
-      console.log(`  [sendMessage]   → ${r.phone} (${r.first_name} ${r.last_name})`);
-    }
-  }
-
-  if (simulated) {
-    const result = simulateSend(eligible, channel, messageId, now);
-    sentCount = result.sentCount;
-    failedCount = result.failedCount;
-    inserts = result.inserts;
-    batchError = result.batchError;
-  } else if (channel === "email") {
-    const result = await sendEmailBatch(eligible, trimmedSubject, trimmedBody, messageId, now, branding, greetingTemplate ?? null, savedRowIdByPerson, attachmentUrls);
-    sentCount = result.sentCount;
-    failedCount = result.failedCount;
-    inserts = result.inserts;
-    batchError = result.batchError;
-  } else {
-    // SMS or WhatsApp via provider abstraction (currently Sinch)
-    const result = await sendViaSmsProvider(channel as "sms" | "whatsapp", eligible, trimmedBody, messageId, now, attachmentUrls);
-    sentCount = result.sentCount;
-    failedCount = result.failedCount;
-    inserts = result.inserts;
-    batchError = result.batchError;
-  }
-
-  const finalStatus = sentCount === 0 ? "failed" : "sent";
-
-  // Collect the most representative error for the campaign row
-  const campaignError: string | null =
-    sentCount === 0
-      ? (batchError ?? inserts.find((i) => i.error_detail)?.error_detail ?? "All sends failed")
-      : null;
-
-  // Overwrite the pre-saved rows with real send results (matched by row id).
-  // Anyone who got no result (e.g. suppressed as opted-out) is removed so the
-  // recipient list matches exactly who was attempted, as before.
-  const resultRows = inserts.map((i) => ({ id: savedRowIdByPerson.get(i.person_id)!, ...i }));
-  const attemptedPersonIds = new Set(inserts.map((i) => i.person_id));
-  const unattemptedRowIds = savedRows
-    .filter((row) => !attemptedPersonIds.has(row.person_id as string))
-    .map((row) => row.id as string);
-
-  const [resultsWrite, unattemptedDelete, messageUpdate] = await Promise.all([
-    resultRows.length > 0
-      ? supabase.from("message_recipients").upsert(resultRows)
-      : Promise.resolve({ error: null }),
-    unattemptedRowIds.length > 0
-      ? supabase.from("message_recipients").delete().in("id", unattemptedRowIds)
-      : Promise.resolve({ error: null }),
-    supabase
-      .from("messages")
-      .update({
-        sent_count: sentCount,
-        failed_count: failedCount,
-        status: finalStatus,
-        sent_at: now,
-        ...(campaignError ? { error_detail: campaignError } : {}),
-      })
-      .eq("id", messageId),
-  ]);
-
-  if (resultsWrite.error)
-    console.error(`[sendMessage] Failed to save send results for message ${messageId}:`, resultsWrite.error);
-  if (unattemptedDelete.error)
-    console.error(`[sendMessage] Failed to remove unattempted recipients for message ${messageId}:`, unattemptedDelete.error);
-  if (messageUpdate.error)
-    console.error(`[sendMessage] Failed to update message ${messageId}:`, messageUpdate.error);
-
-  revalidatePath("/messages");
-
-  if (sentCount === 0 && batchError) {
-    return { success: false, error: batchError };
-  }
-  return { success: true };
-  } catch (err: unknown) {
-    const e = err instanceof Error ? err : new Error(String(err));
-    console.error("[sendMessage] UNCAUGHT EXCEPTION:", e.message, e.stack);
-    return { success: false, error: `Server error: ${e.message}` };
-  }
+  const { data } = await supabase.from("messages").select("id, status, created_by").eq("org_id", orgId).eq("id", id).maybeSingle();
+  return (data as Existing | null) ?? null;
 }
-
-// ─── Full recipient resolution (pre-send audit) ───────────────────────────────
-
-export type ResolvedRecipient = {
-  personId: string;
-  name: string;
-  contactValue: string; // email or phone (E.164 for phone)
-};
 
 /**
- * Resolves the exact set of recipients that will receive a send.
- * Called BEFORE sendMessage so the user can confirm who will receive the message.
- * Also used server-side to audit the recipient list before calling Resend.
+ * One entry point for the compose screen's buttons:
+ *   send_now          save + send right here (admins, or members when approval isn't required)
+ *   schedule          send later at a school-local date/time (optionally repeating weekly)
+ *   draft             save without sending
+ *   request_approval  members: ask an admin to send it
+ * Members' send/schedule turn into an approval request when the school requires
+ * approval. The audience is resolved when the message actually goes out, so
+ * a scheduled message reaches the roster as it is then.
  */
-export async function resolveAllRecipients(
-  audienceSlugs: string[],
-  channel: Channel
-): Promise<ResolvedRecipient[]> {
-  if (audienceSlugs.length === 0) return [];
+export async function submitMessage(raw: MessageInput, opts: SubmitOptions = { action: "send_now" }): Promise<SubmitResult> {
+  try {
+    const { orgId, userId, role } = await getMembership();
+    const admin = isAdminRole(role);
+    const supabase = await createSupabaseServerClient();
 
-  const orgId = await getOrgId();
-  const peopleArrays = await Promise.all(audienceSlugs.map((slug) => getPeopleForAudience(slug, orgId)));
-  const seenIds = new Set<string>();
-  const allPeople: Person[] = [];
-  for (const batch of peopleArrays) {
-    for (const p of batch) {
-      if (!seenIds.has(p.id)) {
-        seenIds.add(p.id);
-        allPeople.push(p);
+    let input = clean(raw);
+    if (!admin) input = { ...input, isEmergency: false }; // only owners/admins can flag emergencies
+    const isSim = await simulated(orgId);
+    const tz = await getSchoolTimezone(supabase, orgId);
+    const needsApproval = !admin && (await getRequireApproval(supabase, orgId));
+
+    let action = opts.action;
+    if (needsApproval && (action === "send_now" || action === "schedule")) action = "request_approval";
+    const repeating = !!opts.repeatWeeks || !!opts.recurringId || (!!opts.zmanim && !!opts.zmanim.repeatWeeks);
+    if (repeating && !admin) return fail("Only owners and admins can set up repeating sends.");
+    if (repeating && action !== "schedule") return fail("A repeating send needs a start date and time.");
+
+    if (action === "draft") {
+      if (!input.body && !input.subject && input.audienceSlugs.length === 0) return fail("There's nothing to save yet.");
+    } else {
+      const bad = validate(input);
+      if (bad) return fail(bad);
+    }
+
+    // When
+    let scheduledFor: Date | null = null;
+    let zmanimRule: ZmanimRule | null = null;
+    if (opts.zmanim && (action === "schedule" || action === "request_approval")) {
+      // Relative to the Jewish calendar: work out the actual time from the school's Hebcal windows
+      const z = opts.zmanim;
+      if (z.anchor !== "candle_lighting" && z.anchor !== "havdalah") return fail("Choose candle lighting or Havdalah.");
+      if (!Number.isInteger(z.offsetMinutes) || Math.abs(z.offsetMinutes) > MAX_OFFSET_MINUTES) return fail("That's too far from candle lighting / Havdalah. Use up to 72 hours.");
+      const windows = await getUpcomingWindows(supabase, orgId, new Date(), 24);
+      const w = windows.find((x) => new Date(x.startsAt).getTime() === new Date(z.windowStartsAt).getTime());
+      if (!w) return fail("That Shabbos isn't in your calendar. Check Settings → Shabbos & Yom Tov.");
+      scheduledFor = zmanimTime(w, z.anchor, z.offsetMinutes);
+      if (z.repeatWeeks) {
+        if (w.kind !== "shabbos") return fail("Repeating sends start on a regular Shabbos. Pick a Shabbos that isn't Yom Tov, or schedule this one on its own.");
+        zmanimRule = { kind: "zmanim", anchor: z.anchor, offsetMinutes: z.offsetMinutes, everyWeeks: Math.min(12, Math.max(1, Math.round(z.repeatWeeks))), startDate: localDateString(new Date(w.startsAt), tz) };
+      }
+      if (!zmanimRule && scheduledFor.getTime() < Date.now() + 60_000) return fail("That time has already passed. Choose a later Shabbos.");
+    } else if (action === "schedule" || (action === "request_approval" && opts.when)) {
+      if (!opts.when || !isDateString(opts.when.date) || !isTimeString(opts.when.time)) return fail("Pick a date and time.");
+      scheduledFor = zonedToUtc(opts.when.date, opts.when.time, tz);
+      if (scheduledFor.getTime() < Date.now() + 60_000) return fail("Pick a time in the future.");
+    }
+
+    let finalInput = input;
+    if (action !== "draft") {
+      // Fundraising never goes on WhatsApp (Meta blocks it to US numbers)
+      const { channels, notes } = effectiveChannels(input);
+      if (channels.length === 0) return fail(notes[0] ?? "Choose a channel.");
+      finalInput = { ...input, channels };
+      const problems = await channelProblems(orgId, finalInput, isSim);
+      if (problems.length > 0) return fail(problems.map((p) => p.problem).join(" "));
+    }
+    let overrideReason: string | null = null;
+    let overrideLabel: string | null = null;
+    if (action === "send_now") {
+      const window = await sendWindowStatus(supabase, orgId);
+      if (window.blocked) {
+        if (!opts.override) return fail(window.message);
+        if (role !== "owner") return fail("Only the school owner can send during Shabbos or Yom Tov.");
+        const reason = opts.override.reason.trim();
+        if (reason.length < 5) return fail("Type a reason for the emergency send, in a few words. It's recorded.");
+        overrideReason = reason.slice(0, 500);
+        overrideLabel = window.label;
       }
     }
+    // A scheduled time inside Shabbos isn't an error — it just waits until Shabbos is over
+    let scheduleNote: string | null = null;
+    if (action === "schedule" && scheduledFor) {
+      const w = await sendWindowStatus(supabase, orgId, scheduledFor);
+      if (w.blocked && !w.approximate && w.until) scheduleNote = `That time is during ${w.label?.trim() || "Shabbos / Yom Tov"}, so it will go out after it ends, at ${formatInZone(w.until, tz)}.`;
+    }
+
+    // Editing something that already exists?
+    let existing: Existing | null = null;
+    if (opts.messageId) {
+      existing = await loadExisting(orgId, opts.messageId);
+      if (!existing) return fail("That message no longer exists.");
+      const allowed = admin ? EDITABLE : MEMBER_EDITABLE;
+      if (!allowed.includes(existing.status)) return fail(existing.status === "sending" || existing.status === "sent" ? "This message has already been sent." : "You can't edit this message.");
+      if (!admin && existing.created_by !== userId) return fail("You can only edit your own drafts and requests.");
+    }
+
+    // Repeating send (admins): a blueprint the dispatcher turns into one message per occurrence
+    if (repeating) {
+      if (opts.recurringId && opts.zmanim && !zmanimRule) return fail("Choose how often this repeats.");
+      const rule: ClockRule | ZmanimRule = zmanimRule ?? {
+        kind: "clock",
+        everyWeeks: opts.repeatWeeks ?? 1,
+        weekday: weekdayOf(opts.when!.date),
+        time: opts.when!.time,
+        startDate: opts.when!.date,
+      };
+      // For a zmanim rule the first send is the chosen Shabbos itself, if it's still ahead
+      const next = zmanimRule ? (await nextRunFor(rule, tz, new Date(Date.now() + 60_000), { supabase, orgId })) : await nextRunFor(rule, tz, new Date());
+      if (!next) return fail("Couldn't work out when this repeats. Check the day, time and number of weeks.");
+      const record = {
+        name: (input.subject || input.body).slice(0, 80),
+        timezone: tz,
+        rule,
+        payload: finalInput,
+        subject: finalInput.channels.includes("email") ? finalInput.subject : null,
+        body: finalInput.body,
+        audience_label: finalInput.audienceLabel || "Audience",
+        next_run_at: next.toISOString(),
+        active: true,
+      };
+      let recurringId = opts.recurringId ?? null;
+      if (recurringId) {
+        const { data, error } = await supabase.from("recurring_sends").update(record).eq("org_id", orgId).eq("id", recurringId).select("id");
+        if (error || !data?.length) return fail(error?.message ?? "That repeating send no longer exists.");
+      } else {
+        const { data, error } = await supabase.from("recurring_sends").insert({ org_id: orgId, created_by: userId, ...record }).select("id").single();
+        if (error || !data) return fail(error?.message ?? "Couldn't save the repeating send.");
+        recurringId = data.id as string;
+      }
+      // A draft/scheduled copy that was converted into a repeating send
+      if (existing) await supabase.from("messages").delete().eq("org_id", orgId).eq("id", existing.id).in("status", EDITABLE);
+      revalidatePath("/messages");
+      return { success: true, kind: "recurring", recurringId, whenLabel: formatInZone(next, tz), ruleLabel: rule.kind === "zmanim" ? describeZmanimRule(rule) : describeClockRule(rule) };
+    }
+
+    const now = new Date().toISOString();
+    const patch: Record<string, unknown> = {
+      ...messageColumns(finalInput),
+      error_detail: null,
+      rejected_by: null,
+      rejected_at: null,
+      rejection_reason: null,
+    };
+    if (opts.resendOf) patch.resend_of = opts.resendOf;
+    if (action === "draft") Object.assign(patch, { status: "draft", scheduled_for: null, requested_at: null, approved_by: null, approved_at: null });
+    else if (action === "request_approval") Object.assign(patch, { status: "pending_approval", scheduled_for: scheduledFor?.toISOString() ?? null, requested_at: now, approved_by: null, approved_at: null });
+    else if (action === "schedule") Object.assign(patch, { status: "scheduled", scheduled_for: scheduledFor!.toISOString(), requested_at: existing?.status === "pending_approval" ? undefined : null, approved_by: userId, approved_at: now });
+    else Object.assign(patch, { status: "sending", claimed_at: now, scheduled_for: null, approved_by: userId, approved_at: now, window_override_reason: overrideReason });
+    for (const k of Object.keys(patch)) if (patch[k] === undefined) delete patch[k];
+
+    let messageId: string;
+    if (existing) {
+      // Guarded on status so a message the dispatcher just claimed can't be overwritten
+      const { data, error } = await supabase.from("messages").update(patch).eq("org_id", orgId).eq("id", existing.id).in("status", admin ? EDITABLE : MEMBER_EDITABLE).select("id");
+      if (error) return fail(error.message);
+      if (!data?.length) return fail("This message changed while you were editing it. Reload and try again.");
+      messageId = existing.id;
+    } else {
+      const { data, error } = await supabase.from("messages").insert({ org_id: orgId, created_by: userId, recipient_count: 0, ...patch }).select("id").single();
+      if (error || !data) return fail(error?.message ?? "Failed to create message record.");
+      messageId = data.id as string;
+    }
+    revalidatePath("/messages");
+    revalidatePath("/dashboard");
+
+    if (action === "draft") return { success: true, kind: "draft", messageId };
+    if (action === "request_approval") return { success: true, kind: "pending_approval", messageId, whenLabel: scheduledFor ? formatInZone(scheduledFor, tz) : null };
+    if (action === "schedule") return { success: true, kind: "scheduled", messageId, whenLabel: formatInZone(scheduledFor!, tz), note: scheduleNote };
+
+    if (overrideReason) {
+      // Logged before anything is sent
+      await supabase.from("window_overrides").insert({ org_id: orgId, message_id: messageId, user_id: userId, reason: overrideReason, window_label: overrideLabel });
+    }
+
+    const result = await executeMessage({ supabase, orgId }, messageId, { deadlineMs: Date.now() + 50_000 });
+    if (result.state === "failed") return fail(result.error);
+    if (result.state === "skipped") return fail(result.reason);
+    if (result.state === "partial") return { success: true, kind: "sending", messageId, sent: result.sent, failed: result.failed, remaining: result.remaining };
+    return { success: true, kind: "sent", messageId, sent: result.sent, failed: result.failed, remaining: 0 };
+  } catch (err) {
+    const e = err instanceof Error ? err : new Error(String(err));
+    console.error("[submitMessage] UNCAUGHT EXCEPTION:", e.message, e.stack);
+    return fail(`Server error: ${e.message}`);
   }
-
-  const eligible =
-    channel === "email"
-      ? allPeople.filter((p) => p.email)
-      : allPeople.filter((p) => targetContactValue(p, channel));
-
-  return eligible.map((r) => ({
-    personId: r.id,
-    name:
-      [r.first_name, r.last_name].filter(Boolean).join(" ") ||
-      (channel === "email" ? r.email ?? "" : targetContactValue(r, channel) ?? ""),
-    contactValue: channel === "email" ? (r.email ?? "") : normalizePhone(targetContactValue(r, channel) ?? ""),
-  }));
 }
 
-// ─── Per-recipient preview ────────────────────────────────────────────────────
+/** Keep sending a message that didn't finish (large audiences, or a function that timed out). */
+export async function continueSending(messageId: string): Promise<{ ok: true; remaining: number } | { ok: false; error: string }> {
+  const { orgId } = await getMembership();
+  const supabase = await createSupabaseServerClient();
+  const result = await executeMessage({ supabase, orgId }, messageId, { deadlineMs: Date.now() + 50_000 });
+  revalidatePath(`/messages/${messageId}`);
+  revalidatePath("/messages");
+  if (result.state === "failed") return { ok: false, error: result.error };
+  if (result.state === "skipped") return { ok: false, error: result.reason };
+  return { ok: true, remaining: result.state === "partial" ? result.remaining : 0 };
+}
 
-export type RecipientPreview = {
-  name: string;
-  contactValue: string;
-  rendered: string;
-};
+// ─── Approvals, cancel, delete ────────────────────────────────────────────────
 
-export async function previewRecipients(
-  audienceSlugs: string[],
-  channel: Channel,
-  bodyTemplate: string,
-  limit = 8
-): Promise<{ previews: RecipientPreview[]; totalCount: number }> {
-  if (!bodyTemplate.trim() || audienceSlugs.length === 0) {
-    return { previews: [], totalCount: 0 };
-  }
+export type ActionResult = { ok: true; message?: string } | { ok: false; error: string };
 
-  const orgId = await getOrgId();
-  const peopleArrays = await Promise.all(audienceSlugs.map((slug) => getPeopleForAudience(slug, orgId)));
-  const seenIds = new Set<string>();
-  const allPeople: Person[] = [];
-  for (const batch of peopleArrays) {
-    for (const p of batch) {
-      if (!seenIds.has(p.id)) {
-        seenIds.add(p.id);
-        allPeople.push(p);
-      }
+async function pendingOrScheduled(orgId: string, id: string) {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.from("messages").select("id, status, created_by, scheduled_for, payload").eq("org_id", orgId).eq("id", id).maybeSingle();
+  return { supabase, row: data as { id: string; status: string; created_by: string | null; scheduled_for: string | null; payload: MessageInput | null } | null };
+}
+
+/** Admin: approve a member's request. Goes out now, or at the time they asked for. */
+export async function approveMessage(messageId: string): Promise<ActionResult> {
+  try {
+    const { orgId, userId, role } = await getMembership();
+    if (!isAdminRole(role)) return { ok: false, error: "Only owners and admins can approve messages." };
+    const { supabase, row } = await pendingOrScheduled(orgId, messageId);
+    if (!row || row.status !== "pending_approval") return { ok: false, error: "This message isn't waiting for approval." };
+    if (!row.payload) return { ok: false, error: "This message has no send settings saved." };
+
+    const problems = await channelProblems(orgId, row.payload, await simulated(orgId));
+    if (problems.length > 0) return { ok: false, error: problems.map((p) => p.problem).join(" ") };
+
+    const now = new Date();
+    const later = row.scheduled_for && new Date(row.scheduled_for).getTime() > now.getTime() + 60_000;
+    if (!later) {
+      const window = await sendWindowStatus(supabase, orgId);
+      if (window.blocked) return { ok: false, error: window.message };
     }
+    const { data, error } = await supabase
+      .from("messages")
+      .update(
+        later
+          ? { status: "scheduled", approved_by: userId, approved_at: now.toISOString() }
+          : { status: "sending", claimed_at: now.toISOString(), scheduled_for: null, approved_by: userId, approved_at: now.toISOString() }
+      )
+      .eq("org_id", orgId)
+      .eq("id", messageId)
+      .eq("status", "pending_approval")
+      .select("id");
+    if (error) return { ok: false, error: error.message };
+    if (!data?.length) return { ok: false, error: "Someone else already handled this message." };
+    revalidatePath("/messages");
+    revalidatePath("/dashboard");
+    if (later) return { ok: true, message: "Approved — it will send at the scheduled time." };
+    const result = await executeMessage({ supabase, orgId }, messageId, { deadlineMs: Date.now() + 50_000 });
+    if (result.state === "failed") return { ok: false, error: result.error };
+    return { ok: true, message: "Approved and sent." };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Couldn't approve." };
   }
+}
 
-  const eligible =
-    channel === "email"
-      ? allPeople.filter((p) => p.email)
-      : allPeople.filter((p) => targetContactValue(p, channel));
+export async function rejectMessage(messageId: string, reason: string): Promise<ActionResult> {
+  try {
+    const { orgId, userId, role } = await getMembership();
+    if (!isAdminRole(role)) return { ok: false, error: "Only owners and admins can reject messages." };
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("messages")
+      .update({ status: "rejected", rejected_by: userId, rejected_at: new Date().toISOString(), rejection_reason: reason.trim().slice(0, 500) || null })
+      .eq("org_id", orgId)
+      .eq("id", messageId)
+      .eq("status", "pending_approval")
+      .select("id");
+    if (error) return { ok: false, error: error.message };
+    if (!data?.length) return { ok: false, error: "This message isn't waiting for approval." };
+    revalidatePath("/messages");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Couldn't reject." };
+  }
+}
 
-  const sample = eligible.slice(0, limit);
-  const previews: RecipientPreview[] = sample.map((r) => ({
-    name: [r.first_name, r.last_name].filter(Boolean).join(" ") || r.email || "Unknown",
-    contactValue: channel === "email" ? (r.email ?? "") : (targetContactValue(r, channel) ?? ""),
-    rendered: renderTemplate(bodyTemplate, r),
-  }));
+/** Stop a scheduled message or withdraw a request (admins any; members their own requests). */
+export async function cancelMessage(messageId: string): Promise<ActionResult> {
+  try {
+    const { orgId, userId, role } = await getMembership();
+    const { supabase, row } = await pendingOrScheduled(orgId, messageId);
+    if (!row) return { ok: false, error: "That message no longer exists." };
+    if (!isAdminRole(role) && (row.created_by !== userId || row.status !== "pending_approval")) return { ok: false, error: "Only owners and admins can cancel scheduled messages." };
+    const { data, error } = await supabase
+      .from("messages")
+      .update({ status: "cancelled" })
+      .eq("org_id", orgId)
+      .eq("id", messageId)
+      .in("status", ["scheduled", "pending_approval"])
+      .select("id");
+    if (error) return { ok: false, error: error.message };
+    if (!data?.length) return { ok: false, error: "It's too late to cancel — this message has already started sending." };
+    revalidatePath("/messages");
+    revalidatePath("/dashboard");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Couldn't cancel." };
+  }
+}
 
-  return { previews, totalCount: eligible.length };
+/** Delete a draft, or a rejected/cancelled message that was never sent. */
+export async function deleteUnsentMessage(messageId: string): Promise<ActionResult> {
+  try {
+    const { orgId, userId, role } = await getMembership();
+    const { supabase, row } = await pendingOrScheduled(orgId, messageId);
+    if (!row) return { ok: true };
+    if (!["draft", "rejected", "cancelled"].includes(row.status)) return { ok: false, error: "Only drafts and unsent messages can be deleted." };
+    if (!isAdminRole(role) && row.created_by !== userId) return { ok: false, error: "You can only delete your own drafts." };
+    const { error } = await supabase.from("messages").delete().eq("org_id", orgId).eq("id", messageId).in("status", ["draft", "rejected", "cancelled"]);
+    if (error) return { ok: false, error: error.message };
+    revalidatePath("/messages");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Couldn't delete." };
+  }
+}
+
+export async function setRecurringActive(recurringId: string, active: boolean): Promise<ActionResult> {
+  try {
+    const { orgId, role } = await getMembership();
+    if (!isAdminRole(role)) return { ok: false, error: "Only owners and admins can change repeating sends." };
+    const supabase = await createSupabaseServerClient();
+    const { data: rec } = await supabase.from("recurring_sends").select("id, timezone, rule").eq("org_id", orgId).eq("id", recurringId).maybeSingle();
+    if (!rec) return { ok: false, error: "That repeating send no longer exists." };
+    // Resuming picks up from the next future occurrence — it never sends what was missed while paused
+    const next = active ? await nextRunFor(rec.rule, rec.timezone as string, new Date(), { supabase, orgId }) : null;
+    if (active && !next) return { ok: false, error: "This repeating send's schedule is no longer valid. Edit it first." };
+    const { error } = await supabase.from("recurring_sends").update({ active, next_run_at: next ? next.toISOString() : null }).eq("org_id", orgId).eq("id", recurringId);
+    if (error) return { ok: false, error: error.message };
+    revalidatePath("/messages");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Couldn't update." };
+  }
+}
+
+export async function deleteRecurring(recurringId: string): Promise<ActionResult> {
+  try {
+    const { orgId, role } = await getMembership();
+    if (!isAdminRole(role)) return { ok: false, error: "Only owners and admins can change repeating sends." };
+    const supabase = await createSupabaseServerClient();
+    // Scheduled-but-unsent occurrences go with it
+    await supabase.from("messages").update({ status: "cancelled" }).eq("org_id", orgId).eq("recurring_id", recurringId).eq("status", "scheduled");
+    const { error } = await supabase.from("recurring_sends").delete().eq("org_id", orgId).eq("id", recurringId);
+    if (error) return { ok: false, error: error.message };
+    revalidatePath("/messages");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Couldn't delete." };
+  }
+}
+
+/** For the schedule picker: is this school-local date/time inside Shabbos / Yom Tov? */
+export async function checkSendWindow(date: string, time: string): Promise<{ held: boolean; note: string | null }> {
+  if (!isDateString(date) || !isTimeString(time)) return { held: false, note: null };
+  const { orgId } = await getMembership();
+  const supabase = await createSupabaseServerClient();
+  const tz = await getSchoolTimezone(supabase, orgId);
+  const w = await sendWindowStatus(supabase, orgId, zonedToUtc(date, time, tz));
+  if (!w.blocked || w.approximate || !w.until) return { held: false, note: null };
+  return { held: true, note: `That time is during ${w.label?.trim() || "Shabbos / Yom Tov"}. The message will wait and go out at ${formatInZone(w.until, tz)}.` };
 }

@@ -37,100 +37,9 @@
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
-
-// ─── CTIA-required keyword constants ──────────────────────────────────────────
-
-// Carriers handle STOP at the network level, but we must also update our DB
-// so analytics stay consistent and we never attempt to re-send to opted-out numbers.
-const STOP_KEYWORDS   = new Set(["STOP", "STOPALL", "UNSUBSCRIBE", "CANCEL", "END", "QUIT"]);
-const UNSTOP_KEYWORDS = new Set(["UNSTOP", "START"]);
-const HELP_KEYWORDS   = new Set(["HELP", "INFO"]);
-
-// CTIA-required auto-response templates.
-// Must include: program name, confirmation, opt-out / opt-in instruction.
-const STOP_CONFIRMATION =
-  "Kesher: You have been unsubscribed from school notifications. " +
-  "No further messages will be sent. Reply UNSTOP to re-subscribe. " +
-  "Questions? contact@kesherhq.co";
-
-const UNSTOP_CONFIRMATION =
-  "Kesher: You have been re-subscribed to school notifications. " +
-  "Reply STOP at any time to opt out. Msg & Data rates may apply.";
-
-const HELP_RESPONSE =
-  "Kesher School Communications. " +
-  "Reply STOP to opt out. Reply UNSTOP to re-subscribe. " +
-  "Msg & Data rates may apply. Support: contact@kesherhq.co | kesherhq.co/sms-terms";
-
-// ─── E.164 normalization ──────────────────────────────────────────────────────
-
-// Inbound Sinch webhooks deliver the sender's number without a leading +
-// (e.g. "19172468571" instead of "+19172468571"). Sending back to the raw
-// value causes an "unallocated prefix" failure at the carrier. This mirrors
-// the normalizePhone() function used in the outbound send path.
-function normalizePhone(raw: string): string {
-  const hasPlus = raw.startsWith("+");
-  const digits  = raw.replace(/\D/g, "");
-  if (hasPlus)                                    return `+${digits}`;
-  if (digits.length === 10)                       return `+1${digits}`;
-  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
-  return `+${digits}`;
-}
-
-// ─── Send auto-response via Sinch Conversation API ───────────────────────────
-
-async function sendAutoResponse(to: string, text: string): Promise<void> {
-  const projectId    = process.env.SINCH_PROJECT_ID;
-  const appId        = process.env.SINCH_APP_ID;
-  const accessKey    = process.env.SINCH_ACCESS_KEY;
-  const accessSecret = process.env.SINCH_ACCESS_SECRET;
-  const smsSender    = process.env.SINCH_SMS_SENDER;
-  const region       = process.env.SINCH_REGION ?? "us";
-
-  if (!projectId || !appId || !accessKey || !accessSecret) {
-    console.warn("[sinch-webhook] Cannot send auto-response — Sinch credentials not configured");
-    return;
-  }
-
-  // Normalize to E.164 — inbound numbers arrive without the leading +
-  const toE164 = normalizePhone(to);
-
-  const credentials = Buffer.from(`${accessKey}:${accessSecret}`).toString("base64");
-  const url = `https://${region}.conversation.api.sinch.com/v1/projects/${projectId}/messages:send`;
-
-  const body: Record<string, unknown> = {
-    app_id: appId,
-    recipient: {
-      identified_by: {
-        channel_identities: [{ channel: "SMS", identity: toE164 }],
-      },
-    },
-    message: { text_message: { text } },
-    channel_priority_order: ["SMS"],
-    // Specify the sender number explicitly — same as regular outbound sends.
-    // Without this Sinch falls back to the app default which may be wrong.
-    ...(smsSender ? { channel_properties: { SMS_SENDER: smsSender } } : {}),
-  };
-
-  try {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization:  `Basic ${credentials}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      const detail = await res.text();
-      console.error(`[sinch-webhook] Auto-response failed to=${toE164} status=${res.status}: ${detail}`);
-    } else {
-      console.log(`[sinch-webhook] Auto-response sent to=${toE164}`);
-    }
-  } catch (err) {
-    console.error("[sinch-webhook] Auto-response exception:", err);
-  }
-}
+import { fallbackForFailedRow } from "@/lib/send/engine";
+import { processInbound } from "@/lib/inbound";
+import { updateThreadMessageStatus } from "@/lib/inbox";
 
 // ─── Sinch payload types ──────────────────────────────────────────────────────
 
@@ -267,6 +176,10 @@ export async function POST(req: NextRequest) {
       `[sinch-webhook] delivery_report messageId=${messageId} status=${status} channel=${channel}`
     );
 
+    // Replies sent from the inbox are tracked on the conversation too
+    if (status === "DELIVERED") await updateThreadMessageStatus(supabase, messageId, "delivered").catch(() => undefined);
+    if (status === "FAILED") await updateThreadMessageStatus(supabase, messageId, "failed", report.reason?.description ?? undefined).catch(() => undefined);
+
     if (status === "DELIVERED") {
       const { data: updated, error } = await supabase
         .from("message_recipients")
@@ -308,6 +221,15 @@ export async function POST(req: NextRequest) {
         console.warn(
           `[sinch-webhook] FAILED matched no recipient for messageId=${messageId} — provider_id mismatch`
         );
+      } else {
+        // Best-channel messages try the next channel (email) for this parent
+        for (const row of updated) {
+          try {
+            await fallbackForFailedRow(supabase, row.id as string, report.reason?.description ?? "Text message failed");
+          } catch (fbErr) {
+            console.error(`[sinch-webhook] fallback failed for row ${row.id}:`, fbErr instanceof Error ? fbErr.message : fbErr);
+          }
+        }
       }
       return NextResponse.json({ ok: true });
     }
@@ -317,140 +239,36 @@ export async function POST(req: NextRequest) {
   }
 
   // ── INBOUND_MESSAGE (reply) ───────────────────────────────────────────────
+  // STOP and its synonyms (English, Hebrew, Yiddish), START and HELP are handled in
+  // lib/inbound.ts per school: the opt-out goes on that school's suppression list and
+  // the parent gets one confirmation from the school's own number.
   if (payload.message) {
-    const msg         = payload.message;
-    const sinchId     = msg.id;
+    const msg     = payload.message;
+    const sinchId = msg.id;
 
     if (!sinchId) {
       console.warn("[sinch-webhook] inbound message missing id — skipping");
       return NextResponse.json({ ok: true });
     }
 
-    // Sinch delivers inbound numbers without a leading + (e.g. "19172468571").
-    // Normalize to E.164 here so all DB queries match stored contact_value (+1...).
-    const fromNumber  = normalizePhone(msg.channel_identity.identity);
-    const toNumber    = process.env.SINCH_SMS_SENDER ?? "";
-    const channel     = msg.channel_identity.channel === "WHATSAPP" ? "whatsapp" : "sms";
-    const bodyText    =
-      msg.contact_message?.text_message?.text ??
-      msg.contact_message?.media_message?.url ??
-      null;
+    const channel  = msg.channel_identity.channel === "WHATSAPP" ? "whatsapp" : "sms";
+    const bodyText = msg.contact_message?.text_message?.text ?? msg.contact_message?.media_message?.url ?? null;
+    console.log(`[sinch-webhook] inbound messageId=${sinchId} channel=${channel}`);
 
-    console.log(
-      `[sinch-webhook] inbound messageId=${sinchId} from=${fromNumber} channel=${channel}`
-    );
-
-    // ── CTIA-required keyword handling ──────────────────────────────────────
-    // Carriers handle STOP at the network level, but we must mirror it in our
-    // DB so analytics stay accurate and we never try to re-send to opted-out numbers.
-    // HELP must return an auto-response containing program name + support info.
-    const keyword = bodyText?.trim().toUpperCase() ?? "";
-
-    if (STOP_KEYWORDS.has(keyword)) {
-      console.log(`[sinch-webhook] STOP received from=${fromNumber} — sending confirmation then marking opted out`);
-      // Send confirmation FIRST per CTIA rules. sendAutoResponse calls the Sinch
-      // Conversation API directly — it does not go through the app's send path so
-      // it is never blocked by our opt-out suppression logic.
-      await sendAutoResponse(fromNumber, STOP_CONFIRMATION);
-      // Mark ALL prior outbound recipients for this number as opted-out.
-      await supabase
-        .from("message_recipients")
-        .update({ status: "opted_out" })
-        .eq("contact_value", fromNumber)
-        .not("status", "eq", "opted_out");
-      // Record STOP as a reply on the most recent opted-out recipient so it
-      // appears in the campaign activity feed and increments the REPLIED counter.
-      const { data: stopMatched } = await supabase
-        .from("message_recipients")
-        .select("id")
-        .eq("contact_value", fromNumber)
-        .eq("status", "opted_out")
-        .is("replied_at", null)
-        .order("sent_at", { ascending: false })
-        .limit(1);
-      const stopRecipientId = stopMatched?.[0]?.id ?? null;
-      if (stopRecipientId) {
-        await supabase
-          .from("message_recipients")
-          .update({ replied_at: eventTime })
-          .eq("id", stopRecipientId);
-      }
-      // Persist the STOP message for audit trail.
-      await supabase.from("inbound_messages").insert({
+    try {
+      await processInbound(supabase, {
         channel,
-        from_number:          fromNumber,
-        to_number:            toNumber,
-        body:                 bodyText,
-        received_at:          eventTime,
-        message_recipient_id: stopRecipientId,
-        telnyx_id:            sinchId,
-        raw_payload:          msg,
+        from: msg.channel_identity.identity,
+        to: null,
+        body: bodyText,
+        providerMessageId: sinchId,
+        receivedAt: eventTime,
+        raw: msg,
       });
-      return NextResponse.json({ ok: true });
+    } catch (err) {
+      console.error(`[sinch-webhook] inbound processing failed id=${sinchId}:`, err instanceof Error ? err.message : err);
+      // Not a 5xx: Sinch would retry and we'd risk a second confirmation text
     }
-
-    if (UNSTOP_KEYWORDS.has(keyword)) {
-      console.log(`[sinch-webhook] UNSTOP received from=${fromNumber}`);
-      await sendAutoResponse(fromNumber, UNSTOP_CONFIRMATION);
-      return NextResponse.json({ ok: true });
-    }
-
-    if (HELP_KEYWORDS.has(keyword)) {
-      console.log(`[sinch-webhook] HELP received from=${fromNumber}`);
-      await sendAutoResponse(fromNumber, HELP_RESPONSE);
-      // Still fall through to log the inbound message — don't return early
-    }
-
-    // ── Regular reply — Find the most recent outbound recipient ──────────────
-    const { data: matched } = await supabase
-      .from("message_recipients")
-      .select("id")
-      .eq("contact_value", fromNumber)
-      .is("replied_at", null)
-      .order("sent_at", { ascending: false })
-      .limit(1);
-
-    const recipientId = matched?.[0]?.id ?? null;
-
-    if (recipientId) {
-      const { error: replyError } = await supabase
-        .from("message_recipients")
-        .update({ replied_at: eventTime })
-        .eq("id", recipientId);
-
-      if (replyError) {
-        console.error(
-          `[sinch-webhook] Failed to set replied_at for recipient ${recipientId}:`,
-          replyError.message
-        );
-      }
-    }
-
-    // Persist the raw inbound message. telnyx_id column stores the Sinch message
-    // ID for deduplication — the column name is an internal DB detail.
-    const { error: insertError } = await supabase
-      .from("inbound_messages")
-      .insert({
-        channel,
-        from_number:          fromNumber,
-        to_number:            toNumber,
-        body:                 bodyText,
-        received_at:          eventTime,
-        message_recipient_id: recipientId,
-        telnyx_id:            sinchId, // dedup key — stores Sinch message ID
-        raw_payload:          msg,
-      })
-      .select()
-      .single();
-
-    if (insertError && insertError.code !== "23505") {
-      // 23505 = unique_violation (duplicate sinchId) — safe to ignore
-      console.error(
-        `[sinch-webhook] Failed to insert inbound_message id=${sinchId}:`,
-        insertError.message
-      );
-    }
-
     return NextResponse.json({ ok: true });
   }
 

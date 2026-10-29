@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { isLikelyScannerClick, SCANNER_CLICK_MS } from "@/lib/tracking";
+import { addSuppression } from "@/lib/suppressions";
 
 // ─── Resend webhook event types ───────────────────────────────────────────────
 // Resend uses standardwebhooks for delivery. Signature headers:
@@ -120,6 +122,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   }
 
+  // Mail security scanners click every link the moment a message lands. A click
+  // within seconds of delivery is a scanner, not a parent, so it isn't recorded.
+  if (type === "email.clicked") {
+    const { data: row } = await supabase.from("message_recipients").select("delivered_at, sent_at").eq("provider_id", emailId).maybeSingle();
+    if (row && isLikelyScannerClick(created_at, row.delivered_at as string | null, row.sent_at as string | null)) {
+      console.log(`[resend-webhook] ignoring click within ${SCANNER_CLICK_MS}ms of delivery (link scanner) — email_id=${emailId}`);
+      return NextResponse.json({ ok: true });
+    }
+  }
+
   const update: Record<string, string | null> = {
     [column]: created_at,
   };
@@ -143,6 +155,26 @@ export async function POST(req: NextRequest) {
   if (error) {
     console.error(`[resend-webhook] DB update failed for ${emailId}:`, error.message);
     // Return 200 so Resend doesn't retry — DB errors shouldn't cause redelivery
+  }
+
+  // A spam complaint or a permanent bounce means this address must not be emailed again by this school
+  if (type === "email.complained" || (type === "email.bounced" && bounceData?.type === "hard")) {
+    const { data: row } = await supabase.from("message_recipients").select("person_id, contact_value, messages!inner(org_id)").eq("provider_id", emailId).maybeSingle();
+    if (row) {
+      const orgId = (row as unknown as { messages: { org_id: string } }).messages.org_id;
+      try {
+        await addSuppression(supabase, {
+          orgId,
+          channel: "email",
+          address: row.contact_value as string,
+          personId: row.person_id as string,
+          reason: type === "email.complained" ? "complaint" : "bounce",
+          source: "resend_webhook",
+        });
+      } catch (err) {
+        console.error(`[resend-webhook] couldn't suppress after ${type} for ${emailId}:`, err instanceof Error ? err.message : err);
+      }
+    }
   }
 
   return NextResponse.json({ ok: true });

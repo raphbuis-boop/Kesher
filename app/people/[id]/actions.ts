@@ -65,8 +65,10 @@ export async function updatePerson(
       .from("people")
       .select("id, first_name, last_name")
       .eq("org_id", orgId)
+      .in("status", ["active", "pending"])
       .eq("email", email)
       .neq("id", id)
+      .limit(1)
       .maybeSingle();
     if (existing) {
       return {
@@ -185,6 +187,16 @@ export async function addRelationship(
     };
   }
 
+  // Both people must belong to this org (RLS only checks the row's org_id)
+  const { data: pair } = await supabase
+    .from("people")
+    .select("id")
+    .eq("org_id", orgId)
+    .in("id", [personId, relatedPersonId]);
+  if ((pair ?? []).length !== 2) {
+    return { success: false, error: "Contact not found." };
+  }
+
   const { error } = await supabase.from("relationships").insert({
     org_id: orgId,
     person_id: personId,
@@ -194,6 +206,25 @@ export async function addRelationship(
 
   if (error) {
     return { success: false, error: error.message };
+  }
+
+  // Keep the family model in step: parent/child relationships are also
+  // guardian ↔ student links, which is what message resolution uses.
+  const type = relationshipType.toLowerCase();
+  const link =
+    ["parent", "mother", "father", "grandparent"].includes(type)
+      ? { guardian_id: personId, student_id: relatedPersonId, relationship: type }
+      : type === "child"
+        ? { guardian_id: relatedPersonId, student_id: personId, relationship: "parent" }
+        : null;
+  if (link) {
+    const isGrandparent = link.relationship === "grandparent";
+    const { error: linkError } = await supabase.from("guardian_students").upsert(
+      { org_id: orgId, ...link, custodial: !isGrandparent, receives_messages: !isGrandparent },
+      { onConflict: "guardian_id,student_id", ignoreDuplicates: true }
+    );
+    if (linkError) console.error("[addRelationship] guardian link failed:", linkError.message);
+    revalidatePath(`/people/${relatedPersonId}`);
   }
 
   revalidatePath(`/people/${personId}`);

@@ -14,7 +14,8 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { resolveAudience, type FilterNode } from "@/lib/resolveAudience";
+import { resolveFilterIds, type FilterNode } from "@/lib/resolveAudience";
+import { chunk, fetchAllRows } from "@/lib/supabase-paging";
 
 export type AudienceMember = {
   id: string;
@@ -28,11 +29,12 @@ export type AudienceMember = {
   categories: string[] | null;
   grade: string | null;
   graduation_year: number | null;
+  custom_fields: Record<string, unknown> | null;
   person_tags: Array<{ tag_id: string; tags: { id: string; name: string } }>;
 };
 
 const MEMBER_COLUMNS =
-  "id, first_name, last_name, preferred_name, salutation, email, phone, whatsapp, categories, grade, graduation_year, person_tags ( tag_id, tags ( id, name ) )";
+  "id, first_name, last_name, preferred_name, salutation, email, phone, whatsapp, categories, grade, graduation_year, custom_fields, person_tags ( tag_id, tags ( id, name ) )";
 
 export type GroupRow = {
   id: string;
@@ -71,19 +73,17 @@ export async function resolveGroupMemberIds(
 ): Promise<string[]> {
   if (group.is_dynamic) {
     if (!group.filter_config) return [];
-    return resolveAudience(group.filter_config, orgId);
+    return resolveFilterIds(supabase, orgId, group.filter_config);
   }
 
   const tagIds = group.group_tags.map((gt) => gt.tag_id);
   if (tagIds.length === 0) return [];
 
-  const { data, error } = await supabase
-    .from("person_tags")
-    .select("person_id")
-    .in("tag_id", tagIds);
-  if (error || !data) return [];
-
-  return [...new Set(data.map((r) => r.person_id as string))];
+  // person_tags can exceed PostgREST's 1,000-row cap — page through it
+  const rows = await fetchAllRows<{ person_id: string }>((from, to) =>
+    supabase.from("person_tags").select("person_id, tag_id").in("tag_id", tagIds).order("person_id").order("tag_id").range(from, to)
+  );
+  return [...new Set(rows.map((r) => r.person_id))];
 }
 
 /** Full member rows for a system (category-based) audience. */
@@ -96,6 +96,7 @@ export async function getSystemAudienceMembers(
     .from("people")
     .select(MEMBER_COLUMNS)
     .eq("org_id", orgId)
+    .eq("status", "active")
     .contains("categories", [category])
     .order("last_name");
   if (error) throw new Error(`getSystemAudienceMembers(${category}): ${error.message}`);
@@ -111,12 +112,18 @@ export async function getGroupMembers(
   const ids = await resolveGroupMemberIds(supabase, orgId, group);
   if (ids.length === 0) return [];
 
-  const { data, error } = await supabase
-    .from("people")
-    .select(MEMBER_COLUMNS)
-    .eq("org_id", orgId)
-    .in("id", ids)
-    .order("last_name");
-  if (error) throw new Error(`getGroupMembers(${group.id}): ${error.message}`);
-  return (data ?? []) as unknown as AudienceMember[];
+  // Chunked so a big audience doesn't build an enormous ?id=in.(…) URL
+  const parts = await Promise.all(
+    chunk(ids, 150).map(async (part) => {
+      const { data, error } = await supabase
+        .from("people")
+        .select(MEMBER_COLUMNS)
+        .eq("org_id", orgId)
+        .eq("status", "active")
+        .in("id", part);
+      if (error) throw new Error(`getGroupMembers(${group.id}): ${error.message}`);
+      return (data ?? []) as unknown as AudienceMember[];
+    })
+  );
+  return parts.flat().sort((a, b) => a.last_name.localeCompare(b.last_name) || a.first_name.localeCompare(b.first_name));
 }

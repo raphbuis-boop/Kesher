@@ -98,7 +98,7 @@ export function DashboardPreview() {
                 { label: "Active Contacts", value: "412", sub: "in directory" },
                 { label: "This Week", value: "3", sub: "campaigns sent" },
                 { label: "Delivery Rate", value: "97.6%", sub: "last 30 days", accent: "border-t-2 border-t-accent" },
-                { label: "Open Rate", value: "64.2%", sub: "email, last 30d", accent: "border-t-2 border-t-violet-400" },
+                { label: "Opened (may be automatic)", value: "64.2%", sub: "email, last 30d", accent: "border-t-2 border-t-violet-400" },
               ].map(({ label, value, sub, accent }) => (
                 <div key={label} className={`rounded-xl border border-[#e7e7e7] bg-white px-3.5 py-3 ${accent ?? ""}`}>
                   <p className="text-[8px] font-semibold uppercase tracking-wider text-[#a1a1aa]">{label}</p>

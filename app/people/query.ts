@@ -75,7 +75,8 @@ export async function listPeople(
       "id, first_name, last_name, email, phone, whatsapp, grade, categories, created_at, person_tags ( tag_id, tags ( id, name ) )",
       { count: "exact" }
     )
-    .eq("org_id", orgId);
+    .eq("org_id", orgId)
+    .eq("status", "active");
 
   if (query.cat) builder = builder.contains("categories", [query.cat]);
 

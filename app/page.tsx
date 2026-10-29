@@ -244,7 +244,7 @@ function FeaturesSection() {
                       {label === "SMS"
                         ? "Text messages sent via a 10DLC-registered long code. Opt-outs handled in real time."
                         : label === "Email"
-                        ? "HTML and plain-text email with delivery confirmation and open rate tracking."
+                        ? "HTML and plain-text email with delivery tracking and an optional ‘I’ve read this’ confirmation."
                         : "WhatsApp Business messaging for school communities that prefer it."}
                     </p>
                   </div>

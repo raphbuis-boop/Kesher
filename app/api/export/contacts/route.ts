@@ -35,6 +35,7 @@ export async function GET() {
       .from("people")
       .select("first_name, last_name, email, phone, whatsapp, grade, categories, created_at, person_tags ( tags ( name ) )")
       .eq("org_id", orgId)
+      .eq("status", "active")
       .order("last_name")
       .order("id")
       .range(from, from + 999);

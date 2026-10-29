@@ -5,6 +5,9 @@ import { notFound } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getOrgId } from "@/lib/org";
 import { getGroup, getGroupMembers, getSystemAudienceMembers, type AudienceMember } from "@/lib/audienceMembers";
+import { getRuleCatalog } from "@/lib/audienceCatalog";
+import { describeRule, type FilterNode, type RuleCatalog } from "@/lib/audienceRules";
+import { EditSmartAudience } from "../EditSmartAudience";
 import { AddPersonButton } from "@/app/people/AddPersonButton";
 import { AddContactsButton } from "./AddContactsButton";
 import { RemoveFromGroupButton } from "./RemoveFromGroupButton";
@@ -73,6 +76,8 @@ export default async function AudiencePage({
   let people: PersonRow[] = [];
   let nonMembers: { id: string; first_name: string; last_name: string; email: string | null }[] = [];
   let isDynamicGroup = false;
+  let smartRule: FilterNode | null = null;
+  let catalog: RuleCatalog | null = null;
 
   // Started now, awaited below — runs in parallel with the member lookups.
   const allTagsPromise = supabase
@@ -92,6 +97,8 @@ export default async function AudiencePage({
     audienceLabel = group.name;
     audienceDescription = group.description ?? "";
     isDynamicGroup = group.is_dynamic;
+    smartRule = group.filter_config;
+    if (isDynamicGroup) catalog = await getRuleCatalog(supabase, orgId);
 
     // Manual "Add Contacts" only makes sense for tag-based groups — a
     // dynamic group's membership is computed from its saved rule, not by
@@ -101,7 +108,7 @@ export default async function AudiencePage({
       getGroupMembers(supabase, orgId, group),
       isDynamicGroup
         ? null
-        : supabase.from("people").select("id, first_name, last_name, email").eq("org_id", orgId),
+        : supabase.from("people").select("id, first_name, last_name, email").eq("org_id", orgId).eq("status", "active"),
     ]);
     people = members;
 
@@ -203,6 +210,9 @@ export default async function AudiencePage({
               {!isSystem && !isDynamicGroup && (
                 <AddContactsButton groupId={slug} nonMembers={nonMembers} />
               )}
+              {isDynamicGroup && catalog && (
+                <EditSmartAudience groupId={slug} name={audienceLabel} description={audienceDescription} rule={smartRule} catalog={catalog} />
+              )}
               <Link
                 href={`/messages/new?audiences=${slug}`}
                 className="inline-flex items-center gap-1.5 rounded-md bg-ink px-3 py-1.5 text-[12px] font-medium text-on-ink transition-colors hover:bg-ink-hover"
@@ -224,7 +234,7 @@ export default async function AudiencePage({
           {isDynamicGroup && (
             <p className="mt-1.5 flex items-center gap-1.5 text-[11px] text-ink-3 ml-[calc(13px+0.375rem+1.25rem)]">
               <Sparkles size={11} strokeWidth={2} />
-              Dynamic audience — membership updates automatically from its saved rule.
+              Smart audience — {catalog ? describeRule(smartRule, catalog) : "rule-based"}. Membership is checked every time you send, so it&apos;s always current.
             </p>
           )}
         </div>

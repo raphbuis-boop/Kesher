@@ -353,7 +353,7 @@ function AppDashboardPreview() {
               { label: "Active Contacts", value: "412",   sub: "in directory"      },
               { label: "This Week",       value: "3",     sub: "campaigns sent"     },
               { label: "Delivery Rate",   value: "97.6%", sub: "last 30 days",  accent: "border-t-2 border-t-emerald-500" },
-              { label: "Open Rate",       value: "64.2%", sub: "email, last 30d", accent: "border-t-2 border-t-sky-500"  },
+              { label: "Opened (may be automatic)", value: "64.2%", sub: "email, last 30d", accent: "border-t-2 border-t-sky-500"  },
             ].map(({ label, value, sub, accent }) => (
               <div
                 key={label}
@@ -502,7 +502,7 @@ function FeaturesSection() {
                     {label === "SMS"
                       ? "Text messages sent via a 10DLC-registered long code. Opt-outs handled in real time."
                       : label === "Email"
-                      ? "HTML and plain-text email with delivery confirmation and open rate tracking."
+                      ? "HTML and plain-text email with delivery tracking and an optional ‘I’ve read this’ confirmation."
                       : "WhatsApp Business messaging for school communities that prefer it."}
                   </p>
                 </div>

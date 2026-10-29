@@ -33,7 +33,16 @@ export async function proxy(request: NextRequest) {
     pathname === "/unsubscribe" ||
     pathname === "/api/unsubscribe" ||
     pathname.startsWith("/invite/") ||
-    pathname.startsWith("/api/webhooks/")
+    // "I've read this" links in messages (signed per recipient)
+    pathname.startsWith("/r/") ||
+    // Parent signup link / QR code
+    pathname.startsWith("/join/") ||
+    // Message preferences and past-messages links in every message
+    pathname.startsWith("/p/") ||
+    pathname.startsWith("/archive/") ||
+    pathname.startsWith("/api/webhooks/") ||
+    // Vercel Cron has no session; these routes check CRON_SECRET themselves
+    pathname.startsWith("/api/cron/")
   ) {
     return NextResponse.next();
   }

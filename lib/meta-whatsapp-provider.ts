@@ -10,17 +10,18 @@
  *   Authorization: Bearer {ACCESS_TOKEN}
  *   Content-Type: application/json
  *
- * Required environment variables:
- *   META_WHATSAPP_PHONE_NUMBER_ID — WhatsApp Business phone number ID (Meta Business Suite)
- *   META_WHATSAPP_ACCESS_TOKEN    — System user access token with whatsapp_business_messaging
- *   META_WHATSAPP_TEMPLATE_NAME   — Name of the Meta-approved message template to send
- *   META_WHATSAPP_TEMPLATE_LANG   — Template language code, e.g. "en_US"
+ * Configuration comes from the school's channel settings (lib/channels.ts):
+ * phone number ID, access token, template name / language, and how many
+ * variables the template has.
  *
  * Template flow:
  *   Business-initiated WhatsApp messages MUST use a pre-approved template outside
  *   the 24-hour customer-service window. There is no freeform/sandbox mode here
- *   (unlike Twilio) — every send is a template message. The rendered campaign body
- *   is injected as the template's {{1}} body variable.
+ *   (unlike Twilio) — every send is a template message. ONE approved UTILITY
+ *   template serves every group: with a two-variable template {{1}} is the
+ *   school/group name and {{2}} the message body; with a one-variable
+ *   template the body is {{1}}. Meta rejects template variables that contain
+ *   line breaks, tabs or 4+ spaces, so those are flattened (see paramText).
  *
  *   Media attachments are not sent through the template body parameter — only
  *   text is supported here. A template with a media header would need a separate
@@ -36,22 +37,68 @@ import type { SmsProvider, SmsChannel, OutboundSms, SmsResult } from "./sms-prov
 // Graph API base used for every Meta call (sends + /api/admin/whatsapp-diagnostics).
 export const META_GRAPH_BASE = "https://graph.facebook.com/v21.0";
 
+/**
+ * Template variables can't contain line breaks, tabs or runs of 4+ spaces
+ * (Meta error 132018) and are limited in length, so message text is flattened:
+ * paragraph/line breaks become " | ".
+ */
+export function paramText(text: string, max = 1000): string {
+  const flat = text
+    .replace(/\s*[\r\n]+\s*/g, " | ")
+    .replace(/\t+/g, " ")
+    .replace(/ {4,}/g, "   ")
+    .trim();
+  return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat;
+}
+
 export class MetaWhatsAppProvider implements SmsProvider {
   private phoneNumberId: string;
   private accessToken:   string;
   private templateName:  string;
   private templateLang:  string;
+  private templateVars:  1 | 2;
 
   constructor(
     phoneNumberId: string,
     accessToken:   string,
     templateName:  string,
     templateLang:  string,
+    templateVars:  1 | 2 = 1,
   ) {
     this.phoneNumberId = phoneNumberId;
     this.accessToken   = accessToken;
     this.templateName  = templateName;
     this.templateLang  = templateLang;
+    this.templateVars  = templateVars;
+  }
+
+  /**
+   * A free-form (non-template) reply. WhatsApp only allows these within 24 hours
+   * of the person's last message to the school — outside that, Meta rejects it
+   * (error 131047) and only a template can start the conversation again.
+   */
+  async sendText(toNumber: string, body: string): Promise<SmsResult> {
+    const to = toNumber.replace(/\D/g, "");
+    try {
+      const res = await fetch(`${META_GRAPH_BASE}/${this.phoneNumberId}/messages`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${this.accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ messaging_product: "whatsapp", to, type: "text", text: { body, preview_url: false } }),
+      });
+      const raw = await res.text();
+      let json: { messages?: { id?: string }[]; error?: { message?: string; code?: number } };
+      try {
+        json = JSON.parse(raw);
+      } catch {
+        return { providerId: null, success: false, error: `HTTP ${res.status} — non-JSON response` };
+      }
+      const providerId = json.messages?.[0]?.id ?? null;
+      console.log(`[meta-send-text] to=${to} http=${res.status} wamid=${providerId ?? "none"} error=${json.error ? JSON.stringify(json.error) : "none"}`);
+      if (!res.ok || !providerId) return { providerId: null, success: false, error: json.error?.message ?? `HTTP ${res.status}` };
+      return { providerId, success: true };
+    } catch (err) {
+      return { providerId: null, success: false, error: err instanceof Error ? err.message : "Network error" };
+    }
   }
 
   async send(_channel: SmsChannel, msg: OutboundSms): Promise<SmsResult> {
@@ -72,7 +119,13 @@ export class MetaWhatsAppProvider implements SmsProvider {
         components: [
           {
             type: "body",
-            parameters: [{ type: "text", text: msg.body }],
+            parameters:
+              this.templateVars === 2
+                ? [
+                    { type: "text", text: paramText(msg.label || "Your school", 60) },
+                    { type: "text", text: paramText(msg.body) },
+                  ]
+                : [{ type: "text", text: paramText(msg.body) }],
           },
         ],
       },

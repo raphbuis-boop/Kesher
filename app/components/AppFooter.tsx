@@ -15,7 +15,7 @@ const CONTACT_EMAIL = "contact@kesherhq.co";
  */
 export function AppFooter() {
   const pathname = usePathname();
-  if (PUBLIC_ROUTES.has(pathname)) return null;
+  if (PUBLIC_ROUTES.has(pathname) || ["/r/", "/join/", "/p/", "/archive/"].some((p) => pathname.startsWith(p))) return null;
 
   const year = new Date().getFullYear();
 

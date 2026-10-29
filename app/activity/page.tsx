@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getOrgId } from "@/lib/org";
-import { Mail, Smartphone, MessageSquare, FileText, Plus } from "lucide-react";
+import { Mail, Smartphone, MessageSquare, FileText, Plus, Send } from "lucide-react";
 
 type MessageEvent = {
   kind: "message";
@@ -61,6 +61,7 @@ const CHANNEL_META: Record<string, { icon: React.FC<{ size?: number; strokeWidth
   email: { icon: Mail, color: "text-ink-2", label: "Email" },
   sms: { icon: Smartphone, color: "text-blue-500", label: "SMS" },
   whatsapp: { icon: MessageSquare, color: "text-emerald-500", label: "WhatsApp" },
+  multi: { icon: Send, color: "text-ink-2", label: "Multi-channel" },
 };
 
 export default async function ActivityPage() {
@@ -72,6 +73,7 @@ export default async function ActivityPage() {
       .from("messages")
       .select("id, subject, body, channel, audience_label, sent_count, failed_count, status, created_at")
       .eq("org_id", orgId)
+      .in("status", ["sending", "sent", "failed"])
       .order("created_at", { ascending: false })
       .limit(100),
     supabase

@@ -27,7 +27,7 @@ export type CategoryCounts = {
  */
 export async function getCategoryCounts(supabase: SupabaseClient, orgId: string): Promise<CategoryCounts> {
   const countPeople = () =>
-    supabase.from("people").select("id", { count: "exact", head: true }).eq("org_id", orgId);
+    supabase.from("people").select("id", { count: "exact", head: true }).eq("org_id", orgId).eq("status", "active");
 
   const [total, uncategorized, ...perCategory] = await Promise.all([
     countPeople(),

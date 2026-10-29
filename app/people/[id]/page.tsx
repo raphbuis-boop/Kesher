@@ -3,10 +3,16 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { getOrgId } from "@/lib/org";
 import { EditPersonButton, type Tag } from "./EditPersonButton";
 import { AddRelationshipButton, type PersonOption } from "./AddRelationshipButton";
 import { gradYearLabel } from "@/lib/gradYear";
+import { getFamily, SOURCE_LABELS, type PersonStatus } from "@/lib/family";
+import { getCustomFieldDefs } from "@/lib/customFields";
+import { getPreferences } from "@/lib/preferences";
+import { FamilyPanel, CustomFieldsPanel, PreferencesPanel } from "./FamilyPanels";
+import { OptOutPanel, type OptOutRow } from "./OptOutPanel";
+import { listSuppressionsFor, normalizeAddress, type SuppressionChannel } from "@/lib/suppressions";
+import { getMembership, isAdminRole } from "@/lib/org";
 import { Mail, Smartphone, MessageSquare, ArrowLeft, Hash } from "lucide-react";
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -65,6 +71,11 @@ type Person = {
   notes: string | null;
   categories: string[] | null;
   created_at: string;
+  household_id: string | null;
+  source_system: string;
+  source_id: string | null;
+  status: PersonStatus;
+  custom_fields: Record<string, unknown> | null;
   person_tags: Array<{
     tag_id: string;
     tags: Tag;
@@ -130,7 +141,7 @@ export default async function PersonPage({
   params: Promise<{ id: string }>;
 }) {
   const supabase = await createSupabaseServerClient();
-  const orgId = await getOrgId();
+  const { orgId, role } = await getMembership();
 
   const { id } = await params;
 
@@ -139,7 +150,7 @@ export default async function PersonPage({
       supabase
         .from("people")
         .select(
-          "id, first_name, last_name, email, phone, whatsapp, address, grade, graduation_year, organization, notes, categories, created_at, person_tags ( tag_id, tags ( id, name ) )"
+          "id, first_name, last_name, email, phone, whatsapp, address, grade, graduation_year, organization, notes, categories, created_at, household_id, source_system, source_id, status, custom_fields, person_tags ( tag_id, tags ( id, name ) )"
         )
         .eq("org_id", orgId)
         .eq("id", id)
@@ -155,6 +166,7 @@ export default async function PersonPage({
         .from("people")
         .select("id, first_name, last_name")
         .eq("org_id", orgId)
+        .eq("status", "active")
         .neq("id", id)
         .order("last_name"),
       supabase
@@ -170,12 +182,27 @@ export default async function PersonPage({
   }
 
   const person = personResult.data as unknown as Person;
+  const [family, fieldDefs, prefs] = await Promise.all([
+    getFamily(supabase, orgId, person.id, person.household_id),
+    getCustomFieldDefs(supabase, orgId),
+    getPreferences(supabase, orgId, person.id),
+  ]);
   const allTags = (tagsResult.data ?? []) as Tag[];
   const relationships = (relationshipsResult.data ?? []) as Relationship[];
   const allPeople = (allPeopleResult.data ?? []) as PersonOption[];
   const messageHistory = (messageHistoryResult.data ?? []) as any[];
 
-  const isOptedOut = messageHistory.some((item: any) => item.status === "opted_out");
+  const channelAddresses: { channel: SuppressionChannel; address: string }[] = [
+    ...(person.email ? [{ channel: "email" as const, address: person.email }] : []),
+    ...(person.phone ? [{ channel: "sms" as const, address: person.phone }] : []),
+    ...((person.whatsapp || person.phone) ? [{ channel: "whatsapp" as const, address: (person.whatsapp || person.phone) as string }] : []),
+  ];
+  const suppressions = await listSuppressionsFor(supabase, orgId, person.id, channelAddresses);
+  const activeSuppressions = suppressions.filter((x) => !x.released_at);
+  const isOptedOut = activeSuppressions.length > 0;
+  const optedOutLabel = activeSuppressions.map((x) => ({ email: "email", sms: "texts", whatsapp: "WhatsApp" }[x.channel])).join(", ");
+  const suppressedChannels = new Set(activeSuppressions.map((x) => x.channel));
+  const addableChannels = channelAddresses.filter((a) => normalizeAddress(a.channel, a.address) && !suppressedChannels.has(a.channel)).map((a) => a.channel);
   const peopleById = new Map(allPeople.map((p) => [p.id, p]));
   const currentTagIds = person.person_tags.map((pt) => pt.tag_id);
   const currentCategories = Array.isArray(person.categories) ? person.categories : [];
@@ -227,7 +254,19 @@ export default async function PersonPage({
               </h1>
               <p className="mt-0.5 text-[11px] text-ink-3">
                 Added {formatDate(person.created_at)}
+                {person.source_system !== "manual" && (
+                  <> · {SOURCE_LABELS[person.source_system] ?? person.source_system}{person.source_id ? ` (ID ${person.source_id})` : ""}</>
+                )}
               </p>
+              {person.status !== "active" && (
+                <p className="mt-2 inline-flex rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-medium text-amber-700">
+                  {person.status === "archived"
+                    ? "Archived — no longer in the school's source data; receives no messages"
+                    : person.status === "pending"
+                      ? "Waiting for review — receives no messages until approved"
+                      : "Rejected in review"}
+                </p>
+              )}
               {(currentCategories.length > 0 || isOptedOut) && (
                 <div className="mt-3 flex flex-wrap gap-1.5">
                   {currentCategories.map((cat) => (
@@ -242,7 +281,7 @@ export default async function PersonPage({
                   {isOptedOut && (
                     <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-0.5 text-[11px] font-medium text-rose-700">
                       <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
-                      SMS opted out
+                      Opted out: {optedOutLabel}
                     </span>
                   )}
                 </div>
@@ -265,6 +304,37 @@ export default async function PersonPage({
               <Field label="Organization" value={person.organization} />
             )}
           </dl>
+        </SectionCard>
+
+        {/* Family */}
+        <SectionCard title="Family">
+          <FamilyPanel
+            personId={person.id}
+            isStudent={currentCategories.includes("student")}
+            family={family}
+            people={allPeople}
+          />
+        </SectionCard>
+
+        {/* Custom fields */}
+        <SectionCard title="School fields">
+          <CustomFieldsPanel personId={person.id} defs={fieldDefs} values={person.custom_fields ?? {}} />
+        </SectionCard>
+
+        {/* Kesher-only preferences */}
+        <SectionCard title="Messaging preferences">
+          <p className="-mt-1 mb-4 text-[11px] text-ink-3">Kept in Kesher only — a sync from your school system never changes these.</p>
+          <PreferencesPanel personId={person.id} prefs={prefs} />
+        </SectionCard>
+
+        {/* Opt-outs: one list per school; STOP, unsubscribe, complaint, bounce */}
+        <SectionCard title="Opt-outs" count={activeSuppressions.length || undefined}>
+          <OptOutPanel
+            personId={person.id}
+            canManage={isAdminRole(role)}
+            addable={addableChannels}
+            rows={suppressions.map((x): OptOutRow => ({ id: x.id, channel: x.channel, address: x.address, reason: x.reason, source: x.source, createdAt: x.created_at, releasedAt: x.released_at, releaseReason: x.release_reason }))}
+          />
         </SectionCard>
 
         {/* Communication History */}
