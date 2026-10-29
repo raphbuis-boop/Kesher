@@ -1,5 +1,7 @@
 export const dynamic = "force-dynamic";
 
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getOrgId } from "@/lib/org";
 
@@ -32,7 +34,7 @@ export default async function DuplicatesPage() {
 
   if (error) {
     return (
-      <div className="p-8 text-red-600 font-mono text-sm">
+      <div className="p-8 font-mono text-sm text-red-600">
         Error loading people: {error.message}
       </div>
     );
@@ -159,7 +161,10 @@ export default async function DuplicatesPage() {
     <div className="min-h-screen bg-canvas">
       <div className="mx-auto max-w-5xl px-6 py-10">
         <div className="mb-8">
-          <h1 className="text-xl font-semibold text-ink">Duplicate Contacts Audit</h1>
+          <Link href="/people" className="mb-3 inline-flex items-center gap-1.5 text-[12px] font-medium text-ink-3 hover:text-ink-2">
+            <ArrowLeft size={13} strokeWidth={2} /> People
+          </Link>
+          <h1 className="text-xl font-semibold text-ink">Possible duplicates</h1>
           <p className="mt-1 text-sm text-ink-2">
             Read-only — no data has been modified.
           </p>
