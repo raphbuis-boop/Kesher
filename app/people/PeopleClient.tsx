@@ -9,6 +9,7 @@ import {
   Smartphone, Hash, Users, ExternalLink, Check,
 } from "lucide-react";
 import type { PersonRow } from "./page";
+import { composeUrlForPeople, MAX_PICKED_PEOPLE } from "@/lib/send/peopleSlug";
 import type { CategoryCounts } from "@/lib/categoryCounts";
 import { PEOPLE_PAGE_SIZE as PAGE_SIZE, type PeopleQuery, type PeopleSortKey } from "./query";
 
@@ -275,7 +276,7 @@ function PersonDrawer({
         {/* Footer */}
         <div className="border-t border-muted-2 px-5 py-4 flex-shrink-0 flex gap-2">
           <Link
-            href={`/messages/new?person=${person.id}`}
+            href={composeUrlForPeople([person.id])}
             className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-line bg-canvas py-2 text-[12px] font-medium text-ink-2 hover:bg-card hover:text-ink hover:shadow-sm transition-all"
             onClick={(e) => e.stopPropagation()}
           >
@@ -317,13 +318,20 @@ function BulkToolbar({
         </span>
         <div className="h-4 w-px bg-line" />
         <div className="flex items-center gap-1">
-          <Link
-            href={`/messages/new`}
-            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium text-ink-2 hover:bg-muted hover:text-ink transition-colors"
-          >
-            <Smartphone size={12} strokeWidth={2} />
-            Message
-          </Link>
+          {count > MAX_PICKED_PEOPLE ? (
+            <span title={`Message up to ${MAX_PICKED_PEOPLE} people at once, or save them as an audience`} className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium text-ink-3">
+              <Smartphone size={12} strokeWidth={2} />
+              Message (max {MAX_PICKED_PEOPLE})
+            </span>
+          ) : (
+            <Link
+              href={composeUrlForPeople(people.map((p) => p.id))}
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium text-ink-2 hover:bg-muted hover:text-ink transition-colors"
+            >
+              <Smartphone size={12} strokeWidth={2} />
+              Message
+            </Link>
+          )}
           <button
             onClick={() => exportCSV(people)}
             className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium text-ink-2 hover:bg-muted hover:text-ink transition-colors"

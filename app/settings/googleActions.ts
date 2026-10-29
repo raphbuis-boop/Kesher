@@ -9,6 +9,7 @@ import { createPreviewRun, getSource, runSourceNow, type RunSummary } from "@/li
 import { fetchSheetBatch, type SheetConfig } from "@/lib/sync/sheets";
 import type { SyncSourceRow } from "@/lib/sync/engine";
 import { getCustomFieldDefs } from "@/lib/customFields";
+import { NOT_CERTIFIED_ERROR, recordCertification } from "@/lib/consent";
 
 type Fail = { ok: false; error: string };
 
@@ -88,9 +89,12 @@ export async function saveSheetAndPreview(input: {
   spreadsheetTitle: string;
   tabTitle: string;
   mapping: ColumnMapping;
+  /** The SMS consent certification checkbox (required: a connected sheet syncs nightly) */
+  certified: boolean;
 }): Promise<{ ok: true; sourceId: string; run: RunSummary } | Fail> {
   const g = await gate();
   if ("ok" in g) return g;
+  if (!input.certified) return { ok: false, error: NOT_CERTIFIED_ERROR };
   const supabase = await createSupabaseServerClient();
   const config: SheetConfig = { spreadsheetId: input.spreadsheetId, spreadsheetTitle: input.spreadsheetTitle, tabTitle: input.tabTitle };
   const name = input.name.trim().slice(0, 120) || input.spreadsheetTitle;
@@ -125,6 +129,10 @@ export async function saveSheetAndPreview(input: {
       source = data as SyncSourceRow;
     }
 
+    const cert = await recordCertification(supabase, { orgId: g.orgId, userId: g.userId, context: "sheet_connect", sourceId: source.id });
+    if (!cert.ok) return cert;
+    await supabase.from("sync_sources").update({ consent_certified_at: new Date().toISOString(), consent_certified_by: g.userId }).eq("org_id", g.orgId).eq("id", source.id);
+
     const batch = buildBatch(table, mapping);
     const run = await createPreviewRun(supabase, g.orgId, g.userId, source, batch, `${config.spreadsheetTitle} → ${config.tabTitle}`);
     refresh();
@@ -135,12 +143,15 @@ export async function saveSheetAndPreview(input: {
 }
 
 /** "Sync now": fetch the sheet and apply it with the same engine and rules as an upload. */
-export async function syncSheetNow(sourceId: string): Promise<{ ok: true; run: RunSummary } | Fail> {
+export async function syncSheetNow(sourceId: string, certified: boolean): Promise<{ ok: true; run: RunSummary } | Fail> {
   const g = await gate();
   if ("ok" in g) return g;
+  if (!certified) return { ok: false, error: NOT_CERTIFIED_ERROR };
   const supabase = await createSupabaseServerClient();
   const source = await getSource(supabase, g.orgId, sourceId);
   if (!source || source.kind !== "google_sheets") return { ok: false, error: "That sheet no longer exists." };
+  const cert = await recordCertification(supabase, { orgId: g.orgId, userId: g.userId, context: "sheet_sync", sourceId: source.id });
+  if (!cert.ok) return cert;
   try {
     const run = await runSourceNow(supabase, g.orgId, source, "manual", g.userId, () => fetchSheetBatch(g.orgId, source));
     refresh();
@@ -151,13 +162,19 @@ export async function syncSheetNow(sourceId: string): Promise<{ ok: true; run: R
   }
 }
 
-export async function setSheetAutoSync(sourceId: string, on: boolean): Promise<{ ok: true } | Fail> {
+export async function setSheetAutoSync(sourceId: string, on: boolean, certified = false): Promise<{ ok: true } | Fail> {
   const g = await gate();
   if ("ok" in g) return g;
   const supabase = await createSupabaseServerClient();
+  // Turning the nightly sync on is a standing import: it needs the certification
+  if (on) {
+    if (!certified) return { ok: false, error: NOT_CERTIFIED_ERROR };
+    const cert = await recordCertification(supabase, { orgId: g.orgId, userId: g.userId, context: "sheet_auto_sync", sourceId });
+    if (!cert.ok) return cert;
+  }
   const { error } = await supabase
     .from("sync_sources")
-    .update({ auto_sync: on, status: "active", updated_at: new Date().toISOString() })
+    .update({ auto_sync: on, status: "active", updated_at: new Date().toISOString(), ...(on ? { consent_certified_at: new Date().toISOString(), consent_certified_by: g.userId } : {}) })
     .eq("org_id", g.orgId)
     .eq("id", sourceId)
     .eq("kind", "google_sheets");

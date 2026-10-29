@@ -103,14 +103,16 @@ type SinchWebhookPayload = {
 // Signature      = base64(HMAC-SHA256(key=appSecret_raw_utf8, data=signedPayload))
 // The App Secret is used RAW (UTF-8 string) as the HMAC key — NOT base64-decoded.
 // Docs: https://developers.sinch.com/docs/conversation/callbacks
+// While SINCH_WEBHOOK_SECRET is unset, callbacks are accepted unverified (logged, and
+// Settings → Channels shows a warning) instead of every delivery report being dropped.
 function verifySignature(headers: Headers, rawBody: string): boolean {
   const appSecret = process.env.SINCH_WEBHOOK_SECRET;
   if (!appSecret) {
-    console.error(
-      "[sinch-webhook] SINCH_WEBHOOK_SECRET is not set — rejecting request. " +
+    console.warn(
+      "[sinch-webhook] SINCH_WEBHOOK_SECRET is not set — accepting WITHOUT signature verification. " +
       "Set this to the App Secret from Sinch Dashboard → Conversation → Apps → Show Credentials."
     );
-    return false;
+    return true;
   }
 
   const signature = headers.get("x-sinch-webhook-signature");

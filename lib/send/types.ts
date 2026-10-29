@@ -56,7 +56,7 @@ export type ResolvedRecipient = {
   fallbackChannels: Channel[];
 };
 
-export type ExcludedReason = "opted_out" | "preference" | "no_address" | "duplicate_address" | "emergency_only" | "whatsapp_unavailable";
+export type ExcludedReason = "opted_out" | "preference" | "no_address" | "duplicate_address" | "emergency_only" | "whatsapp_unavailable" | "not_receiving";
 
 export type Resolution = {
   recipients: ResolvedRecipient[];

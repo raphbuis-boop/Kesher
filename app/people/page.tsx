@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { UserCheck } from "lucide-react";
+import { CopyCheck, UserCheck, UserX } from "lucide-react";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getOrgId } from "@/lib/org";
 import { isDemoWorkspaceLoaded } from "@/lib/demoWorkspace";
@@ -69,6 +69,12 @@ export default async function PeoplePage({
                 <UserCheck size={12} /> Review {pendingReview} new
               </Link>
             )}
+            <Link href="/messages/problems" className="btn btn-secondary btn-sm" title="Families with no working email, phone or WhatsApp, and recent failed deliveries">
+              <UserX size={12} /> <span className="hidden sm:inline">Can&apos;t reach</span>
+            </Link>
+            <Link href="/admin/duplicates" className="btn btn-secondary btn-sm" title="People who look like the same person entered twice">
+              <CopyCheck size={12} /> <span className="hidden sm:inline">Duplicates</span>
+            </Link>
             <AddPersonButton tags={tags} />
           </div>
         </div>

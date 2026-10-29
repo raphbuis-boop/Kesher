@@ -20,6 +20,7 @@ import { cellToString, parseCsv, toTable } from "@/lib/sync/table";
 import type { RunSummary } from "@/lib/sync/runs";
 import type { PersonDiff } from "@/lib/sync/engine";
 import { applySyncRun, discardSyncRun } from "./syncActions";
+import { ConsentCertification } from "@/app/components/ConsentCertification";
 
 export type SourceOption = { id: string; name: string; mapping: ColumnMapping | null };
 
@@ -321,6 +322,7 @@ export function SyncImport({
   const [run, setRun] = useState<RunSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [applying, startApply] = useTransition();
+  const [certified, setCertified] = useState(false);
 
   const bestSource = useMemo(() => {
     if (!table) return null;
@@ -500,6 +502,7 @@ export function SyncImport({
           <p className="truncate text-[12px] text-ink-3">{fileName}</p>
         </div>
         <RunDiffView run={run} />
+        <ConsentCertification checked={certified} onChange={setCertified} />
         <div className="flex items-center justify-end gap-2 border-t border-line pt-4">
           <button
             type="button"
@@ -514,10 +517,10 @@ export function SyncImport({
           </button>
           <button
             type="button"
-            disabled={applying}
+            disabled={applying || !certified}
             onClick={() =>
               startApply(async () => {
-                const res = await applySyncRun(run.id);
+                const res = await applySyncRun(run.id, certified);
                 if (!res.ok) {
                   toast.error(res.error);
                   return;

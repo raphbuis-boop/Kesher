@@ -11,7 +11,7 @@ import { MessageRowActions, RecurringRowActions } from "./RowActions";
 import { isDemoWorkspaceLoaded } from "@/lib/demoWorkspace";
 import { DemoWorkspaceControl } from "@/app/components/DemoWorkspaceControl";
 import { AdminOnly } from "@/app/components/AdminOnly";
-import { Plus, Mail, Smartphone, MessageSquare, Send } from "lucide-react";
+import { Plus, Mail, Smartphone, MessageSquare, Send, UserX } from "lucide-react";
 import { Pagination, parsePage } from "@/app/components/ui/Pagination";
 
 const PAGE_SIZE = 50;
@@ -130,6 +130,9 @@ export default async function MessagesPage({
             </div>
             <div className="flex items-center gap-3 shrink-0">
               {demoLoaded && <AdminOnly><DemoWorkspaceControl mode="remove" /></AdminOnly>}
+              <Link href="/messages/problems" className="btn btn-secondary btn-sm" title="Families we can't reach, and recent failed deliveries">
+                <UserX size={12} /> <span className="hidden sm:inline">Families we can&apos;t reach</span>
+              </Link>
               <Link
                 href="/messages/new"
                 className="inline-flex items-center gap-1.5 rounded-md bg-ink px-3 py-1.5 text-[12px] font-medium text-on-ink hover:bg-ink-hover"

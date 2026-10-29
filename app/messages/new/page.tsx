@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { parsePeopleSlug, peopleSlug } from "@/lib/send/peopleSlug";
 import { getMembership, isAdminRole } from "@/lib/org";
 import { getCategoryCounts } from "@/lib/categoryCounts";
 import { resolveGroupMemberIds, type GroupRow } from "@/lib/audienceMembers";
@@ -34,9 +35,9 @@ const SYSTEM_AUDIENCES: { slug: string; label: string; category: string }[] = [
 const EDITABLE = ["draft", "pending_approval", "scheduled", "rejected", "cancelled"];
 const MEMBER_EDITABLE = ["draft", "pending_approval", "rejected"];
 
-export default async function NewMessagePage({ searchParams }: { searchParams: Promise<{ audiences?: string; edit?: string; recurring?: string }> }) {
-  const { audiences: audiencesParam, edit, recurring } = await searchParams;
-  const initialAudienceSlugs = audiencesParam ? audiencesParam.split(",") : undefined;
+export default async function NewMessagePage({ searchParams }: { searchParams: Promise<{ audiences?: string; edit?: string; recurring?: string; person?: string }> }) {
+  const { audiences: audiencesParam, edit, recurring, person } = await searchParams;
+  const initialAudienceSlugs = audiencesParam ? audiencesParam.split(",") : person ? [peopleSlug([person])] : undefined;
   const supabase = await createSupabaseServerClient();
   const { orgId, role, userId } = await getMembership();
   const admin = isAdminRole(role);
@@ -112,6 +113,20 @@ export default async function NewMessagePage({ searchParams }: { searchParams: P
     })
   );
 
+  // "Exactly these people" (People page selection, a family, a student, or a draft/send-again of one)
+  const pickedSlugs = [...new Set([...(initialAudienceSlugs ?? []), ...(initial?.input.audienceSlugs ?? [])].filter((slug) => parsePeopleSlug(slug)))];
+  const pickedAudiences: AudienceOption[] = await Promise.all(
+    pickedSlugs.map(async (slug) => {
+      const ids = parsePeopleSlug(slug) ?? [];
+      const { data } = ids.length
+        ? await supabase.from("people").select("first_name, last_name, preferred_name").eq("org_id", orgId).eq("status", "active").in("id", ids.slice(0, 4))
+        : { data: [] };
+      const names = ((data ?? []) as { first_name: string; last_name: string; preferred_name: string | null }[]).map((p) => `${p.preferred_name || p.first_name} ${p.last_name}`.trim());
+      const label = ids.length <= 3 && names.length === ids.length ? names.join(", ") : `${ids.length} selected people`;
+      return { slug, label, totalCount: ids.length };
+    })
+  );
+
   return (
     <div className="min-h-screen bg-canvas">
       <header className="sticky top-0 z-10 border-b border-line bg-card/95 backdrop-blur-sm px-6 py-3.5">
@@ -122,7 +137,7 @@ export default async function NewMessagePage({ searchParams }: { searchParams: P
       </header>
       <div className="mx-auto max-w-2xl px-6 py-6">
         <ComposeFlow
-          audiences={[...systemAudiences, ...customAudiences]}
+          audiences={[...pickedAudiences, ...systemAudiences, ...customAudiences]}
           initialAudienceSlugs={initialAudienceSlugs}
           attachmentsEnabled={!!process.env.BLOB_READ_WRITE_TOKEN}
           templates={templates.map((t) => ({ id: t.id, name: t.name, defaultSubject: t.default_subject }))}

@@ -23,10 +23,13 @@
  * webhook doesn't touch them either; doing so here would diverge from that
  * established pattern rather than align with it.
  *
- * Required env var:
+ * Required env vars:
  *   WHATSAPP_WEBHOOK_VERIFY_TOKEN — arbitrary string you choose, entered both here
  *   and in Meta App Dashboard → WhatsApp → Configuration → Webhooks when you
  *   register the callback URL.
+ *   META_APP_SECRET — Meta App Dashboard → App settings → Basic → App secret.
+ *   Every POST must carry a valid X-Hub-Signature-256 made with it; anything else
+ *   (or every POST, while it is unset) is rejected with 401 and logged.
  */
 
 import { NextRequest, NextResponse, after } from "next/server";
@@ -34,6 +37,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { fallbackForFailedRow } from "@/lib/send/engine";
 import { processInbound } from "@/lib/inbound";
 import { updateThreadMessageStatus } from "@/lib/inbox";
+import { metaAppSecrets, verifyMetaSignature } from "@/lib/webhookSecurity";
 
 // ─── GET — Meta's webhook verification challenge ──────────────────────────────
 
@@ -123,7 +127,17 @@ function formatErrorDetail(err: MetaStatusError | undefined): string {
 }
 
 export async function POST(req: NextRequest) {
-  const rawBody = await req.text();
+  const rawBytes = Buffer.from(await req.arrayBuffer());
+  const secrets = metaAppSecrets();
+  if (secrets.length === 0) {
+    console.error("[meta-status] META_APP_SECRET is not set — rejecting POST (set it in Vercel; see DEPLOYMENT.md)");
+    return NextResponse.json({ error: "Webhook secret not configured" }, { status: 401 });
+  }
+  if (!verifyMetaSignature(rawBytes, req.headers.get("x-hub-signature-256"), secrets)) {
+    console.error(`[meta-status] invalid X-Hub-Signature-256 — rejecting POST (bytes=${rawBytes.length}, header=${req.headers.has("x-hub-signature-256") ? "present" : "missing"})`);
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+  }
+  const rawBody = rawBytes.toString("utf8");
 
   console.log(`[meta-status] full payload: ${rawBody}`);
 

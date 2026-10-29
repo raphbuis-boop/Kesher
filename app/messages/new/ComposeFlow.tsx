@@ -1204,7 +1204,7 @@ export function ComposeFlow({
               <button type="button" onClick={() => setShowSkipped((v) => !v)} className="underline decoration-dotted underline-offset-2">
                 {preview.unreachableCount.toLocaleString()} {preview.unreachableCount === 1 ? "person" : "people"} won&apos;t get this
               </button>
-              {Object.entries({ opted_out: "opted out", no_address: "no contact info", preference: "turned it off", emergency_only: "emergency messages only" }).map(([k, label]) =>
+              {Object.entries({ opted_out: "opted out", no_address: "no contact info", preference: "turned it off", emergency_only: "emergency messages only", not_receiving: "marked not to receive messages" }).map(([k, label]) =>
                 preview.excluded[k as keyof typeof preview.excluded] > 0 ? <span key={k} className="text-ink-3"> · {preview.excluded[k as keyof typeof preview.excluded]} {label}</span> : null
               )}
               {preview.studentsWithoutParent > 0 && <span className="text-amber-700"> · {preview.studentsWithoutParent} student{preview.studentsWithoutParent === 1 ? " has" : "s have"} no parent linked</span>}

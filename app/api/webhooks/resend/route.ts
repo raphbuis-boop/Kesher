@@ -11,7 +11,8 @@ import { addSuppression } from "@/lib/suppressions";
 //   svix-signature v1,<base64-hmac-sha256>
 //
 // Set RESEND_WEBHOOK_SECRET in Vercel env vars after creating the webhook
-// endpoint in the Resend dashboard (Webhooks → Add Endpoint).
+// endpoint in the Resend dashboard (Webhooks → Add Endpoint → signing secret,
+// starts with "whsec_"). While it is unset, events are accepted unverified.
 // Enable these events: email.delivered, email.bounced, email.complained,
 //                      email.opened, email.clicked
 
@@ -46,41 +47,48 @@ export async function POST(req: NextRequest) {
     rawBodyLength: rawBody.length,
   });
 
+  // Resend's svix-style payload, verified when RESEND_WEBHOOK_SECRET is set. Without it,
+  // events are accepted unverified (and Settings → Channels shows a warning) rather
+  // than every delivery/bounce/open being silently dropped.
+  let payload: { type: string; created_at?: string; data: unknown };
   if (!secret) {
-    console.warn("[resend-webhook] RESEND_WEBHOOK_SECRET not set — rejecting request");
-    return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 });
-  }
+    console.warn("[resend-webhook] RESEND_WEBHOOK_SECRET not set — accepting WITHOUT signature verification (see DEPLOYMENT.md)");
+    try {
+      payload = JSON.parse(rawBody);
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    }
+    if (!payload || typeof payload.type !== "string" || !payload.data) return NextResponse.json({ ok: true });
+  } else {
+    if (!svixId || !svixTimestamp || !svixSignature) {
+      console.error("[resend-webhook] Missing svix-* headers", { svixId, svixTimestamp, svixSignature: !!svixSignature });
+      return NextResponse.json({ error: "Missing signature headers" }, { status: 400 });
+    }
 
-  if (!svixId || !svixTimestamp || !svixSignature) {
-    console.error("[resend-webhook] Missing svix-* headers", { svixId, svixTimestamp, svixSignature: !!svixSignature });
-    return NextResponse.json({ error: "Missing signature headers" }, { status: 400 });
-  }
-
-  // ── Signature verification via Resend SDK ──────────────────────────────────
-  // Uses standardwebhooks under the hood: HMAC-SHA256 of "{id}.{timestamp}.{body}"
-  const resend = new Resend(process.env.RESEND_API_KEY);
-
-  let payload: ReturnType<typeof resend.webhooks.verify>;
-  try {
-    payload = resend.webhooks.verify({
-      payload: rawBody,
-      headers: {
-        id:        svixId,
-        timestamp: svixTimestamp,
-        signature: svixSignature,
-      },
-      webhookSecret: secret,
-    });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("[resend-webhook] Signature verification failed:", message);
-    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    // ── Signature verification via Resend SDK ────────────────────────────────
+    // Uses standardwebhooks under the hood: HMAC-SHA256 of "{id}.{timestamp}.{body}"
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    try {
+      payload = resend.webhooks.verify({
+        payload: rawBody,
+        headers: {
+          id:        svixId,
+          timestamp: svixTimestamp,
+          signature: svixSignature,
+        },
+        webhookSecret: secret,
+      }) as unknown as typeof payload;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("[resend-webhook] Signature verification failed:", message);
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+    }
   }
 
   // ── Event routing ──────────────────────────────────────────────────────────
   const type    = payload.type as ResendEvent;
   const emailId = (payload.data as { email_id?: string }).email_id;
-  const created_at = (payload as unknown as { created_at: string }).created_at;
+  const created_at = payload.created_at ?? new Date().toISOString();
 
   if (!emailId) {
     return NextResponse.json({ ok: true });

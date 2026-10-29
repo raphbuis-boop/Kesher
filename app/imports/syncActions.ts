@@ -4,13 +4,14 @@ import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { ADMIN_ROLES, PermissionError, requireRole } from "@/lib/org";
 import { applyPreviewRun, type RunSummary } from "@/lib/sync/runs";
+import { NOT_CERTIFIED_ERROR, recordCertification } from "@/lib/consent";
 
 export type SyncActionResult = { ok: true; message?: string; run?: RunSummary } | { ok: false; error: string };
 
-async function admin(): Promise<{ orgId: string } | SyncActionResult> {
+async function admin(): Promise<{ orgId: string; userId: string } | SyncActionResult> {
   try {
-    const { orgId } = await requireRole(ADMIN_ROLES);
-    return { orgId };
+    const { orgId, userId } = await requireRole(ADMIN_ROLES);
+    return { orgId, userId };
   } catch (err) {
     if (err instanceof PermissionError) return { ok: false, error: err.message };
     throw err;
@@ -27,11 +28,15 @@ function refresh() {
 }
 
 /** Confirms a preview: writes the changes it showed (recomputed against current data). */
-export async function applySyncRun(runId: string): Promise<SyncActionResult> {
+export async function applySyncRun(runId: string, certified: boolean): Promise<SyncActionResult> {
   const gate = await admin();
   if ("ok" in gate) return gate;
+  if (!certified) return { ok: false, error: NOT_CERTIFIED_ERROR };
   const supabase = await createSupabaseServerClient();
   try {
+    const { data: runRow } = await supabase.from("sync_runs").select("source_id").eq("org_id", gate.orgId).eq("id", runId).maybeSingle();
+    const cert = await recordCertification(supabase, { orgId: gate.orgId, userId: gate.userId, context: "file_import", runId, sourceId: (runRow?.source_id as string | undefined) ?? null });
+    if (!cert.ok) return cert;
     const run = await applyPreviewRun(supabase, gate.orgId, runId);
     refresh();
     if (run.status === "failed") return { ok: false, error: run.error ?? "Import failed." };

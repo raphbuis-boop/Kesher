@@ -8,6 +8,7 @@ import { DemoWorkspaceControl } from "@/app/components/DemoWorkspaceControl";
 import { AdminOnly } from "@/app/components/AdminOnly";
 import { getChannelsOverview } from "./channels";
 import { ChannelsSettings } from "./panels/ChannelsSettings";
+import { webhookSecretStatus } from "@/lib/webhookSecurity";
 import { WhatsAppTemplatePanel } from "./panels/WhatsAppTemplatePanel";
 import { SettingsShell, type SectionId, type TeamInvite, type TeamMember } from "./SettingsShell";
 import { getCustomFieldDefs } from "@/lib/customFields";
@@ -156,7 +157,7 @@ export default async function SettingsPage() {
   // Server-loaded panels shown inside the matching Settings section (admins only)
   const panels: Partial<Record<SectionId, React.ReactNode>> = admin && channelsOverview
     ? {
-        channels: <ChannelsSettings overview={channelsOverview} simulated={simulated ?? false} />,
+        channels: <ChannelsSettings overview={channelsOverview} simulated={simulated ?? false} webhookSecrets={webhookSecretStatus()} />,
         shabbos: <ShabbosSettings view={shabbosView} />,
         parents: (
           <ParentSignupSettings

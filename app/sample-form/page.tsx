@@ -77,12 +77,12 @@ export default function SampleFormPage() {
               {
                 step: "2",
                 title: "Administrator imports to Kesher with certification",
-                body: "The administrator uploads the CSV to Kesher. Before any numbers are saved, they must check a certification box confirming that all contacts have explicitly consented to receive SMS from the school.",
+                body: "The administrator uploads the CSV to Kesher. Before the import is applied, they must tick a certification box confirming that all contacts have explicitly consented to receive SMS from the school.",
               },
               {
                 step: "3",
                 title: "Kesher records the import and consent certification",
-                body: "Kesher logs the import timestamp, the administrator's identity, and the certification acknowledgment. This creates an auditable consent trail.",
+                body: "Kesher records who certified, when, and the exact certification text. This creates an auditable consent trail.",
               },
               {
                 step: "4",

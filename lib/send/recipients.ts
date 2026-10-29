@@ -7,7 +7,8 @@
  * A family with three kids in the audience gets ONE message per parent (the
  * two parents of separate households each get their own), optionally
  * prefixed "For Moshe (3rd) and Rivka (6th)". Adults in an audience are
- * messaged directly. Each guardian's channel preferences, "emergency only"
+ * messaged directly, except guardians marked as not receiving messages for
+ * any of their children (custody), who are never messaged. Each guardian's channel preferences, "emergency only"
  * setting and opt-outs are respected.
  *
  * Pure with respect to the database apart from reads, so previews, the
@@ -81,7 +82,7 @@ const toChild = (p: Person): Child => ({ id: p.id, first_name: p.first_name, las
 
 export async function resolveRecipients(supabase: SupabaseClient, orgId: string, opts: ResolveOptions): Promise<Resolution> {
   const excludedIds = new Set(opts.excludePersonIds);
-  const excluded: Record<ExcludedReason, number> = { opted_out: 0, preference: 0, no_address: 0, duplicate_address: 0, emergency_only: 0, whatsapp_unavailable: 0 };
+  const excluded: Record<ExcludedReason, number> = { opted_out: 0, preference: 0, no_address: 0, duplicate_address: 0, emergency_only: 0, whatsapp_unavailable: 0, not_receiving: 0 };
   const unreachable: Resolution["unreachable"] = [];
 
   // ── 1. Audience members (and which audiences each came through) ──────────
@@ -136,12 +137,28 @@ export async function resolveRecipients(supabase: SupabaseClient, orgId: string,
     }
   }
 
+  // ── 2b. Custody: a guardian marked "doesn't receive messages" for every child
+  // they're linked to is never messaged — not through a "Parents" audience, not
+  // when picked by hand, not in an emergency.
+  const direct = [...recipientsBase.keys()].filter((id) => !childrenViaStudents.has(id));
+  if (direct.length) {
+    const allLinks = await loadLinks(supabase, orgId, "guardian_id", direct, false);
+    const receiving = new Set((await loadLinks(supabase, orgId, "guardian_id", direct, true)).map((l) => l.guardian_id));
+    for (const gid of new Set(allLinks.map((l) => l.guardian_id))) {
+      if (receiving.has(gid)) continue;
+      const p = recipientsBase.get(gid);
+      recipientsBase.delete(gid);
+      excluded.not_receiving++;
+      if (p) unreachable.push({ person: p, reason: "Marked as not receiving school messages" });
+    }
+  }
+
   // ── 3. Children list for the "For Moshe (3rd)…" line ──────────────────────
   const childrenOf = new Map<string, Child[]>(childrenViaStudents);
   if (opts.familyPrefix) {
     const needAll = [...recipientsBase.keys()].filter((id) => !childrenOf.has(id));
     if (needAll.length) {
-      const kidLinks = await loadLinks(supabase, orgId, "guardian_id", needAll, false);
+      const kidLinks = await loadLinks(supabase, orgId, "guardian_id", needAll, true);
       const kids = new Map((await loadPeople(supabase, orgId, kidLinks.map((l) => l.student_id))).map((p) => [p.id, p]));
       for (const l of kidLinks) {
         const k = kids.get(l.student_id);

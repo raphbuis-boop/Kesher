@@ -20,6 +20,7 @@ import {
   PenLine,
   UserPlus,
 } from "lucide-react";
+import { LANDING_FEATURES } from "@/app/components/landing/features";
 
 export const metadata: Metadata = {
   title: "Kesher — School Communications Platform",
@@ -38,23 +39,7 @@ const CHANNELS = [
   { Icon: MessageSquare, label: "WhatsApp", color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200" },
 ];
 
-const FEATURES = [
-  {
-    Icon: Users,
-    title: "One contact directory",
-    body: "Import your school's contact list and organize it by role — parents, students, staff, alumni, board members, and donors. Every contact in one place, always up to date.",
-  },
-  {
-    Icon: Send,
-    title: "Simple message campaigns",
-    body: "Write a message, choose your audience, pick a channel, and send. Track delivery, opens, and failures in real time. Every campaign is saved with its full history.",
-  },
-  {
-    Icon: Layers,
-    title: "Audiences and groups",
-    body: "Create custom audience segments — grade level, homeroom, specific families. Message exactly who needs to hear from you, without copy-pasting lists.",
-  },
-];
+const FEATURES = LANDING_FEATURES;
 
 const COMPLIANCE_ITEMS = [
   {
@@ -70,7 +55,7 @@ const COMPLIANCE_ITEMS = [
   {
     Icon: FileText,
     title: "School-Facilitated Opt-In",
-    body: "Schools certify at import that every contact has provided explicit written or digital consent. Kesher enforces this certification before any phone number can be imported.",
+    body: "Schools certify at import that every contact has provided explicit written or digital consent. Kesher requires this certification before every import and records who certified and when.",
   },
   {
     Icon: ShieldCheck,
@@ -83,7 +68,7 @@ const HOW_IT_WORKS = [
   {
     step: "01",
     title: "Import your contact list",
-    body: "Upload a CSV of your school community. Before any number is saved, you certify that every person has opted in to receive messages from your school. Kesher enforces this at every import.",
+    body: "Upload a CSV of your school community. Before any number is saved, you certify that every person has opted in to receive messages from your school. Kesher requires it at every import and records who certified and when.",
   },
   {
     step: "02",
@@ -550,7 +535,7 @@ function HowItWorksSection() {
             <p className="text-[13px] font-semibold text-amber-900 mb-1">Consent certification is required before any import</p>
             <p className="text-[13px] text-amber-700 leading-relaxed">
               Before any phone numbers enter Kesher, the school administrator must certify that every person on the list
-              has provided explicit written or digital consent to receive SMS messages. This is enforced at every import — not optional.
+              has provided explicit written or digital consent to receive SMS messages. Kesher requires it on every import, sheet sync and hand-entered number, and records who certified and when.
             </p>
           </div>
         </div>
@@ -751,14 +736,14 @@ function ForReviewersSection() {
             </h2>
             <p className="text-[14px] text-zinc-500 leading-relaxed mb-5">
               Kesher operates as an A2P messaging platform exclusively for educational institutions. Schools use Kesher
-              to send transactional and informational communications — announcements, emergency alerts, attendance
-              notices, event reminders — to community members who have provided explicit opt-in consent.
+              to send transactional and informational communications — announcements, emergency alerts,
+              event reminders, schedule changes — to community members who have provided explicit opt-in consent.
             </p>
             <div className="grid gap-2 mb-5">
               {[
                 { label: "Program type",    value: "School communications — informational and transactional only. No marketing." },
                 { label: "Opt-in method",   value: "School-facilitated explicit opt-in via enrollment forms, parent portals, and staff onboarding" },
-                { label: "Message content", value: "Announcements, emergency alerts, event reminders, attendance, schedule changes" },
+                { label: "Message content", value: "Announcements, emergency alerts, event reminders, schedule changes" },
                 { label: "Opt-out",         value: "STOP keyword — processed in real time, suppressed permanently" },
                 { label: "Help response",   value: "HELP keyword triggers automated message with support contact" },
                 { label: "Contact",         value: CONTACT_EMAIL },
@@ -857,7 +842,7 @@ function ContactSection() {
               },
               {
                 q: "How does consent work for SMS?",
-                a: "Every school must certify at import that each contact has provided explicit written or digital consent to receive SMS messages. Kesher enforces this before any number can be imported.",
+                a: "Every school must certify at import that each contact has provided explicit written or digital consent to receive SMS messages. Kesher requires this before every import, sheet sync, and hand-entered number, and records who certified and when.",
               },
               {
                 q: "What happens when someone replies STOP?",

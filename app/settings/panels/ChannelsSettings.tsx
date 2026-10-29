@@ -8,6 +8,7 @@ import { toast } from "@/app/components/ui/toast";
 import type { ChannelStatus, ChannelsOverview } from "../channels";
 import { checkWhatsAppNow, removeWhatsAppToken, saveSms, saveWhatsApp } from "../channelActions";
 import { FieldLabel, Panel, Pill, inputCls, useAction } from "./ui";
+import type { WebhookSecretStatus } from "@/lib/webhookSecurity";
 
 const ICONS = { email: Mail, sms: Smartphone, whatsapp: MessageSquare } as const;
 
@@ -15,7 +16,7 @@ function StatePill({ s }: { s: ChannelStatus }) {
   return s.state === "connected" ? <Pill tone="ok">Connected</Pill> : s.state === "attention" ? <Pill tone="warn">Needs attention</Pill> : <Pill tone="muted">Not connected</Pill>;
 }
 
-export function ChannelsSettings({ overview, simulated }: { overview: ChannelsOverview; simulated: boolean }) {
+export function ChannelsSettings({ overview, simulated, webhookSecrets = [] }: { overview: ChannelsOverview; simulated: boolean; webhookSecrets?: WebhookSecretStatus[] }) {
   const router = useRouter();
   const { form } = overview;
   const [wa, setWa] = useState({ ...form.whatsapp, accessToken: "" });
@@ -28,6 +29,22 @@ export function ChannelsSettings({ overview, simulated }: { overview: ChannelsOv
       {simulated && (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-[12px] text-amber-800 [[data-theme=dark]_&]:text-amber-300">
           Sends are simulated for this workspace (demo mode) — no real messages go out.
+        </div>
+      )}
+
+      {webhookSecrets.some((w) => !w.set) && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-[12px] text-amber-800 [[data-theme=dark]_&]:text-amber-300">
+          <p className="font-medium">Webhook security isn&apos;t fully set up</p>
+          <ul className="mt-1.5 space-y-1">
+            {webhookSecrets
+              .filter((w) => !w.set)
+              .map((w) => (
+                <li key={w.key}>
+                  <span className="font-mono text-[11.5px]">{w.key}</span> ({w.label}) is missing. {w.effect}
+                </li>
+              ))}
+          </ul>
+          <p className="mt-1.5">Add it in Vercel → Project → Settings → Environment Variables and redeploy. DEPLOYMENT.md says where to find each one.</p>
         </div>
       )}
 
